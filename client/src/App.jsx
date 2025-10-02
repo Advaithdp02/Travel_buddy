@@ -1,11 +1,30 @@
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { HomePage } from "./components/HomePage";
+import { AboutPage } from "./components/AboutPage";
+import { DestinationPage } from "./components/DestinationPage";
+import { BlogPage } from "./components/BlogPage";
+import { ContactPage } from "./components/ContactPage";
+import { Footer } from "./components/Footer";
+import "./App.css"; // import normal CSS
 
+const App = () => {
+  return (
+    <Router>
+      <div className="app-container">
+        <main>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/services" element={<DestinationPage />} />
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </Router>
+  );
+};
 
-import './App.css'
-
-function App() {
-  
-
-  return (<>Hello</>)
-}
-
-export default App
+export default App;
