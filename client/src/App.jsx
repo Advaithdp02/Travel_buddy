@@ -6,7 +6,10 @@ import { DestinationPage } from "./components/DestinationPage";
 import { BlogPage } from "./components/BlogPage";
 import { ContactPage } from "./components/ContactPage";
 import { Footer } from "./components/Footer";
-import "./App.css"; // import normal CSS
+import  { Login }  from "./components/Login";
+import { Registration } from "./components/Registration"; 
+import "./App.css"; 
+
 
 const App = () => {
   return (
@@ -19,6 +22,8 @@ const App = () => {
             <Route path="/services" element={<DestinationPage />} />
             <Route path="/blog" element={<BlogPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Registration />} />
           </Routes>
         </main>
         <Footer />
