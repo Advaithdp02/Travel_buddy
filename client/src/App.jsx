@@ -9,6 +9,7 @@ import { Footer } from "./components/Footer";
 import  { Login }  from "./components/Login";
 import { Registration } from "./components/Registration"; 
 import "./App.css"; 
+import { Profile } from "./components/Profile";
 
 
 const App = () => {
@@ -24,6 +25,7 @@ const App = () => {
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Registration />} />
+            <Route path="/profile" element={<Profile />} />
           </Routes>
         </main>
         <Footer />
