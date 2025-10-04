@@ -1,8 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Header } from './Header';
 import { StarIcon, CheckIcon, LeftArrowIcon, RightArrowIcon, WeatherIcon, PhoneIcon, ChevronDownIcon, ExternalLinkIcon, LocationPinIcon } from './Icons';
 
 export const DestinationPage = ({ currentPage, navigate }) => {
+  const [activeTab, setActiveTab] = useState("comments");
+
+  const comments = [
+    { user: "Rahul", text: "Amazing viewpoint! Totally worth the trek." },
+    { user: "Meera", text: "The misty mornings here are unforgettable." },
+  ];
+
+  const contributions = [
+    { user: "Anita", title: "Best Time to Visit", detail: "Early morning before 9 AM gives the best views." },
+    { user: "Suresh", title: "Travel Tip", detail: "Carry water bottles and wear proper shoes for the trek." },
+  ];
   const places = [
     { name: "Chembra Peak", location: "Millumukku, Kaniyambetta, Wayanad, Kerala 673122", distance: "30 km", arrival: "12.00 am", time: "6 hr 30 min", img: "https://picsum.photos/seed/place1/300/200" },
     { name: "Banasura Hill", location: "Millumukku, Kaniyambetta, Wayanad, Kerala 673122", distance: "30 km", arrival: "12.00 am", time: "6 hr 30 min", img: "https://picsum.photos/seed/place2/300/200" },
@@ -59,10 +70,83 @@ export const DestinationPage = ({ currentPage, navigate }) => {
               <li className="flex items-start"><CheckIcon className="text-brand-yellow mr-2 mt-1 flex-shrink-0" /> Accessible via a scenic trek through winding trails surrounded by diverse flora.</li>
               <li className="flex items-start"><CheckIcon className="text-brand-yellow mr-2 mt-1 flex-shrink-0" /> A paradise for photographers with breathtaking landscapes and vibrant natural colors.</li>
             </ul>
-            <button className="bg-brand-yellow text-brand-dark font-semibold py-3 px-8 rounded-lg shadow-lg hover:bg-yellow-400 transition-transform transform hover:scale-105">VIEW MORE</button>
+            <button className="bg-brand-yellow text-brand-dark font-semibold py-3 px-8 rounded-lg shadow-lg hover:bg-yellow-400 transition-transform transform hover:scale-105">WishList</button>
           </div>
         </div>
       </section>
+      
+      {/* Comments & Contributions Section */}
+<section className="py-16 px-8 bg-gray-50">
+  <div className="container mx-auto">
+    <h2 className="text-3xl font-bold text-brand-dark mb-6">Community Insights</h2>
+
+    {/* Toggle Tabs */}
+    <div className="flex gap-6 mb-8 border-b border-gray-200">
+      <button
+        onClick={() => setActiveTab("comments")}
+        className={`pb-2 font-semibold transition-colors ${
+          activeTab === "comments" ? "border-b-2 border-brand-yellow text-brand-dark" : "text-brand-gray"
+        }`}
+      >
+        Comments
+      </button>
+      <button
+        onClick={() => setActiveTab("contributions")}
+        className={`pb-2 font-semibold transition-colors ${
+          activeTab === "contributions" ? "border-b-2 border-brand-yellow text-brand-dark" : "text-brand-gray"
+        }`}
+      >
+        Contributions
+      </button>
+    </div>
+
+    {/* Content Area */}
+    <div className="relative overflow-hidden">
+      <div
+        className="flex transition-transform duration-500"
+        style={{
+          transform: activeTab === "comments" ? "translateX(0%)" : "translateX(-50%)",
+          width: "200%", // full width for both panels combined
+        }}
+      >
+        {/* Comments Section */}
+        <div className="w-full pr-6">
+          <div className="space-y-4">
+            {comments.map((c, index) => (
+              <div
+                key={index}
+                className="bg-white p-4 rounded-xl shadow border border-gray-100"
+              >
+                <p className="text-sm text-brand-dark font-semibold">{c.user}</p>
+                <p className="text-gray-600 text-sm mt-1">{c.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Contributions Section */}
+        <div className="w-full pl-6">
+          <div className="space-y-4">
+            {contributions.map((c, index) => (
+              <div
+                key={index}
+                className="bg-white p-4 rounded-xl shadow border border-gray-100"
+              >
+                <h4 className="font-semibold text-brand-dark">{c.title}</h4>
+                <p className="text-gray-600 text-sm mt-1">{c.detail}</p>
+                <span className="text-xs text-brand-gray">
+                  Shared by {c.user}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
 
       {/* Filter and Places */}
       <section className="bg-brand-light-purple py-12 px-8">

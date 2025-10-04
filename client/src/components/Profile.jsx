@@ -30,12 +30,17 @@ export const Profile = () => {
               className="w-32 h-32 rounded-full border-4 border-white shadow-lg"
             />
           </div>
-
+          <div className="flex flex-row ml-10 mt-4 justify-between px-4 ">
+          
           {/* Name / Username / Bio */}
           <div className="flex flex-col justify-center mb-5">
             <h1 className="text-3xl font-bold">John Doe</h1>
             <p className="text-gray-500">@john_doe</p>
             <p className="mt-1 text-gray-600">Traveler, Photographer, Coffee Lover</p>
+          </div>
+          <div>
+            <button className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg">Edit Profile</button>
+          </div>
           </div>
      </div>
     </div>
