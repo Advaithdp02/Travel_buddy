@@ -9,7 +9,7 @@ export const Profile = () => {
 
   const logout = () => {
     localStorage.clear();
-    window.location.reload();
+    window.location.href = "/";
   };
 
   useEffect(() => {

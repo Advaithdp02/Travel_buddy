@@ -42,7 +42,7 @@ export const Login = ({ currentPage }) => {
       // Store token + userId in localStorage
       localStorage.setItem("token", data.token);
       localStorage.setItem("userId", data.user.id);
-      sessionStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("isLoggedIn", "true");
 
       alert("Login successful ✅");
       navigate("/"); 

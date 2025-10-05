@@ -17,7 +17,7 @@ export const Header = ({ variant = 'light' }) => {
     { name: 'Contact Us', page: '/contact' },
   ];
   useEffect(() => {
-    const loggedIn = sessionStorage.getItem("isLoggedIn");
+    const loggedIn = localStorage.getItem("isLoggedIn");
     setIsLoggedIn(loggedIn === "true");
   }, []);
   return (

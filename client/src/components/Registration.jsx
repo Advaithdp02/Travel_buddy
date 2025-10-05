@@ -1,35 +1,45 @@
 import React, { useState } from "react";
 import { Header } from "./Header";
-import { LocationIcon } from "./Icons"; // Replace with a user/lock icon if you have one
+import { LocationIcon } from "./Icons";
 import { useNavigate } from "react-router-dom";
 
 export const Registration = ({ currentPage }) => {
-    const navigate = useNavigate();
-  const [step, setStep] = useState(1);
+  const navigate = useNavigate();
+  const [step, setStep] = useState(1); // Step 1: Email/Phone, Step 1.5: OTP, Step 2: Full form
+  const [loading, setLoading] = useState(false);
+
+  // Step 1
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [generatedOtp, setGeneratedOtp] = useState("");
-  const [formData, setFormData] = useState({ name: "", place: "", age: "" });
-  const [loading, setLoading] = useState(false);
 
-  
+  // Step 2: Registration fields
+  const [formData, setFormData] = useState({
+    name: "",
+    username: "",
+    password: "",
+    dob: "",
+    location: "",
+  });
+
+  // Generate OTP
   const handleStep1Submit = (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate OTP generation
+    // Generate 6-digit OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log("Generated OTP:", otpCode); // In real app, send via backend
+    console.log("Generated OTP:", otpCode); // Send this via backend in real app
     setGeneratedOtp(otpCode);
 
     setTimeout(() => {
       setLoading(false);
-      setStep(1.5); // Move to OTP step
+      setStep(1.5);
     }, 1000);
   };
 
-  
+  // Verify OTP
   const handleOtpSubmit = (e) => {
     e.preventDefault();
     if (otp === generatedOtp) {
@@ -40,13 +50,49 @@ export const Registration = ({ currentPage }) => {
     }
   };
 
-  
-  const handleFinalSubmit = (e) => {
+  // Final Registration API call
+  const handleFinalSubmit = async (e) => {
     e.preventDefault();
-    const data = { email, phone, ...formData };
-    console.log("Final Registration Data:", data);
-    alert("Registration Complete 🎉");
-    navigate("/login");  
+    setLoading(true);
+
+    const payload = {
+      name: formData.name,
+      username: formData.username,
+      password: formData.password,
+      location: formData.location,
+      dob: formData.dob,
+      phone,
+      email,
+    };
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Registration failed");
+      }
+
+      const data = await res.json();
+      console.log("Registration successful:", data);
+
+      // Store token & userId in localStorage
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userId", data.user.id);
+      localStorage.setItem("isLoggedIn", "true");
+
+      alert("Registration Complete 🎉");
+      navigate("/");
+    } catch (err) {
+      console.error("Registration Error:", err);
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -69,29 +115,25 @@ export const Registration = ({ currentPage }) => {
           {step === 1 && (
             <form onSubmit={handleStep1Submit} className="space-y-6">
               <div>
-                <label className="block text-sm font-semibold text-brand-dark mb-2">
-                  Email
-                </label>
+                <label className="block text-sm font-semibold text-brand-dark mb-2">Email</label>
                 <input
                   type="email"
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-yellow"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-yellow"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-brand-dark mb-2">
-                  Phone Number
-                </label>
+                <label className="block text-sm font-semibold text-brand-dark mb-2">Phone Number</label>
                 <input
                   type="text"
                   placeholder="Enter phone number"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-yellow"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-yellow"
                   required
                 />
               </div>
@@ -99,7 +141,7 @@ export const Registration = ({ currentPage }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-brand-dark text-white font-semibold py-3 rounded-lg shadow-lg hover:bg-brand-dark/90 transition-transform transform hover:scale-105"
+                className="w-full bg-brand-dark text-white font-semibold py-3 rounded-lg shadow-lg hover:bg-brand-dark/90"
               >
                 {loading ? "Sending OTP..." : "Next"}
               </button>
@@ -110,83 +152,98 @@ export const Registration = ({ currentPage }) => {
           {step === 1.5 && (
             <form onSubmit={handleOtpSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-semibold text-brand-dark mb-2">
-                  Enter OTP
-                </label>
+                <label className="block text-sm font-semibold text-brand-dark mb-2">Enter OTP</label>
                 <input
                   type="text"
                   placeholder="Enter OTP"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-yellow"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-yellow"
                   required
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-brand-dark text-white font-semibold py-3 rounded-lg shadow-lg hover:bg-brand-dark/90 transition-transform transform hover:scale-105"
+                className="w-full bg-brand-dark text-white font-semibold py-3 rounded-lg shadow-lg hover:bg-brand-dark/90"
               >
                 Verify OTP
               </button>
             </form>
           )}
 
-          {/* Step 2: Name, Place, Age */}
+          {/* Step 2: Full Registration Form */}
           {step === 2 && (
             <form onSubmit={handleFinalSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-semibold text-brand-dark mb-2">
-                  Name
-                </label>
+                <label className="block text-sm font-semibold text-brand-dark mb-2">Name</label>
                 <input
                   type="text"
                   placeholder="Enter your name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-yellow"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-yellow"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-brand-dark mb-2">
-                  Place
-                </label>
+                <label className="block text-sm font-semibold text-brand-dark mb-2">Username</label>
                 <input
                   type="text"
-                  placeholder="Enter your place"
-                  value={formData.place}
-                  onChange={(e) => setFormData({ ...formData, place: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-yellow"
+                  placeholder="Choose a username"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-yellow"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-brand-dark mb-2">
-                  Age
-                </label>
+                <label className="block text-sm font-semibold text-brand-dark mb-2">Password</label>
                 <input
-                  type="number"
-                  placeholder="Enter your age"
-                  value={formData.age}
-                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-yellow"
+                  type="password"
+                  placeholder="Enter password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-yellow"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-brand-dark mb-2">Place / Location</label>
+                <input
+                  type="text"
+                  placeholder="Enter your location"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-yellow"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-brand-dark mb-2">Date of Birth</label>
+                <input
+                  type="date"
+                  value={formData.dob}
+                  onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-yellow"
                   required
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-brand-dark text-white font-semibold py-3 rounded-lg shadow-lg hover:bg-brand-dark/90 transition-transform transform hover:scale-105"
+                disabled={loading}
+                className="w-full bg-brand-dark text-white font-semibold py-3 rounded-lg shadow-lg hover:bg-brand-dark/90"
               >
-                Register
+                {loading ? "Registering..." : "Register"}
               </button>
             </form>
           )}
 
-          {/* Already have account */}
           <p className="text-center text-sm text-brand-gray mt-6">
             Already have an account?{" "}
             <button
