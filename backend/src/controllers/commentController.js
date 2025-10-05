@@ -1,4 +1,4 @@
-import Comment from "../models/Comment.js";
+import Comment from "../models/Comments.js";
 import Location from "../models/Location.js";
 import Contribution from "../models/Contribution.js";
 

@@ -10,6 +10,7 @@ import  { Login }  from "./components/Login";
 import { Registration } from "./components/Registration"; 
 import "./App.css"; 
 import { Profile } from "./components/Profile";
+import { ProfilePublic } from "./components/ProfilePublic";
 
 
 const App = () => {
@@ -26,6 +27,7 @@ const App = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Registration />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:username" element={<ProfilePublic />} />
           </Routes>
         </main>
         <Footer />

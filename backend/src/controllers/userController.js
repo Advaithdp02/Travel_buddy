@@ -59,9 +59,14 @@ export const registerUser = async (req, res) => {
 // -------------------- LOGIN --------------------
 export const loginUser = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { identifier, password } = req.body; 
+    
 
-    const user = await User.findOne({ username });
+    // Find user by username OR email
+    const user = await User.findOne({
+      $or: [{ username: identifier }, { email: identifier }],
+    });
+
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const isMatch = await bcrypt.compare(password, user.password);

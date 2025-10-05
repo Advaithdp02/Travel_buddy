@@ -19,7 +19,7 @@ router.post("/register", registerUser);
 router.post("/login", loginUser);
 
 // ---------------- PROFILE ----------------
-router.get("/profile", protect, getUserProfile);      // Get logged-in user profile
+router.get("/profile", protect, getUserProfile);      
 router.put("/profile", protect, updateUserProfile);  // Update logged-in user profile
 
 // ---------------- OTHER USERS ----------------
