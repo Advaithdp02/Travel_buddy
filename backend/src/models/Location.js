@@ -1,17 +1,25 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
-const locationSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  description: String,
-  district: { type: mongoose.Schema.Types.ObjectId, ref: "District" },
-  coordinates: {
-    lat: Number,
-    lng: Number
-  },
+const locationSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    district: { type: mongoose.Schema.Types.ObjectId, ref: "District", required: true },
+    description: { type: String },
+    images: [String],
+    coordinates: {
+      lat: Number,
+      lng: Number
+    },
+    createdAt: { type: Date, default: Date.now },
+
   contributions: [{ type: mongoose.Schema.Types.ObjectId, ref: "Contribution" }],
   comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }],
-  
-  createdAt: { type: Date, default: Date.now },
-});
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model("Location", locationSchema);
+const Location = mongoose.model("Location", locationSchema);
+
+export default Location;
+
+  

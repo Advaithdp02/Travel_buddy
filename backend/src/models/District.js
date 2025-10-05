@@ -1,8 +1,9 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const districtSchema = new mongoose.Schema({
   name: { type: String, required: true },
   locations: [{ type: mongoose.Schema.Types.ObjectId, ref: "Location" }],
 });
 
-module.exports = mongoose.model("District", districtSchema);
+const District = mongoose.model("District", districtSchema);
+export default District;
