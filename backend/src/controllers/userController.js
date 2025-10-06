@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import Location from "../models/Location.js";
+import Contribution from "../models/Contribution.js";
 
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -99,24 +100,24 @@ export const loginUser = async (req, res) => {
 // -------------------- FOLLOW / UNFOLLOW --------------------
 export const toggleFollow = async (req, res) => {
   try {
-    const { id: targetUserId } = req.params;
+    const { username } = req.params;
     const currentUserId = req.user.id;
 
-    if (currentUserId === targetUserId)
+    const targetUser = await User.findOne({ username });
+    if (!targetUser) return res.status(404).json({ message: "Target user not found" });
+
+    if (targetUser._id.toString() === currentUserId)
       return res.status(400).json({ message: "Cannot follow yourself" });
 
     const currentUser = await User.findById(currentUserId);
-    const targetUser = await User.findById(targetUserId);
 
-    if (!targetUser) return res.status(404).json({ message: "Target user not found" });
-
-    if (currentUser.following.includes(targetUserId)) {
+    if (currentUser.following.includes(targetUser._id)) {
       // Unfollow
-      currentUser.following.pull(targetUserId);
+      currentUser.following.pull(targetUser._id);
       targetUser.followers.pull(currentUserId);
     } else {
       // Follow
-      currentUser.following.push(targetUserId);
+      currentUser.following.push(targetUser._id);
       targetUser.followers.push(currentUserId);
     }
 
@@ -185,10 +186,19 @@ export const updateUserProfile = async (req, res) => {
  
 export const getOtherUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id)
-      .select("-password") // never expose password
+    const user = await User.findOne({ username: req.params.username })
+      .select("-password")
       .populate("followers", "username profilePic")
       .populate("following", "username profilePic")
+      .populate({
+        path: "contributions",
+        select: "title description images likes comments verified createdAt",
+        match: { verified: true }, // only verified contributions
+        populate: [
+          { path: "likes", select: "username profilePic" }, // populate likes with username & profilePic
+          { path: "comments", select: "user text createdAt", populate: { path: "user", select: "username profilePic" } } // nested populate
+        ]
+      })
       .populate("wishlist", "name location");
 
     if (!user) return res.status(404).json({ message: "User not found" });

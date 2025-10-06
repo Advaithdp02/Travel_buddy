@@ -23,10 +23,10 @@ router.get("/profile", protect, getUserProfile);
 router.put("/profile", protect, updateUserProfile);  // Update logged-in user profile
 
 // ---------------- OTHER USERS ----------------
-router.get("/:id", protect, getOtherUserProfile);    // View another user’s profile
+router.get("/profile/:username", protect, getOtherUserProfile);    // View another user’s profile
 
 // ---------------- FOLLOW ----------------
-router.put("/follow/:id", protect, toggleFollow);   // Follow/unfollow another user
+router.put("/follow/:username", protect, toggleFollow);   // Follow/unfollow another user
 
 // ---------------- WISHLIST ----------------
 router.put("/wishlist/add/:locationId", protect, addToWishlist);

@@ -18,8 +18,9 @@ const userSchema = new mongoose.Schema(
     profilePic: { type: String }, // URL or filename
     coverPhoto: { type: String }, // URL or filename
     bio: { type: String, maxlength: 500 },
-    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Location" }], // wishlist of locations
-
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Location" }],
+     // wishlist of locations
+  contributions: [{ type: mongoose.Schema.Types.ObjectId, ref: "Contribution" }],
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
