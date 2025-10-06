@@ -42,7 +42,7 @@ export const ProfilePublic = () => {
     };
 
     fetchUser();
-  }, [username]);
+  }, [username,isFollowing]);
 
   // Toggle Follow
   const handleToggleFollow = async () => {
