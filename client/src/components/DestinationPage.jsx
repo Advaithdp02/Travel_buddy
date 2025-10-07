@@ -9,10 +9,14 @@ import {
   ExternalLinkIcon,
   LocationPinIcon
 } from './Icons';
+import { useParams } from 'react-router-dom';
+
+const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
+const Backend_URL = import.meta.env.VITE_BACKEND_URL;
 
 export const DestinationPage = ({ currentPage, navigate }) => {
   const [activeTab, setActiveTab] = useState("comments");
-
+  const locationId  = useParams();
   // Hero Section
   const [hero, setHero] = useState({
     title: "Neelimala Viewpoint",
@@ -117,56 +121,97 @@ export const DestinationPage = ({ currentPage, navigate }) => {
 
 
 useEffect(() => {
-    const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  const fetchLocationData = async () => {
+    try {
+      // Fetch location details from backend
+      const res = await fetch(`${Backend_URL}/locations/${locationId.id}`); // replace locationId with your param/state
+      const data = await res.json();
 
-    const fetchWeather = async () => {
-      try {
-        // 1️⃣ Fetch Current Weather & Air Quality
-        const currentRes = await fetch(
-          `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${lat},${lon}&aqi=yes`
-        );
-        const currentData = await currentRes.json();
-        const current = currentData.current;
+      // Fill Hero & About (example)
+      setHero({
+        title: data.name,
+        subtitle: data.description || "Beautiful Place",
+        bgImg: data.images[0] || "https://picsum.photos/seed/default/1600/900"
+      });
 
-        // 2️⃣ Fetch Sunrise & Sunset from Astronomy API
-        const astroRes = await fetch(
-          `https://api.weatherapi.com/v1/astronomy.json?key=${apiKey}&q=${lat},${lon}&dt=${today}`
-        );
+      setAbout({
+        heading: `About ${data.name}`,
+        subHeading: `Explore the beauty of ${data.name}`,
+        description: data.description || "No description available",
+        points: ["Stunning views", "Great for trekking", "Photographer's paradise"], // or from data
+        rating: 4.5, // placeholder or calculated
+        reviews: 120, // placeholder or from contributions/comments count
+        images: data.images.slice(0, 2)
+      });
 
-        const astroData = await astroRes.json();
-        const astro = astroData.astronomy.astro;
-        const forecastRes = await fetch(
-          `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${lat},${lon}&days=1`
-        );
-        const forecastData = await forecastRes.json();
+      // Comments & Contributions
+      setComments(data.comments || []);
+      setContributions(data.contributions || []);
 
-        // 3️⃣ Update state
-        setWeather({
-          temp: `${current.temp_c}°C`,
-          lastUpdated: current.last_updated,
-          wind: `${current.wind_kph} km/h (${current.wind_dir})`,
-          probability: forecastData.forecast.forecastday[0].day.daily_chance_of_rain > 50 ? "High" : "Low",
-          pressure: `${current.pressure_mb} mb`,
-          dewPoint: `${current.dewpoint_c}°C`,
-          humidity: `${current.humidity}%`,
-          cloudCover: `${current.cloud}%`,
-          uvIndex: current.uv,
-          visibility: `${current.vis_km} km`,
-          precipitation: `${current.precip_mm} mm`,
-          sunrise: astro.sunrise,
-          sunset: astro.sunset,
-          airQuality: current.air_quality
-            ? `CO: ${current.air_quality.co.toFixed(1)}, PM2.5: ${current.air_quality.pm2_5.toFixed(1)}`
-            : "N/A"
-        });
-      } catch (error) {
-        console.error("Error fetching weather data:", error);
-      }
-    };
+      // Example for Places, Hotels, Nearby Places
+      setPlaces(data.places || []);
+      setHotels(data.hotels || []);
+      setNearbyPlaces(data.nearbyPlaces || []);
 
-    fetchWeather();
-  }, [lat, lon]);
+      // Filters (district/state from populated data)
+      setFilters({
+        state: data.district?.state || "Kerala",
+        district: data.district?.name || "Wayanad",
+        terrain: "Mountain" // if you have terrain info
+      });
+
+      // Weather fetch using lat/lon
+      const [lon, lat] = data.coordinates.coordinates; // GeoJSON is [lon, lat]
+      setLat(lat);
+      setLon(lon);
+
+      // Current Weather
+      const currentRes = await fetch(
+        `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${lat},${lon}&aqi=yes`
+      );
+      const currentData = await currentRes.json();
+      const current = currentData.current;
+
+      // Astronomy for sunrise/sunset
+      const today = new Date().toISOString().split("T")[0];
+      const astroRes = await fetch(
+        `https://api.weatherapi.com/v1/astronomy.json?key=${apiKey}&q=${lat},${lon}&dt=${today}`
+      );
+      const astroData = await astroRes.json();
+      const astro = astroData.astronomy.astro;
+
+      // Forecast for rain probability
+      const forecastRes = await fetch(
+        `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${lat},${lon}&days=1`
+      );
+      const forecastData = await forecastRes.json();
+      const chanceOfRain = forecastData.forecast.forecastday[0].day.daily_chance_of_rain;
+
+      setWeather({
+        temp: `${current.temp_c}°C`,
+        lastUpdated: current.last_updated,
+        wind: `${current.wind_kph} km/h (${current.wind_dir})`,
+        probability: chanceOfRain > 50 ? "High" : "Low",
+        pressure: `${current.pressure_mb} mb`,
+        dewPoint: `${current.dewpoint_c}°C`,
+        humidity: `${current.humidity}%`,
+        cloudCover: `${current.cloud}%`,
+        uvIndex: current.uv,
+        visibility: `${current.vis_km} km`,
+        precipitation: `${current.precip_mm} mm`,
+        sunrise: astro.sunrise,
+        sunset: astro.sunset,
+        airQuality: current.air_quality
+          ? `CO: ${current.air_quality.co.toFixed(1)}, PM2.5: ${current.air_quality.pm2_5.toFixed(1)}`
+          : "N/A"
+      });
+    } catch (err) {
+      console.error("Error fetching location or weather data:", err);
+    }
+  };
+
+  fetchLocationData();
+}, [locationId]);
 
 
 

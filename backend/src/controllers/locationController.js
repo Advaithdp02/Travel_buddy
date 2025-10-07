@@ -21,6 +21,17 @@ export const getAllLocations = async (req, res) => {
   }
 };
 
+
+export const getAllLocationsNoDistrict = async (req, res) => {
+  try {
+    const locations = await Location.find().populate("district").populate("comments").populate("contributions");
+    res.json(locations);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const getNearestLocation = async (req, res) => {
   try {
     const { lat, lon } = req.params;
@@ -55,18 +66,22 @@ export const getNearestLocation = async (req, res) => {
 // Get single location by ID
 export const getLocationById = async (req, res) => {
   try {
-    const location = await Location.findById(req.params.id)
-      .populate("district")
-      .populate("contributions")
-      .populate("comments");
+    // Find the location by ID
+    const location = await Location.findById(req.params.id);
 
-    if (!location) return res.status(404).json({ message: "Location not found" });
+    // Check if it exists
+    if (!location) {
+      return res.status(404).json({ message: "Location not found" });
+    }
+
+    // Send the raw location object as stored in MongoDB
     res.json(location);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // Create new location (Admin only)
 export const createLocation = async (req, res) => {

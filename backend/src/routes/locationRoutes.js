@@ -5,6 +5,7 @@ import {
   createLocation,
   updateLocation,
   deleteLocation,
+  getAllLocationsNoDistrict,
   getNearestLocation,
 } from "../controllers/locationController.js";
 import { protect,adminProtect } from "../middlewares/authMiddleware.js";
@@ -13,9 +14,10 @@ import { protect,adminProtect } from "../middlewares/authMiddleware.js";
 const router = express.Router();
 
 // Public routes
-router.get("/:district", getAllLocations);
+router.get("/district/:district", getAllLocations);
 router.get("/:id", getLocationById);
 router.get("/nearest/:lat/:lon", getNearestLocation);
+router.get("/", getAllLocationsNoDistrict);
 
 // Admin only
 router.post("/", protect, adminProtect, createLocation);
