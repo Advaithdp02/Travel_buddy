@@ -11,8 +11,7 @@ export const Login = ({ currentPage }) => {
 
   // backend URL from .env
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-; 
-  // if vite, use: import.meta.env.VITE_BACKEND_URL
+
 
   useEffect(() => {
     // If already logged in, redirect to homepage

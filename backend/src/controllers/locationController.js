@@ -4,13 +4,53 @@ import District from "../models/District.js";
 // Get all locations
 export const getAllLocations = async (req, res) => {
   try {
-    const locations = await Location.find().populate("district");
+    const { district } = req.params;
+
+    // Find the district document by name first
+    const districtDoc = await District.findOne({ name: district });
+    if (!districtDoc) {
+      return res.status(404).json({ message: "District not found" });
+    }
+
+    // Now get all locations under this district
+    const locations = await Location.find({ district: districtDoc._id }).populate("district");
     res.json(locations);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const getNearestLocation = async (req, res) => {
+  try {
+    const { lat, lon } = req.params;
+
+    if (!lat || !lon) {
+      return res.status(400).json({ message: "Latitude and longitude are required" });
+    }
+
+    const nearest = await Location.findOne({
+      coordinates: {
+        $near: {
+          $geometry: {
+            type: "Point",
+            coordinates: [parseFloat(lon), parseFloat(lat)] // [lon, lat]
+          }
+        }
+      }
+    }).populate("district");
+
+    if (!nearest) {
+      return res.status(404).json({ message: "No nearby locations found" });
+    }
+
+    res.json(nearest);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 
 // Get single location by ID
 export const getLocationById = async (req, res) => {
@@ -51,6 +91,36 @@ export const createLocation = async (req, res) => {
     }
 
     res.status(201).json(location);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const updateLocation = async (req, res) => {
+  try {
+    const location = await Location.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!location) return res.status(404).json({ message: "Location not found" });
+    res.json(location);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const deleteLocation = async (req, res) => {
+  try {
+    const location = await Location.findByIdAndDelete(req.params.id);
+    if (!location) return res.status(404).json({ message: "Location not found" });
+
+    // Remove location from district
+    const dist = await District.findById(location.district);
+    if (dist) {
+      dist.locations = dist.locations.filter((locId) => locId.toString() !== location._id.toString());
+      await dist.save();
+    }
+
+    res.json({ message: "Location deleted" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

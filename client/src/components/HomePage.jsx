@@ -1,26 +1,123 @@
-import React from 'react';
-import { Header } from './Header';
-import { LocationIcon, HotelIcon, RestaurantIcon, LeftArrowIcon, RightArrowIcon, ClimateIcon, PlacesIcon, TrafficIcon } from './Icons';
+import React, { useEffect, useState, useCallback } from "react";
+import { Header } from "./Header";
+import {
+  LocationIcon,
+  HotelIcon,
+  RestaurantIcon,
+  LeftArrowIcon,
+  RightArrowIcon,
+  ClimateIcon,
+  PlacesIcon,
+  TrafficIcon,
+} from "./Icons";
+import { data, Link } from "react-router-dom";
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+function useGeolocation({ enableFallback = true, ipFallbackUrl = "https://ipapi.co/json/" } = {}) {
+  const [coords, setCoords] = useState(null);
+  const [status, setStatus] = useState("idle");
+  const [error, setError] = useState(null);
+
+
+  const requestGeolocation = useCallback(() => {
+    if (!("geolocation" in navigator)) {
+      setStatus("error");
+      setError(new Error("Geolocation is not supported by this browser."));
+      if (enableFallback) fallbackToIP();
+      return;
+    }
+
+    setStatus("requesting");
+    setError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setCoords({ latitude, longitude });
+        localStorage.setItem("userCoords", JSON.stringify({ latitude, longitude }));
+        setStatus("success");
+      },
+      (err) => {
+        setError(err);
+        if (err.code === err.PERMISSION_DENIED) setStatus("denied");
+        else setStatus("error");
+        if (enableFallback) fallbackToIP();
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }, [enableFallback]);
+
+  const fallbackToIP = useCallback(async () => {
+    try {
+      setStatus("fallback");
+      const res = await fetch(ipFallbackUrl);
+      if (!res.ok) throw new Error("IP fallback request failed");
+      const data = await res.json();
+      const lat = data.latitude ?? data.lat;
+      const lon = data.longitude ?? data.lon;
+      if (lat != null && lon != null) {
+        setCoords({ latitude: parseFloat(lat), longitude: parseFloat(lon) });
+        localStorage.setItem("userCoords", JSON.stringify({ latitude: parseFloat(lat), longitude: parseFloat(lon) }));
+        setStatus("success");
+      } else throw new Error("IP fallback returned no coordinates");
+    } catch (e) {
+      setError(e);
+      setStatus((s) => (s === "fallback" ? "error" : s));
+    }
+  }, [ipFallbackUrl]);
+
+  useEffect(() => {
+    requestGeolocation();
+  }, [requestGeolocation]);
+
+  return { coords, status, error, requestGeolocation };
+}
+
 
 export const HomePage = ({ currentPage, navigate }) => {
   const topDestinations = [
-    { name: 'Kozhikode', img: 'https://picsum.photos/300/400?random=1' },
-    { name: 'Alappuzha', img: 'https://picsum.photos/300/400?random=2' },
-    { name: 'Palakkad', img: 'https://picsum.photos/300/400?random=3' },
-    { name: 'Wayanad', img: 'https://picsum.photos/300/400?random=4' },
+    { name: "Kozhikode", img: "https://picsum.photos/300/400?random=1" },
+    { name: "Alappuzha", img: "https://picsum.photos/300/400?random=2" },
+    { name: "Palakkad", img: "https://picsum.photos/300/400?random=3" },
+    { name: "Wayanad", img: "https://picsum.photos/300/400?random=4" },
   ];
-  
+
   const services = [
-    { name: 'Climate', icon: <ClimateIcon />, description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's" },
-    { name: 'Location', icon: <LocationIcon className="w-8 h-8 text-brand-dark" />, description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's" },
-    { name: 'Places', icon: <PlacesIcon />, description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's" },
-    { name: 'Hotels', icon: <HotelIcon className="w-8 h-8 text-brand-dark" />, description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's" },
-    { name: 'Traffic', icon: <TrafficIcon />, description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's" },
+    { name: "Climate", icon: <ClimateIcon />, description: "Lorem Ipsum..." },
+    { name: "Location", icon: <LocationIcon className="w-8 h-8 text-brand-dark" />, description: "Lorem Ipsum..." },
+    { name: "Places", icon: <PlacesIcon />, description: "Lorem Ipsum..." },
+    { name: "Hotels", icon: <HotelIcon className="w-8 h-8 text-brand-dark" />, description: "Lorem Ipsum..." },
+    { name: "Traffic", icon: <TrafficIcon />, description: "Lorem Ipsum..." },
   ];
+
+  const { coords, status, error, requestGeolocation } = useGeolocation({ enableFallback: true });
+  const[nearestLocation,setNearestLocation]=useState(null);
+  // ------------------------------
+  // useEffect to fetch nearest location
+  // ------------------------------
+  useEffect(() => {
+    const fetchNearest = async () => {
+      if (!coords) return;
+
+      try {
+        const res = await fetch(
+          `${BACKEND_URL}/locations/nearest/${coords.latitude}/${coords.longitude}`
+        );
+        if (!res.ok) throw new Error("Failed to fetch nearest location");
+
+        const data = await res.json();
+        setNearestLocation(data._id); // Assuming data contains the location object with an _id field
+        console.log("Nearest Location:", data); // Display result in console
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchNearest();
+  }, [coords]);
 
   return (
     <>
-      {/* Hero Section */}
       <section className="relative bg-white pt-32 pb-16 overflow-hidden">
         <Header currentPage={currentPage} navigate={navigate} />
         <div className="container mx-auto px-8 grid md:grid-cols-2 items-center gap-8">
@@ -28,64 +125,21 @@ export const HomePage = ({ currentPage, navigate }) => {
             <p className="text-brand-yellow font-semibold text-lg">Explore the world</p>
             <h1 className="text-5xl md:text-7xl font-bold text-brand-dark my-4 leading-tight">It's Time to Travel Around the World</h1>
             <p className="text-brand-gray mb-8">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
-            <button className="bg-brand-dark text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:bg-brand-dark/90 transition-transform transform hover:scale-105">EXPLORE NOW</button>
+
+            <div className="flex gap-3">
+              <button className="bg-brand-dark text-white font-semibold py-3 px-8 rounded-lg shadow-lg hover:bg-brand-dark/90 transition-transform transform hover:scale-105">
+               <Link to={`/${nearestLocation}`}  > EXPLORE NOW</Link>
+              </button>
+              
+            </div>
           </div>
           <div className="relative">
-            <img src="https://i.imgur.com/kS5B4i2.png" alt="Happy couple ready to travel" className="relative z-10 max-w-full mx-auto" style={{ maxWidth: '550px' }} />
+            <img src="https://i.imgur.com/kS5B4i2.png" alt="Happy couple ready to travel" className="relative z-10 max-w-full mx-auto" style={{ maxWidth: "550px" }} />
           </div>
         </div>
       </section>
 
-      {/* Services Section */}
-      <section className="py-20 px-8">
-        <div className="container mx-auto">
-          <div className="grid md:grid-cols-2 items-start gap-16">
-            <div className="order-2 md:order-1">
-              <p className="text-brand-yellow font-semibold text-lg">Our Services</p>
-              <h2 className="text-4xl font-bold text-brand-dark my-2">Your Gateway to Unforgettable Journeys</h2>
-              <p className="text-brand-gray mb-8">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text since the 1500s...</p>
-              <img src="https://picsum.photos/seed/service/600/400" alt="Scenic view" className="rounded-lg shadow-xl w-full" />
-            </div>
-            <div className="order-1 md:order-2 grid grid-cols-1 gap-8">
-              {services.map(service => (
-                <div key={service.name} className="flex items-start space-x-4">
-                   <div className="flex-shrink-0 w-12 h-12 bg-brand-light-purple rounded-full flex items-center justify-center">
-                      {service.icon}
-                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-brand-dark mb-2">{service.name}</h3>
-                    <p className="text-brand-gray">{service.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="bg-brand-dark text-white py-16">
-        <div className="container mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center px-8">
-          <div>
-            <p className="text-5xl font-bold text-brand-yellow">8745</p>
-            <p className="text-gray-300 mt-2">Tourist Places</p>
-          </div>
-          <div>
-            <p className="text-5xl font-bold text-brand-yellow">9874</p>
-            <p className="text-gray-300 mt-2">Number Of Resorts</p>
-          </div>
-          <div>
-            <p className="text-5xl font-bold text-brand-yellow">9874</p>
-            <p className="text-gray-300 mt-2">Happy Travelers</p>
-          </div>
-          <div>
-            <p className="text-5xl font-bold text-brand-yellow">6847</p>
-            <p className="text-gray-300 mt-2">Tourist Places</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Top Destination Section */}
+      {/* Top Destinations Section */}
       <section className="bg-brand-light-purple py-20 px-8">
         <div className="container mx-auto">
           <div className="flex justify-between items-center mb-12">
@@ -94,12 +148,16 @@ export const HomePage = ({ currentPage, navigate }) => {
               <h2 className="text-4xl font-bold text-brand-dark">Explore Top Destinations</h2>
             </div>
             <div className="flex space-x-4">
-              <button className="p-3 bg-white rounded-full shadow-md hover:bg-gray-100"><LeftArrowIcon /></button>
-              <button className="p-3 bg-brand-yellow rounded-full shadow-md hover:bg-yellow-400"><RightArrowIcon /></button>
+              <button className="p-3 bg-white rounded-full shadow-md hover:bg-gray-100">
+                <LeftArrowIcon />
+              </button>
+              <button className="p-3 bg-brand-yellow rounded-full shadow-md hover:bg-yellow-400">
+                <RightArrowIcon />
+              </button>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {topDestinations.map(dest => (
+            {topDestinations.map((dest) => (
               <div key={dest.name} className="bg-white rounded-2xl shadow-lg overflow-hidden p-4">
                 <img src={dest.img} alt={dest.name} className="w-full h-64 object-cover rounded-xl mb-4" />
                 <h3 className="text-xl font-bold text-brand-dark">{dest.name}</h3>

@@ -5,21 +5,31 @@ const locationSchema = new mongoose.Schema(
     name: { type: String, required: true },
     district: { type: mongoose.Schema.Types.ObjectId, ref: "District", required: true },
     description: { type: String },
-    images: [String],
-    coordinates: {
-      lat: Number,
-      lng: Number
-    },
-    createdAt: { type: Date, default: Date.now },
+    images: [{ type: String }],
 
-  contributions: [{ type: mongoose.Schema.Types.ObjectId, ref: "Contribution" }],
-  comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }],
+    // GeoJSON coordinates
+    coordinates: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point"
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        required: true
+      }
+    },
+
+    contributions: [{ type: mongoose.Schema.Types.ObjectId, ref: "Contribution" }],
+    comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }],
+    createdAt: { type: Date, default: Date.now }
   },
   { timestamps: true }
 );
 
+// Add 2dsphere index for geospatial queries
+locationSchema.index({ coordinates: "2dsphere" });
+
 const Location = mongoose.model("Location", locationSchema);
 
 export default Location;
-
-  
