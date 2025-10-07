@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Header } from './Header';
+
 import {
   StarIcon,
   CheckIcon,
@@ -17,6 +18,8 @@ const Backend_URL = import.meta.env.VITE_BACKEND_URL;
 export const DestinationPage = ({ currentPage, navigate }) => {
   const [activeTab, setActiveTab] = useState("comments");
   const locationId  = useParams();
+
+
   // Hero Section
   const [hero, setHero] = useState({
     title: "Neelimala Viewpoint",
@@ -124,7 +127,7 @@ useEffect(() => {
   const fetchLocationData = async () => {
     try {
       // Fetch location details from backend
-      const res = await fetch(`${Backend_URL}/locations/${locationId.id}`); // replace locationId with your param/state
+      const res = await fetch(`${Backend_URL}/locations/${locationId.id}`); 
       const data = await res.json();
 
       // Fill Hero & About (example)
