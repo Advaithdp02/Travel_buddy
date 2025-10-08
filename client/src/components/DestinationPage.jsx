@@ -22,27 +22,22 @@ export const DestinationPage = ({ currentPage, navigate }) => {
 
   // Hero Section
   const [hero, setHero] = useState({
-    title: "Neelimala Viewpoint",
-    subtitle: "Beauty of Wayanad from Neelimala Viewpoint",
-    bgImg: "https://picsum.photos/seed/wayanad/1600/900"
+    title: "",
+    subtitle: "",
+    bgImg: ""
   });
 
   // About Section
   const [about, setAbout] = useState({
-    heading: "About Neelimala Viewpoint",
-    subHeading: "A Window to Wayanad's Scenic Splendor",
+    heading: "",
+    subHeading: "",
     description:
-      "Neelimala Viewpoint in Wayanad is a stunning destination offering panoramic views of Kerala's lush landscapes. Perched on a high hill, the viewpoint provides a breathtaking glimpse of mist-covered valleys, dense forests, and waterfalls cascading through green slopes. Popular among trekkers and nature lovers, the journey to Neelimala is an adventure in itself, with a scenic trek through narrow trails lined with vibrant flora.",
+      "",
     points: [
-      "Offers sweeping views of misty valleys, lush forests, and cascading waterfalls.",
-      "Accessible via a scenic trek through winding trails surrounded by diverse flora.",
-      "A paradise for photographers with breathtaking landscapes and vibrant natural colors."
     ],
     rating: 4.8,
     reviews: 836,
     images: [
-      "https://picsum.photos/seed/viewpoint1/400/500",
-      "https://picsum.photos/seed/viewpoint2/300/200"
     ]
   });
   const [lat, setLat] = useState(11.6856); 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const activitiesList = [
   "Sightseeing",
@@ -24,9 +24,14 @@ const facilitiesList = [
 const bestTimes = ["Morning", "Afternoon", "Evening", "Sunrise", "Sunset", "Anytime"];
 const accessibilityOptions = ["Easy", "Moderate", "Difficult", "Unknown"];
 
-export const AddContributionModal = ({ isOpen, onClose, onSave, locationId }) => {
+const Backend_URL = import.meta.env.VITE_BACKEND_URL
+export const AddContributionModal = ({ isOpen, onClose,  locationId }) => {
+  const [districts, setDistricts] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [formData, setFormData] = useState({
-    title: "",
+    user: "",
+    district: "",
+    location: "",
     description: "",
     locationId: locationId || "",
     images: [],
@@ -47,8 +52,10 @@ export const AddContributionModal = ({ isOpen, onClose, onSave, locationId }) =>
     const { name, value, type, checked } = e.target;
     if (type === "checkbox") {
       setFormData((prev) => ({ ...prev, [name]: checked }));
+      
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
+      console.log(formData);
     }
   };
 
@@ -71,8 +78,78 @@ export const AddContributionModal = ({ isOpen, onClose, onSave, locationId }) =>
   };
 
   const handleSave = () => {
-    onSave(formData);
+    const handleSave = async () => {
+      const token = localStorage.getItem("token");
+      setFormData((prev) => ({ ...prev, user: localStorage.getItem("userId") || "" }));
+
+      if (!token) {
+    alert("You must be logged in to add a contribution.");
+    return;
+  }
+  try {
+    const res = await fetch(`${Backend_URL}/contributions`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(formData),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      console.error("Error saving contribution:", errorData);
+      alert("Failed to save contribution.");
+      return;
+    }
+
+    const data = await res.json();
+    console.log("Contribution saved successfully:", data);
+
+    
+
+    alert("Contribution added successfully!");
+    onClose(); // close modal
+  } catch (err) {
+    console.error("Error posting contribution:", err);
+    alert("An error occurred while saving.");
+  }
+};
+    handleSave();
   };
+
+  useEffect(() => {
+    const fetchDistricts = async () => {
+      try {
+        const res = await fetch(`${Backend_URL}/districts`);
+        if (!res.ok) throw new Error("Failed to fetch districts");
+        const data = await res.json();
+        setDistricts(data);
+      } catch (error) {
+        console.error("Error fetching districts:", error);
+      }
+    };
+    fetchDistricts();
+  }, []);
+
+  useEffect(() => {
+    const fetchLocations = async () => {
+      if (!formData.district) {
+        setLocations([]);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${Backend_URL}/locations/district/${formData.district}`);
+        if (!res.ok) throw new Error("Failed to fetch locations");
+        const data = await res.json();
+        console.log(data);
+        setLocations(data);
+      } catch (error) {
+        console.error("Error fetching locations:", error);
+      }
+    };
+
+    fetchLocations();
+  }, [formData.district]);
+
 
   if (!isOpen) return null;
 
@@ -83,13 +160,43 @@ export const AddContributionModal = ({ isOpen, onClose, onSave, locationId }) =>
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 font-bold text-xl">
           ×
         </button>
+        {/* DISTRICT SELECT */}
+      <div className="flex flex-col mb-3">
+        <label className="font-semibold mb-1">District</label>
+        <select
+          name="district"
+          value={formData.district}
+          onChange={handleChange}
+          className="border px-3 py-2 rounded-lg"
+        >
+          <option value="">Select District</option>
+          {districts.map((district) => (
+            <option key={district._id} value={district.name}>
+              {district.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
-        {/* LOCATION */ }
+      {/* LOCATION SELECT */}
+      <div className="flex flex-col mb-3">
+        <label className="font-semibold mb-1">Location</label>
+        <select
+          name="location"
+          value={formData.location}
+          onChange={handleChange}
+          className="border px-3 py-2 rounded-lg"
+          disabled={!formData.district}
+        >
+          <option value="">Select Location</option>
+          {locations.map((loc) => (
+            <option key={loc._id} value={loc._id}>
+              {loc.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
-        <div className="flex flex-col mb-3">
-          <label className="font-semibold mb-1">Location </label>
-          
-        </div>
 
         {/* Description */}
         <div className="flex flex-col mb-3">
