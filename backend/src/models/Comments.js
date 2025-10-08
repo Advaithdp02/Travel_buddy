@@ -9,7 +9,6 @@ const replySchema = new mongoose.Schema({
 const commentSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   location: { type: mongoose.Schema.Types.ObjectId, ref: "Location" },
-  contribution: { type: mongoose.Schema.Types.ObjectId, ref: "Contribution" },
   text: { type: String, required: true },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Users who liked
   replies: [replySchema], // Array of nested replies

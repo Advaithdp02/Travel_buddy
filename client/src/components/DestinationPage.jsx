@@ -19,6 +19,7 @@ export const DestinationPage = ({ currentPage, navigate }) => {
   const [activeTab, setActiveTab] = useState("comments");
   const locationId = useParams();
   const[isModalOpen,setIsModalOpen] = useState(false);
+  
   // Hero Section
   const [hero, setHero] = useState({ title: "", subtitle: "", bgImg: "" });
 
@@ -115,7 +116,7 @@ export const DestinationPage = ({ currentPage, navigate }) => {
         // Fetch location details from backend
         const res = await fetch(`${Backend_URL}/locations/${locationId.id}`);
         const data = await res.json();
-
+        localStorage.setItem("location_id", data._id);
         // Hero & About
         setHero({
           title: data.name,
@@ -132,9 +133,10 @@ export const DestinationPage = ({ currentPage, navigate }) => {
           reviews: 120,
           images: data.images.slice(0, 2)
         });
-
-        // Comments & Contributions
-        setComments(data.comments || []);
+        const commentRes = await fetch(`${Backend_URL}/comments/location/${data._id}`);
+        const commentData = await commentRes.json();
+        
+        setComments(commentData || []);
         setContributions(data.contributions || []);
 
         // Places, Hotels, Nearby Places
@@ -202,6 +204,9 @@ export const DestinationPage = ({ currentPage, navigate }) => {
     fetchLocationData();
   }, [locationId]);
 
+  
+ 
+  
   return (
     <>
       <Header variant="dark" currentPage={currentPage} navigate={navigate} />
@@ -259,73 +264,133 @@ export const DestinationPage = ({ currentPage, navigate }) => {
 
       {/* Comments & Contributions */}
       <section className="py-16 px-8 bg-gray-50">
-        <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-brand-dark mb-6">Community Insights</h2>
-          <div className="flex gap-6 mb-8 border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab("comments")}
-              className={`pb-2 font-semibold transition-colors ${
-                activeTab === "comments"
-                  ? "border-b-2 border-brand-yellow text-brand-dark"
-                  : "text-brand-gray"
-              }`}
-            >
-              Comments
-            </button>
-            <button
-              onClick={() => setActiveTab("contributions")}
-              className={`pb-2 font-semibold transition-colors ${
-                activeTab === "contributions"
-                  ? "border-b-2 border-brand-yellow text-brand-dark"
-                  : "text-brand-gray"
-              }`}
-            >
-              Contributions
-            </button>
-          </div>
-          <div className="relative overflow-hidden">
-            <div
-              className="flex transition-transform duration-500"
-              style={{
-                transform: activeTab === "comments" ? "translateX(0%)" : "translateX(-50%)",
-                width: "200%"
-              }}
-            >
-              {/* Comments */}
-              <div className="w-full pr-6">
-                <div className="space-y-4">
-                  {comments.map((c, index) => (
-                    <div key={index} className="bg-white p-4 rounded-xl shadow border border-gray-100 cursor-pointer" onClick={()=>setIsModalOpen(true)} >
-                      <p className="text-sm text-brand-dark font-semibold">{c.user}</p>
-                      <p className="text-gray-600 text-sm mt-1">{c.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+          <div className="container mx-auto">
+            <h2 className="text-3xl font-bold text-brand-dark mb-6">Community Insights</h2>
 
-              {/* Contributions */}
-              <div className="w-full pl-6">
-                <div className="space-y-4">
-                  {contributions.map((c, index) => (
-                    <div key={index} className="bg-white p-4 rounded-xl shadow border border-gray-100 cursor-pointer" onClick={()=>setIsModalOpen(true)} >
-                      <h4 className="font-semibold text-brand-dark">{c.title}</h4>
-                      <p className="text-gray-600 text-sm mt-1">{c.detail}</p>
-                      <span className="text-xs text-brand-gray">Shared by {c.user}</span>
-                    </div>
-                  ))}
+            {/* Tabs */}
+            <div className="flex gap-6 mb-8 border-b border-gray-200">
+              <button
+                onClick={() => setActiveTab("comments")}
+                className={`pb-2 font-semibold transition-colors ${
+                  activeTab === "comments"
+                    ? "border-b-2 border-brand-yellow text-brand-dark"
+                    : "text-brand-gray"
+                }`}
+              >
+                Comments
+              </button>
+              <button
+                onClick={() => setActiveTab("contributions")}
+                className={`pb-2 font-semibold transition-colors ${
+                  activeTab === "contributions"
+                    ? "border-b-2 border-brand-yellow text-brand-dark"
+                    : "text-brand-gray"
+                }`}
+              >
+                Contributions
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            <div className="relative overflow-hidden">
+              <div
+                className="flex transition-transform duration-500"
+                style={{
+                  transform:
+                    activeTab === "comments" ? "translateX(0%)" : "translateX(-50%)",
+                  width: "200%",
+                }}
+              >
+                {/* -------------------- COMMENTS TAB -------------------- */}
+                <div className="w-full pr-6">
+                  <div className="space-y-4">
+                    {comments.length === 0 && (
+                      <div className="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center">
+                        <span className="text-gray-500">No comments yet</span>
+                        <button
+                          className="bg-brand-yellow text-brand-dark font-semibold py-1 px-3 rounded"
+                          onClick={() => setIsModalOpen(true)}
+                        >
+                          Add Comment
+                        </button>
+                      </div>
+                    )}
+
+                    {comments.length > 0 &&
+                      comments.slice(0, 3).map((c, index) => (
+                        <div
+                          key={c._id || index}
+                          className="bg-white p-4 rounded-xl shadow border border-gray-100 cursor-pointer flex gap-3"
+                          onClick={() => setIsModalOpen(true)}
+                        >
+                          {/* Profile Picture */}
+                          {c.user?.profilePic && (
+                            <img
+                              src={c.user.profilePic}
+                              alt={c.user.name || c.user.username}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          )}
+
+                          <div className="flex-1">
+                            <p className="text-sm text-brand-dark font-semibold">
+                              {c.user?.name || c.user?.username || "Unknown User"}
+                            </p>
+                            <p className="text-gray-600 text-sm mt-1">{c.text}</p>
+                          </div>
+                        </div>
+                      ))}
+
+                    {comments.length > 0 && comments.length <= 3 && (
+                      <button
+                        className="bg-brand-yellow text-brand-dark font-semibold py-2 px-4 rounded mt-2"
+                        onClick={() => setIsModalOpen(true)}
+                      >
+                        Add Comment
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* -------------------- CONTRIBUTIONS TAB -------------------- */}
+                <div className="w-full pl-6">
+                  <div className="space-y-4">
+                    {contributions.length === 0 ? (
+                      <div className="bg-white p-4 rounded-xl shadow border border-gray-100 text-gray-500">
+                        No contributions yet
+                      </div>
+                    ) : (
+                      contributions.slice(0, 3).map((c, index) => (
+                        <div
+                          key={c._id || index}
+                          className="bg-white p-4 rounded-xl shadow border border-gray-100 cursor-pointer"
+                          onClick={() => setIsModalOpen(true)}
+                        >
+                          <h4 className="font-semibold text-brand-dark">{c.title}</h4>
+                          <p className="text-gray-600 text-sm mt-1">{c.detail}</p>
+                          <span className="text-xs text-brand-gray">
+                            Shared by{" "}
+                            {c.user?.name || c.user?.username || "Unknown User"}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
-      <CommunityModal
+        </section>
+
+
+<CommunityModal
   isOpen={isModalOpen}
   onClose={() => setIsModalOpen(false)}
   activeTab={activeTab}
   comments={comments}
   contributions={contributions}
 />
+
 
       {/* Filter & Places Section */}
       <section className="bg-brand-light-purple py-12 px-8">

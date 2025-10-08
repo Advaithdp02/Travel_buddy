@@ -1,15 +1,55 @@
 import React, { useState } from "react";
 import { ClimateIcon, UserIcon } from "./Icons"; // replace with your icon imports
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
 export const CommunityModal = ({ isOpen, onClose, activeTab, comments, contributions }) => {
   const [newComment, setNewComment] = useState("");
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (!newComment.trim()) return;
-    // For now, just console log. Later, call backend API
-    console.log("New Comment:", newComment);
+    const locationId = localStorage.getItem("location_id");
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You must be logged in to add a comment.");
+      return;
+    }
+
+    
+    try {
+      setLoading(true);
+
+      const res = await fetch(`${BACKEND_URL}/comments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          location: locationId,
+          text: newComment.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to post comment");
+      }
+
+      const data = await res.json();
+      console.log("✅ Comment added:", data);
+      alert("Comment added!");
+      
+
+    } catch (err) {
+      console.error("❌ Error adding comment:", err);
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
     setNewComment("");
   };
 
