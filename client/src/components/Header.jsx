@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export const Header = ({ variant = 'light' }) => {
+export const Header = ({ variant = 'light' ,nearestlocation}) => {
   const navigate = useNavigate(); 
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const isLight = variant === 'light';
@@ -12,7 +12,7 @@ export const Header = ({ variant = 'light' }) => {
   const links = [
     { name: 'Home', page: '/' },
     { name: 'About US', page: '/about' },
-    { name: 'Services', page: '/services' },
+    { name: 'Services', page: `/${nearestlocation}` },
     { name: 'Blog', page: '/blog' },
     { name: 'Contact Us', page: '/contact' },
   ];

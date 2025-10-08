@@ -107,6 +107,7 @@ export const HomePage = ({ currentPage, navigate }) => {
 
         const data = await res.json();
         setNearestLocation(data._id); // Assuming data contains the location object with an _id field
+
         console.log("Nearest Location:", data); // Display result in console
       } catch (err) {
         console.error(err);
@@ -119,7 +120,7 @@ export const HomePage = ({ currentPage, navigate }) => {
   return (
     <>
       <section className="relative bg-white pt-32 pb-16 overflow-hidden">
-        <Header currentPage={currentPage} navigate={navigate} />
+        <Header currentPage={currentPage} navigate={navigate} nearestLocation={nearestLocation} />
         <div className="container mx-auto px-8 grid md:grid-cols-2 items-center gap-8">
           <div className="z-10">
             <p className="text-brand-yellow font-semibold text-lg">Explore the world</p>

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Header } from './Header';
-
 import {
   StarIcon,
   CheckIcon,
@@ -11,37 +10,31 @@ import {
   LocationPinIcon
 } from './Icons';
 import { useParams } from 'react-router-dom';
+import { CommunityModal } from './CommunityModal';
 
 const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
 const Backend_URL = import.meta.env.VITE_BACKEND_URL;
 
 export const DestinationPage = ({ currentPage, navigate }) => {
   const [activeTab, setActiveTab] = useState("comments");
-  const locationId  = useParams();
-
-
+  const locationId = useParams();
+  const[isModalOpen,setIsModalOpen] = useState(false);
   // Hero Section
-  const [hero, setHero] = useState({
-    title: "",
-    subtitle: "",
-    bgImg: ""
-  });
+  const [hero, setHero] = useState({ title: "", subtitle: "", bgImg: "" });
 
   // About Section
   const [about, setAbout] = useState({
     heading: "",
     subHeading: "",
-    description:
-      "",
-    points: [
-    ],
+    description: "",
+    points: [],
     rating: 4.8,
     reviews: 836,
-    images: [
-    ]
+    images: []
   });
-  const [lat, setLat] = useState(11.6856); 
-  const [lon, setLon] = useState(76.1310); 
+
+  const [lat, setLat] = useState(11.6856);
+  const [lon, setLon] = useState(76.1310);
 
   // Community Section
   const [comments, setComments] = useState([
@@ -116,111 +109,108 @@ export const DestinationPage = ({ currentPage, navigate }) => {
     terrain: "Mountain"
   });
 
+  useEffect(() => {
+    const fetchLocationData = async () => {
+      try {
+        // Fetch location details from backend
+        const res = await fetch(`${Backend_URL}/locations/${locationId.id}`);
+        const data = await res.json();
 
+        // Hero & About
+        setHero({
+          title: data.name,
+          subtitle: data.description || "Beautiful Place",
+          bgImg: data.images[0] || "https://picsum.photos/seed/default/1600/900"
+        });
 
-useEffect(() => {
-  const fetchLocationData = async () => {
-    try {
-      // Fetch location details from backend
-      const res = await fetch(`${Backend_URL}/locations/${locationId.id}`); 
-      const data = await res.json();
+        setAbout({
+          heading: `About ${data.name}`,
+          subHeading: `Explore the beauty of ${data.name}`,
+          description: data.description || "No description available",
+          points: ["Stunning views", "Great for trekking", "Photographer's paradise"],
+          rating: 4.5,
+          reviews: 120,
+          images: data.images.slice(0, 2)
+        });
 
-      // Fill Hero & About (example)
-      setHero({
-        title: data.name,
-        subtitle: data.description || "Beautiful Place",
-        bgImg: data.images[0] || "https://picsum.photos/seed/default/1600/900"
-      });
+        // Comments & Contributions
+        setComments(data.comments || []);
+        setContributions(data.contributions || []);
 
-      setAbout({
-        heading: `About ${data.name}`,
-        subHeading: `Explore the beauty of ${data.name}`,
-        description: data.description || "No description available",
-        points: ["Stunning views", "Great for trekking", "Photographer's paradise"], // or from data
-        rating: 4.5, // placeholder or calculated
-        reviews: 120, // placeholder or from contributions/comments count
-        images: data.images.slice(0, 2)
-      });
+        // Places, Hotels, Nearby Places
+        setPlaces(data.places || []);
+        setHotels(data.hotels || []);
+        setNearbyPlaces(data.nearbyPlaces || []);
 
-      // Comments & Contributions
-      setComments(data.comments || []);
-      setContributions(data.contributions || []);
+        // Filters
+        setFilters({
+          state: data.district?.state || "Kerala",
+          district: data.district?.name || "Wayanad",
+          terrain: "Mountain"
+        });
 
-      // Example for Places, Hotels, Nearby Places
-      setPlaces(data.places || []);
-      setHotels(data.hotels || []);
-      setNearbyPlaces(data.nearbyPlaces || []);
+        // Weather
+        const [lon, lat] = data.coordinates.coordinates;
+        setLat(lat);
+        setLon(lon);
 
-      // Filters (district/state from populated data)
-      setFilters({
-        state: data.district?.state || "Kerala",
-        district: data.district?.name || "Wayanad",
-        terrain: "Mountain" // if you have terrain info
-      });
+        // Current Weather
+        const currentRes = await fetch(
+          `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${lat},${lon}&aqi=yes`
+        );
+        const currentData = await currentRes.json();
+        const current = currentData.current;
 
-      // Weather fetch using lat/lon
-      const [lon, lat] = data.coordinates.coordinates; // GeoJSON is [lon, lat]
-      setLat(lat);
-      setLon(lon);
+        // Astronomy
+        const today = new Date().toISOString().split("T")[0];
+        const astroRes = await fetch(
+          `https://api.weatherapi.com/v1/astronomy.json?key=${apiKey}&q=${lat},${lon}&dt=${today}`
+        );
+        const astroData = await astroRes.json();
+        const astro = astroData.astronomy.astro;
 
-      // Current Weather
-      const currentRes = await fetch(
-        `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${lat},${lon}&aqi=yes`
-      );
-      const currentData = await currentRes.json();
-      const current = currentData.current;
+        // Forecast
+        const forecastRes = await fetch(
+          `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${lat},${lon}&days=1`
+        );
+        const forecastData = await forecastRes.json();
+        const chanceOfRain = forecastData.forecast.forecastday[0].day.daily_chance_of_rain;
 
-      // Astronomy for sunrise/sunset
-      const today = new Date().toISOString().split("T")[0];
-      const astroRes = await fetch(
-        `https://api.weatherapi.com/v1/astronomy.json?key=${apiKey}&q=${lat},${lon}&dt=${today}`
-      );
-      const astroData = await astroRes.json();
-      const astro = astroData.astronomy.astro;
+        setWeather({
+          temp: `${current.temp_c}°C`,
+          lastUpdated: current.last_updated,
+          wind: `${current.wind_kph} km/h (${current.wind_dir})`,
+          probability: chanceOfRain > 50 ? "High" : "Low",
+          pressure: `${current.pressure_mb} mb`,
+          dewPoint: `${current.dewpoint_c}°C`,
+          humidity: `${current.humidity}%`,
+          cloudCover: `${current.cloud}%`,
+          uvIndex: current.uv,
+          visibility: `${current.vis_km} km`,
+          precipitation: `${current.precip_mm} mm`,
+          sunrise: astro.sunrise,
+          sunset: astro.sunset,
+          airQuality: current.air_quality
+            ? `CO: ${current.air_quality.co.toFixed(1)}, PM2.5: ${current.air_quality.pm2_5.toFixed(1)}`
+            : "N/A"
+        });
+      } catch (err) {
+        console.error("Error fetching location or weather data:", err);
+      }
+    };
 
-      // Forecast for rain probability
-      const forecastRes = await fetch(
-        `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${lat},${lon}&days=1`
-      );
-      const forecastData = await forecastRes.json();
-      const chanceOfRain = forecastData.forecast.forecastday[0].day.daily_chance_of_rain;
-
-      setWeather({
-        temp: `${current.temp_c}°C`,
-        lastUpdated: current.last_updated,
-        wind: `${current.wind_kph} km/h (${current.wind_dir})`,
-        probability: chanceOfRain > 50 ? "High" : "Low",
-        pressure: `${current.pressure_mb} mb`,
-        dewPoint: `${current.dewpoint_c}°C`,
-        humidity: `${current.humidity}%`,
-        cloudCover: `${current.cloud}%`,
-        uvIndex: current.uv,
-        visibility: `${current.vis_km} km`,
-        precipitation: `${current.precip_mm} mm`,
-        sunrise: astro.sunrise,
-        sunset: astro.sunset,
-        airQuality: current.air_quality
-          ? `CO: ${current.air_quality.co.toFixed(1)}, PM2.5: ${current.air_quality.pm2_5.toFixed(1)}`
-          : "N/A"
-      });
-    } catch (err) {
-      console.error("Error fetching location or weather data:", err);
-    }
-  };
-
-  fetchLocationData();
-}, [locationId]);
-
-
-
-
+    fetchLocationData();
+  }, [locationId]);
 
   return (
     <>
       <Header variant="dark" currentPage={currentPage} navigate={navigate} />
 
       {/* Hero Section */}
-      <section className="relative h-[60vh] bg-cover bg-center text-white flex items-center justify-center" style={{ backgroundImage: `url(${hero.bgImg})` }}>
+      <section
+        className="relative h-[60vh] bg-cover bg-center text-white flex items-center justify-center"
+        style={{ backgroundImage: `url(${hero.bgImg})` }}
+      >
         <div className="absolute inset-0 bg-black/40"></div>
         <div className="relative z-10 text-center">
           <p className="text-xl">{hero.title}</p>
@@ -232,24 +222,37 @@ useEffect(() => {
       <section className="py-20 px-8">
         <div className="container mx-auto grid lg:grid-cols-2 gap-12 items-center">
           <div className="relative h-96">
-            <img src={about.images[0]} alt="Viewpoint" className="absolute top-0 left-0 w-2/3 h-full object-cover rounded-xl shadow-lg" />
-            <img src={about.images[1]} alt="Viewpoint detail" className="absolute bottom-0 right-0 w-1/2 border-8 border-white rounded-xl shadow-2xl" />
+            <img
+              src={about.images[0]}
+              alt="Viewpoint"
+              className="absolute top-0 left-0 w-2/3 h-full object-cover rounded-xl shadow-lg"
+            />
+            <img
+              src={about.images[1]}
+              alt="Viewpoint detail"
+              className="absolute bottom-0 right-0 w-1/2 border-8 border-white rounded-xl shadow-2xl"
+            />
             <div className="absolute top-4 right-8 bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-lg flex items-center space-x-2">
               <StarIcon className="text-yellow-400" />
               <span className="font-bold text-brand-dark">{about.rating}</span>
               <span className="text-xs text-brand-gray">Based on {about.reviews} Reviews</span>
             </div>
           </div>
+
           <div>
             <p className="text-lg font-semibold text-brand-dark">{about.heading}</p>
             <h2 className="text-4xl font-bold text-brand-dark my-3">{about.subHeading}</h2>
             <p className="text-brand-gray mb-6">{about.description}</p>
             <ul className="space-y-3 text-brand-gray mb-8">
               {about.points.map((point, idx) => (
-                <li key={idx} className="flex items-start"><CheckIcon className="text-brand-yellow mr-2 mt-1 flex-shrink-0" /> {point}</li>
+                <li key={idx} className="flex items-start">
+                  <CheckIcon className="text-brand-yellow mr-2 mt-1 flex-shrink-0" /> {point}
+                </li>
               ))}
             </ul>
-            <button className="bg-brand-yellow text-brand-dark font-semibold py-3 px-8 rounded-lg shadow-lg hover:bg-yellow-400 transition-transform transform hover:scale-105">WishList</button>
+            <button className="bg-brand-yellow text-brand-dark font-semibold py-3 px-8 rounded-lg shadow-lg hover:bg-yellow-400 transition-transform transform hover:scale-105">
+              WishList
+            </button>
           </div>
         </div>
       </section>
@@ -262,7 +265,9 @@ useEffect(() => {
             <button
               onClick={() => setActiveTab("comments")}
               className={`pb-2 font-semibold transition-colors ${
-                activeTab === "comments" ? "border-b-2 border-brand-yellow text-brand-dark" : "text-brand-gray"
+                activeTab === "comments"
+                  ? "border-b-2 border-brand-yellow text-brand-dark"
+                  : "text-brand-gray"
               }`}
             >
               Comments
@@ -270,7 +275,9 @@ useEffect(() => {
             <button
               onClick={() => setActiveTab("contributions")}
               className={`pb-2 font-semibold transition-colors ${
-                activeTab === "contributions" ? "border-b-2 border-brand-yellow text-brand-dark" : "text-brand-gray"
+                activeTab === "contributions"
+                  ? "border-b-2 border-brand-yellow text-brand-dark"
+                  : "text-brand-gray"
               }`}
             >
               Contributions
@@ -279,24 +286,28 @@ useEffect(() => {
           <div className="relative overflow-hidden">
             <div
               className="flex transition-transform duration-500"
-              style={{ transform: activeTab === "comments" ? "translateX(0%)" : "translateX(-50%)", width: "200%" }}
+              style={{
+                transform: activeTab === "comments" ? "translateX(0%)" : "translateX(-50%)",
+                width: "200%"
+              }}
             >
               {/* Comments */}
               <div className="w-full pr-6">
                 <div className="space-y-4">
                   {comments.map((c, index) => (
-                    <div key={index} className="bg-white p-4 rounded-xl shadow border border-gray-100">
+                    <div key={index} className="bg-white p-4 rounded-xl shadow border border-gray-100 cursor-pointer" onClick={()=>setIsModalOpen(true)} >
                       <p className="text-sm text-brand-dark font-semibold">{c.user}</p>
                       <p className="text-gray-600 text-sm mt-1">{c.text}</p>
                     </div>
                   ))}
                 </div>
               </div>
+
               {/* Contributions */}
               <div className="w-full pl-6">
                 <div className="space-y-4">
                   {contributions.map((c, index) => (
-                    <div key={index} className="bg-white p-4 rounded-xl shadow border border-gray-100">
+                    <div key={index} className="bg-white p-4 rounded-xl shadow border border-gray-100 cursor-pointer" onClick={()=>setIsModalOpen(true)} >
                       <h4 className="font-semibold text-brand-dark">{c.title}</h4>
                       <p className="text-gray-600 text-sm mt-1">{c.detail}</p>
                       <span className="text-xs text-brand-gray">Shared by {c.user}</span>
@@ -308,6 +319,13 @@ useEffect(() => {
           </div>
         </div>
       </section>
+      <CommunityModal
+  isOpen={isModalOpen}
+  onClose={() => setIsModalOpen(false)}
+  activeTab={activeTab}
+  comments={comments}
+  contributions={contributions}
+/>
 
       {/* Filter & Places Section */}
       <section className="bg-brand-light-purple py-12 px-8">
@@ -315,21 +333,36 @@ useEffect(() => {
           <div className="bg-brand-dark rounded-xl p-6 flex flex-wrap items-center justify-between gap-4 mb-10">
             <span className="text-white text-2xl font-bold">Filter</span>
             <div className="flex-grow flex flex-wrap items-center gap-4">
-              <select className="flex-grow bg-white p-3 rounded-lg w-full sm:w-auto" value={filters.state} onChange={(e) => setFilters({...filters, state: e.target.value})}>
+              <select
+                className="flex-grow bg-white p-3 rounded-lg w-full sm:w-auto"
+                value={filters.state}
+                onChange={(e) => setFilters({ ...filters, state: e.target.value })}
+              >
                 <option>Kerala</option>
                 <option>Karnataka</option>
               </select>
-              <select className="flex-grow bg-white p-3 rounded-lg w-full sm:w-auto" value={filters.district} onChange={(e) => setFilters({...filters, district: e.target.value})}>
+              <select
+                className="flex-grow bg-white p-3 rounded-lg w-full sm:w-auto"
+                value={filters.district}
+                onChange={(e) => setFilters({ ...filters, district: e.target.value })}
+              >
                 <option>Wayanad</option>
                 <option>Bengaluru</option>
               </select>
-              <select className="flex-grow bg-white p-3 rounded-lg w-full sm:w-auto" value={filters.terrain} onChange={(e) => setFilters({...filters, terrain: e.target.value})}>
+              <select
+                className="flex-grow bg-white p-3 rounded-lg w-full sm:w-auto"
+                value={filters.terrain}
+                onChange={(e) => setFilters({ ...filters, terrain: e.target.value })}
+              >
                 <option>Mountain</option>
                 <option>Hill</option>
               </select>
             </div>
-            <button className="bg-brand-yellow text-brand-dark font-bold py-3 px-8 rounded-lg w-full sm:w-auto">SEARCH</button>
+            <button className="bg-brand-yellow text-brand-dark font-bold py-3 px-8 rounded-lg w-full sm:w-auto">
+              SEARCH
+            </button>
           </div>
+
           <div className="relative">
             <div className="flex overflow-x-auto space-x-6 pb-4 -mx-4 px-4">
               {places.map((place, index) => (
@@ -342,7 +375,9 @@ useEffect(() => {
                     <span>Arrival: <b className="text-brand-dark">{place.arrival}</b></span>
                     <span>Time: <b className="text-brand-dark">{place.time}</b></span>
                   </div>
-                  <button className="mt-3 w-full bg-brand-dark text-white font-semibold py-2.5 rounded-lg hover:bg-brand-dark/90">Lets Go</button>
+                  <button className="mt-3 w-full bg-brand-dark text-white font-semibold py-2.5 rounded-lg hover:bg-brand-dark/90">
+                    Lets Go
+                  </button>
                 </div>
               ))}
             </div>
@@ -351,132 +386,135 @@ useEffect(() => {
       </section>
 
       {/* Main Content Area */}
-<section className="py-20 px-8">
-  <div className="container mx-auto grid lg:grid-cols-3 gap-12">
-    {/* Left Column */}
-    <div className="lg:col-span-2 space-y-10">
-      {/* Weather */}
-      <div className="bg-brand-dark text-white rounded-2xl p-6 shadow-2xl">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <p className="text-sm text-gray-400">Current Weather</p>
-            <div className="flex items-center">
-              <WeatherIcon className="w-16 h-16 mr-2" />
-              <span className="text-6xl font-bold">{weather.temp}</span>
+      <section className="py-20 px-8">
+        <div className="container mx-auto grid lg:grid-cols-3 gap-12">
+          {/* Left Column */}
+          <div className="lg:col-span-2 space-y-10">
+            {/* Weather */}
+            <div className="bg-brand-dark text-white rounded-2xl p-6 shadow-2xl">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <p className="text-sm text-gray-400">Current Weather</p>
+                  <div className="flex items-center">
+                    <WeatherIcon className="w-16 h-16 mr-2" />
+                    <span className="text-6xl font-bold">{weather.temp}</span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-400">Last updated {weather.lastUpdated}</p>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm">
+                <span>Wind speed: <b>{weather.wind}</b></span>
+                <span>Probability: <b>{weather.probability}</b></span>
+                <span>Pressure: <b>{weather.pressure}</b></span>
+                <span>Dew point: <b>{weather.dewPoint}</b></span>
+                <span>Humidity: <b>{weather.humidity}</b></span>
+                <span>Cloud cover: <b>{weather.cloudCover}</b></span>
+                <span>UV index: <b>{weather.uvIndex}</b></span>
+                <span>Visibility: <b>{weather.visibility}</b></span>
+                <span>Precipitation: <b>{weather.precipitation}</b></span>
+                <span>Sunrise: <b>{weather.sunrise}</b></span>
+                <span>Air quality: <b>{weather.airQuality}</b></span>
+                <span>Sunset: <b>{weather.sunset}</b></span>
+              </div>
+            </div>
+
+            {/* Emergency Contacts */}
+            <div>
+              <h3 className="text-2xl font-bold text-brand-dark mb-4">Emergency Contact Details</h3>
+              <div className="space-y-3">
+                {emergencyContacts.map((contact, index) => (
+                  <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 flex justify-between items-center shadow-sm">
+                    <div className="flex items-center">
+                      <PhoneIcon className="mr-4 text-brand-dark" />
+                      <span className="font-semibold text-brand-dark">{contact}</span>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <ExternalLinkIcon className="text-brand-gray cursor-pointer" />
+                      <ChevronDownIcon className="text-brand-gray cursor-pointer" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Hotels & Resorts */}
+            <div>
+              <h3 className="text-2xl font-bold text-brand-dark mb-4">Hotels & Resorts</h3>
+              <div className="space-y-4">
+                {hotels.map((hotel, index) => (
+                  <div key={index} className="bg-white border border-gray-200 rounded-xl p-4 flex gap-4 items-center shadow-sm">
+                    <img src={hotel.img} alt={hotel.name} className="w-24 h-24 object-cover rounded-lg" />
+                    <div className="flex-grow">
+                      <h4 className="font-bold text-brand-dark">{hotel.name}</h4>
+                      <p className="text-xs text-brand-gray">{hotel.location}</p>
+                      <div className="flex items-center text-xs mt-1">
+                        <LocationPinIcon className="w-3 h-3 mr-1 text-brand-gray" />
+                        <span>{hotel.distance}</span>
+                        <a href="#" className="ml-2 text-blue-600 underline text-xs">Show on map</a>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="bg-brand-yellow text-brand-dark font-bold text-sm px-2 py-1 rounded-md mb-3 inline-block">
+                        <StarIcon className="inline w-3 h-3 mr-1" /> {hotel.rating}
+                      </div>
+                      <button className="bg-brand-dark text-white font-semibold py-2 px-5 rounded-lg text-sm">
+                        View More
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-          <p className="text-xs text-gray-400">Last updated {weather.lastUpdated}</p>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm">
-          <span>Wind speed: <b>{weather.wind}</b></span>
-          <span>Probability: <b>{weather.probability}</b></span>
-          <span>Pressure: <b>{weather.pressure}</b></span>
-          <span>Dew point: <b>{weather.dewPoint}</b></span>
-          <span>Humidity: <b>{weather.humidity}</b></span>
-          <span>Cloud cover: <b>{weather.cloudCover}</b></span>
-          <span>UV index: <b>{weather.uvIndex}</b></span>
-          <span>Visibility: <b>{weather.visibility}</b></span>
-          <span>Precipitation: <b>{weather.precipitation}</b></span>
-          <span>Sunrise: <b>{weather.sunrise}</b></span>
-          <span>Air quality: <b>{weather.airQuality}</b></span>
-          <span>Sunset: <b>{weather.sunset}</b></span>
-        </div>
-      </div>
 
-      {/* Emergency Contacts */}
-      <div>
-        <h3 className="text-2xl font-bold text-brand-dark mb-4">Emergency Contact Details</h3>
-        <div className="space-y-3">
-          {emergencyContacts.map((contact, index) => (
-            <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 flex justify-between items-center shadow-sm">
-              <div className="flex items-center">
-                <PhoneIcon className="mr-4 text-brand-dark" />
-                <span className="font-semibold text-brand-dark">{contact}</span>
-              </div>
-              <div className="flex items-center space-x-4">
-                <ExternalLinkIcon className="text-brand-gray cursor-pointer" />
-                <ChevronDownIcon className="text-brand-gray cursor-pointer" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Hotels & Resorts */}
-      <div>
-        <h3 className="text-2xl font-bold text-brand-dark mb-4">Hotels & Resorts</h3>
-        <div className="space-y-4">
-          {hotels.map((hotel, index) => (
-            <div key={index} className="bg-white border border-gray-200 rounded-xl p-4 flex gap-4 items-center shadow-sm">
-              <img src={hotel.img} alt={hotel.name} className="w-24 h-24 object-cover rounded-lg" />
-              <div className="flex-grow">
-                <h4 className="font-bold text-brand-dark">{hotel.name}</h4>
-                <p className="text-xs text-brand-gray">{hotel.location}</p>
-                <div className="flex items-center text-xs mt-1">
-                  <LocationPinIcon className="w-3 h-3 mr-1 text-brand-gray"/>
-                  <span>{hotel.distance}</span>
-                  <a href="#" className="ml-2 text-blue-600 underline text-xs">Show on map</a>
+          {/* Right Column */}
+          <div className="space-y-10">
+            {/* Map */}
+            <div className="bg-gray-200 rounded-2xl overflow-hidden shadow-lg">
+              <img src={mapInfo.img} alt="Map" className="w-full h-auto object-cover" />
+              <div className="bg-brand-dark text-white p-4 flex justify-around items-center text-center">
+                <div>
+                  <p className="text-xs text-gray-400">Distance</p>
+                  <p className="font-bold text-lg">{mapInfo.distance}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">Expected Arrival</p>
+                  <p className="font-bold text-lg">{mapInfo.arrival}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">Estimated Time</p>
+                  <p className="font-bold text-lg">{mapInfo.time}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="bg-brand-yellow text-brand-dark font-bold text-sm px-2 py-1 rounded-md mb-3 inline-block">
-                  <StarIcon className="inline w-3 h-3 mr-1" />
-                  {hotel.rating}
-                </div>
-                <button className="bg-brand-dark text-white font-semibold py-2 px-5 rounded-lg text-sm">View More</button>
+            </div>
+
+            {/* Nearby Places */}
+            <div>
+              <h3 className="text-2xl font-bold text-brand-dark mb-4">Nearby Places</h3>
+              <div className="space-y-4">
+                {nearbyPlaces.map((place, index) => (
+                  <div key={index} className="bg-white border border-gray-200 rounded-xl p-3 flex gap-4 items-center shadow-sm">
+                    <img src={place.img} alt={place.name} className="w-20 h-20 object-cover rounded-lg" />
+                    <div className="flex-grow">
+                      <h4 className="font-bold text-sm text-brand-dark">{place.name}</h4>
+                      <p className="text-xs text-brand-gray mb-1">{place.location}</p>
+                      <div className="text-xs text-brand-gray flex space-x-2">
+                        <span><b>{place.distance}</b></span>
+                        <span><b>{place.arrival}</b></span>
+                        <span><b>{place.time}</b></span>
+                      </div>
+                    </div>
+                    <button className="bg-brand-dark text-white font-semibold py-2 px-4 rounded-lg text-xs self-end">
+                      Lets Go
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-    </div>
-
-    {/* Right Column */}
-    <div className="space-y-10">
-      {/* Map */}
-      <div className="bg-gray-200 rounded-2xl overflow-hidden shadow-lg">
-        <img src={mapInfo.img} alt="Map" className="w-full h-auto object-cover" />
-        <div className="bg-brand-dark text-white p-4 flex justify-around items-center text-center">
-          <div>
-            <p className="text-xs text-gray-400">Distance</p>
-            <p className="font-bold text-lg">{mapInfo.distance}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-400">Expected Arrival</p>
-            <p className="font-bold text-lg">{mapInfo.arrival}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-400">Estimated Time</p>
-            <p className="font-bold text-lg">{mapInfo.time}</p>
           </div>
         </div>
-      </div>
-
-      {/* Nearby Places */}
-      <div>
-        <h3 className="text-2xl font-bold text-brand-dark mb-4">Nearby Places</h3>
-        <div className="space-y-4">
-          {nearbyPlaces.map((place, index) => (
-            <div key={index} className="bg-white border border-gray-200 rounded-xl p-3 flex gap-4 items-center shadow-sm">
-              <img src={place.img} alt={place.name} className="w-20 h-20 object-cover rounded-lg"/>
-              <div className="flex-grow">
-                <h4 className="font-bold text-sm text-brand-dark">{place.name}</h4>
-                <p className="text-xs text-brand-gray mb-1">{place.location}</p>
-                <div className="text-xs text-brand-gray flex space-x-2">
-                  <span><b>{place.distance}</b></span>
-                  <span><b>{place.arrival}</b></span>
-                  <span><b>{place.time}</b></span>
-                </div>
-              </div>
-              <button className="bg-brand-dark text-white font-semibold py-2 px-4 rounded-lg text-xs self-end">Lets Go</button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
+      </section>
     </>
   );
 };
