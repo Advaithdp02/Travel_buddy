@@ -11,11 +11,13 @@ import {
 } from './Icons';
 import { useParams } from 'react-router-dom';
 import { CommunityModal } from './CommunityModal';
+import usePageTimeTracker from '../hooks/usePageTimeTracker';
 
 const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
 const Backend_URL = import.meta.env.VITE_BACKEND_URL;
 
 export const DestinationPage = ({ currentPage, navigate }) => {
+  usePageTimeTracker();
   const [activeTab, setActiveTab] = useState("comments");
   const locationId = useParams();
   const[isModalOpen,setIsModalOpen] = useState(false);

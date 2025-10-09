@@ -9,6 +9,7 @@ import locationRoutes from "./routes/locationRoutes.js";
 import districtRoutes from "./routes/districtRoutes.js";
 import contributionRoutes from "./routes/contributionRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
+import trackRoutes from "./routes/trackRoutes.js";
 
 const app = express();
 
@@ -36,7 +37,7 @@ app.use("/api/locations", locationRoutes);
 app.use("/api/districts", districtRoutes);
 app.use("/api/contributions", contributionRoutes);
 app.use("/api/comments", commentRoutes);
-
+app.use("/api/track", trackRoutes);
 // --------------------
 // 404 HANDLER
 // --------------------

@@ -14,9 +14,13 @@ import { ProfilePublic } from "./components/ProfilePublic";
 
 
 const App = () => {
+  
+
   return (
     <Router>
+      
       <div className="app-container">
+         
         <main>
           <Routes>
             <Route path="/" element={<HomePage />} />
