@@ -52,10 +52,7 @@ export const DestinationPage = ({ currentPage, navigate }) => {
 
   // Places, Hotels, Nearby Places
   const [places, setPlaces] = useState([
-    { name: "Chembra Peak", location: "Millumukku, Kaniyambetta, Wayanad, Kerala 673122", distance: "30 km", arrival: "12.00 am", time: "6 hr 30 min", img: "https://picsum.photos/seed/place1/300/200" },
-    { name: "Banasura Hill", location: "Millumukku, Kaniyambetta, Wayanad, Kerala 673122", distance: "30 km", arrival: "12.00 am", time: "6 hr 30 min", img: "https://picsum.photos/seed/place2/300/200" },
-    { name: ".Brahmagiri Hills", location: "Millumukku, Kaniyambetta, Wayanad, Kerala 673122", distance: "30 km", arrival: "12.00 am", time: "6 hr 30 min", img: "https://picsum.photos/seed/place3/300/200" },
-    { name: "Pakshipathalar", location: "Millumukku, Kaniya", distance: "30 km", arrival: "12.00 am", time: "6 hr 30 min", img: "https://picsum.photos/seed/place4/300/200" }
+    
   ]);
 
   const [hotels, setHotels] = useState([
@@ -108,13 +105,41 @@ export const DestinationPage = ({ currentPage, navigate }) => {
   // Filters
   const [filters, setFilters] = useState({
     state: "Kerala",
-    district: "Vayanad",
+    district: "",
     terrain: "Mountain"
   });
 
+  const [allDistricts, setAllDistricts] = useState([]);
+
+useEffect(() => {
+
+    const fetchhLocationDistrict = async () => {
+      if (!filters.district) return; 
+      try {
+        const districtRes = await fetch(`${Backend_URL}/locations/district/${filters.district}`);
+        const districtData = await districtRes.json();
+
+        // store all districts separately
+
+        console.log(districtData);
+        setPlaces(districtData);
+      } catch (err) {
+        console.error("Error fetching districts:", err);
+      }
+    };
+    fetchhLocationDistrict();
+
+  }, [filters.district]);
   useEffect(() => {
+    
+  
     const fetchLocationData = async () => {
       try {
+        const districtRes = await fetch(`${Backend_URL}/districts/`);
+        const districtData = await districtRes.json();
+
+        // store all districts separately
+        setAllDistricts(districtData);
         // Fetch location details from backend
         const res = await fetch(`${Backend_URL}/locations/${locationId.id}`);
         const data = await res.json();
@@ -146,12 +171,7 @@ export const DestinationPage = ({ currentPage, navigate }) => {
         setHotels(data.hotels || []);
         setNearbyPlaces(data.nearbyPlaces || []);
 
-        // Filters
-        setFilters({
-          state: data.district?.state || "Kerala",
-          district: data.district?.name || "Wayanad",
-          terrain: "Mountain"
-        });
+        
 
         // Weather
         const [lon, lat] = data.coordinates.coordinates;
@@ -204,6 +224,7 @@ export const DestinationPage = ({ currentPage, navigate }) => {
     };
 
     fetchLocationData();
+    
   }, [locationId]);
 
   
@@ -406,15 +427,17 @@ export const DestinationPage = ({ currentPage, navigate }) => {
                 onChange={(e) => setFilters({ ...filters, state: e.target.value })}
               >
                 <option>Kerala</option>
-                <option>Karnataka</option>
               </select>
               <select
                 className="flex-grow bg-white p-3 rounded-lg w-full sm:w-auto"
                 value={filters.district}
                 onChange={(e) => setFilters({ ...filters, district: e.target.value })}
               >
-                <option>Wayanad</option>
-                <option>Bengaluru</option>
+                {allDistricts.map((district) => (
+                  <option key={district._id} value={district.name}>
+                    {district.name}
+                  </option>
+                ))}
               </select>
               <select
                 className="flex-grow bg-white p-3 rounded-lg w-full sm:w-auto"
@@ -434,7 +457,7 @@ export const DestinationPage = ({ currentPage, navigate }) => {
             <div className="flex overflow-x-auto space-x-6 pb-4 -mx-4 px-4">
               {places.map((place, index) => (
                 <div key={index} className="flex-shrink-0 w-80 bg-white rounded-2xl shadow-lg p-4">
-                  <img src={place.img} alt={place.name} className="w-full h-40 object-cover rounded-xl mb-4" />
+                  <img src={place.images[0]} alt={place.name} className="w-full h-40 object-cover rounded-xl mb-4" />
                   <h3 className="text-lg font-bold text-brand-dark">{place.name}</h3>
                   <p className="text-xs text-brand-gray mb-3 truncate">{place.location}</p>
                   <div className="text-xs text-brand-gray flex justify-between border-t pt-2">
