@@ -111,6 +111,34 @@ export const DestinationPage = ({ currentPage, navigate }) => {
 
   const [allDistricts, setAllDistricts] = useState([]);
 
+// Utility to calculate distance (Haversine formula)
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Radius of Earth in km
+  const toRad = (deg) => (deg * Math.PI) / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // in km
+};
+
+// Utility to calculate estimated travel time
+const calculateTime = (distanceKm, speedKmph = 80) => {
+  const timeHours = distanceKm / speedKmph;
+  const hours = Math.floor(timeHours);
+  const minutes = Math.round((timeHours - hours) * 60);
+  return `${hours} hr ${minutes} min`;
+};
+
+
+
 useEffect(() => {
 
     const fetchhLocationDistrict = async () => {
@@ -119,10 +147,29 @@ useEffect(() => {
         const districtRes = await fetch(`${Backend_URL}/locations/district/${filters.district}`);
         const districtData = await districtRes.json();
 
-        // store all districts separately
+       const userCoords = JSON.parse(localStorage.getItem("userCoords") || '{"latitude":0,"longitude":0}');
 
-        console.log(districtData);
-        setPlaces(districtData);
+const origin = { lat: userCoords.latitude, lon: userCoords.longitude };
+      const enrichedPlaces = (districtData || []).map((place) => {
+        const [lon, lat] = place.coordinates.coordinates; // GeoJSON order: [lon, lat]
+
+        const distance = calculateDistance(origin.lat, origin.lon, lat, lon);
+        const travelTime = calculateTime(distance);
+        const now = new Date();
+         const timeHours = distance / 80; // Assuming 80 km/h average speed
+        const arrival = new Date(now.getTime() + timeHours * 3600 * 1000);
+        const arrivalTime = arrival.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        return {
+          ...place,
+          distance: `${distance.toFixed(2)} km`,
+          travelTime,
+          arrivalTime
+        };
+      });
+      
+      console.log(enrichedPlaces);
+
+      setPlaces(enrichedPlaces);
       } catch (err) {
         console.error("Error fetching districts:", err);
       }
@@ -170,6 +217,7 @@ useEffect(() => {
         setPlaces(data.places || []);
         setHotels(data.hotels || []);
         setNearbyPlaces(data.nearbyPlaces || []);
+        
 
         
 
@@ -462,8 +510,8 @@ useEffect(() => {
                   <p className="text-xs text-brand-gray mb-3 truncate">{place.location}</p>
                   <div className="text-xs text-brand-gray flex justify-between border-t pt-2">
                     <span>Distance: <b className="text-brand-dark">{place.distance}</b></span>
-                    <span>Arrival: <b className="text-brand-dark">{place.arrival}</b></span>
-                    <span>Time: <b className="text-brand-dark">{place.time}</b></span>
+                    <span>Arrival: <b className="text-brand-dark">{place.travelTime}</b></span>
+                    <span>Time: <b className="text-brand-dark">{place.arrivalTime}</b></span>
                   </div>
                   <button className="mt-3 w-full bg-brand-dark text-white font-semibold py-2.5 rounded-lg hover:bg-brand-dark/90">
                     Lets Go
