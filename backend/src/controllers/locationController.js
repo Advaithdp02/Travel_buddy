@@ -1,5 +1,7 @@
 import Location from "../models/Location.js";
 import District from "../models/District.js";
+import { uploadToS3, deleteFromS3 } from "./uploadController.js";
+
 
 // Get all locations
 export const getAllLocations = async (req, res) => {
@@ -86,42 +88,112 @@ export const getLocationById = async (req, res) => {
 // Create new location (Admin only)
 export const createLocation = async (req, res) => {
   try {
-    const { name, district, description, images, coordinates } = req.body;
+    const { name, district, description, coordinates } = req.body;
 
+    const dist = await District.findById(district);
+    if (!dist) return res.status(404).json({ message: "District not found" });
+
+    const folderName = `places/${dist.name}/${name}`;
+    let images = [];
+
+    console.log("Files received:", req.files); // should log an array of uploaded files
+
+    // ✅ Upload images if provided
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const url = await uploadToS3(
+          file.buffer,
+          file.originalname,
+          folderName,
+          file.mimetype
+        );
+        images.push(url);
+      }
+    }
+
+    // ✅ Create new location
     const location = new Location({
       name,
       district,
       description,
-      images,
       coordinates,
+      images,
     });
 
     await location.save();
 
-    // Add location to district
-    const dist = await District.findById(district);
-    if (dist) {
-      dist.locations.push(location._id);
-      await dist.save();
-    }
+    // ✅ Add location reference to district
+    dist.locations.push(location._id);
+    await dist.save();
 
     res.status(201).json(location);
   } catch (err) {
-    console.error(err);
+    console.error("Create Location Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
+// Update location (Admin only)
 export const updateLocation = async (req, res) => {
   try {
-    const location = await Location.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const location = await Location.findById(req.params.id).populate("district");
     if (!location) return res.status(404).json({ message: "Location not found" });
+
+    const fieldsToUpdate = ["name", "description", "coordinates", "district"];
+    fieldsToUpdate.forEach((field) => {
+      if (req.body[field] !== undefined) location[field] = req.body[field];
+    });
+
+    const districtDoc = await District.findById(location.district);
+    const folderName = `places/${districtDoc.name}/${location.name}`;
+
+    console.log("Files received:", req.files); // <-- should log an array
+
+    // Upload new images if provided
+    if (req.files && req.files.length > 0) {
+      // Delete old images from S3
+      if (location.images?.length > 0) {
+        for (const oldUrl of location.images) {
+          await deleteFromS3(oldUrl);
+        }
+      }
+
+      // Upload new ones
+      const uploadedUrls = [];
+      for (const file of req.files) {
+        const url = await uploadToS3(
+          file.buffer,
+          file.originalname,
+          folderName,
+          file.mimetype
+        );
+        uploadedUrls.push(url);
+      }
+
+      console.log("Uploaded image URLs:", uploadedUrls);
+      location.images = uploadedUrls;
+    }
+
+    // Handle explicit clearing of images
+    if (req.body.images === "" || req.body.images === null) {
+      if (location.images?.length > 0) {
+        for (const oldUrl of location.images) {
+          await deleteFromS3(oldUrl);
+        }
+      }
+      location.images = [];
+    }
+
+    await location.save();
     res.json(location);
   } catch (err) {
-    console.error(err);
+    console.error("Update Location Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+
 
 export const deleteLocation = async (req, res) => {
   try {

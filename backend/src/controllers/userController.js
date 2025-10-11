@@ -1,7 +1,7 @@
 import User from "../models/User.js";
 import Location from "../models/Location.js";
 import Contribution from "../models/Contribution.js";
-
+import { uploadToS3, deleteFromS3 } from "./uploadController.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import AnonymousVisit from "../models/AnonymousVisit.js";
@@ -152,7 +152,44 @@ export const updateUserProfile = async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Only update fields provided in the request body
+    const folderName = `users/${user.username}`;
+
+    // ---------- PROFILE PICTURE ----------
+    if (req.files?.profilePic?.[0]) {
+      // New file uploaded → delete old and upload new
+      if (user.profilePic) await deleteFromS3(user.profilePic);
+
+      const file = req.files.profilePic[0];
+      user.profilePic = await uploadToS3(
+        file.buffer,
+        file.originalname,
+        `${folderName}/profilePics`,
+        file.mimetype
+      );
+    } else if (req.body.profilePic === "" || req.body.profilePic === null) {
+      // User removed profile pic → delete old and set null
+      if (user.profilePic) await deleteFromS3(user.profilePic);
+      user.profilePic = null;
+    }
+    // else → user kept existing image, do nothing
+
+    // ---------- COVER PHOTO ----------
+    if (req.files?.coverPhoto?.[0]) {
+      if (user.coverPhoto) await deleteFromS3(user.coverPhoto);
+
+      const file = req.files.coverPhoto[0];
+      user.coverPhoto = await uploadToS3(
+        file.buffer,
+        file.originalname,
+        `${folderName}/coverPhotos`,
+        file.mimetype
+      );
+    } else if (req.body.coverPhoto === "" || req.body.coverPhoto === null) {
+      if (user.coverPhoto) await deleteFromS3(user.coverPhoto);
+      user.coverPhoto = null;
+    }
+
+    // ---------- TEXT FIELDS ----------
     const fieldsToUpdate = [
       "name",
       "username",
@@ -163,14 +200,10 @@ export const updateUserProfile = async (req, res) => {
       "occupation",
       "relationshipStatus",
       "bio",
-      "profilePic",
-      "coverPhoto",
     ];
 
     fieldsToUpdate.forEach((field) => {
-      if (req.body[field] !== undefined) {
-        user[field] = req.body[field];
-      }
+      if (req.body[field] !== undefined) user[field] = req.body[field];
     });
 
     await user.save();
@@ -180,9 +213,11 @@ export const updateUserProfile = async (req, res) => {
       user: user.toObject({ getters: true, virtuals: false, versionKey: false }),
     });
   } catch (err) {
+    console.error("Profile update error:", err);
     res.status(500).json({ message: err.message });
   }
 };
+
  
 export const getOtherUserProfile = async (req, res) => {
   try {

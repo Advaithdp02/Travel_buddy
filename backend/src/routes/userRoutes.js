@@ -1,4 +1,5 @@
 import express from "express";
+import multer from "multer";
 import {
   registerUser,
   loginUser,
@@ -14,19 +15,29 @@ import { protect } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
+// ✅ Setup multer to handle in-memory uploads
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
 // ---------------- AUTH ----------------
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 
 // ---------------- PROFILE ----------------
-router.get("/profile", protect, getUserProfile);      
-router.put("/profile", protect, updateUserProfile);  // Update logged-in user profile
+router.get("/profile", protect, getUserProfile);
+
+// ✅ Allow updating profile info + image uploads
+router.put("/profile",protect,upload.fields([
+    { name: "profilePic", maxCount: 1 },
+    { name: "coverPhoto", maxCount: 1 },
+  ]),updateUserProfile
+);
 
 // ---------------- OTHER USERS ----------------
-router.get("/profile/:username", protect, getOtherUserProfile);    // View another user’s profile
+router.get("/profile/:username", protect, getOtherUserProfile);
 
 // ---------------- FOLLOW ----------------
-router.put("/follow/:username", protect, toggleFollow);   // Follow/unfollow another user
+router.put("/follow/:username", protect, toggleFollow);
 
 // ---------------- WISHLIST ----------------
 router.put("/wishlist/add/:locationId", protect, addToWishlist);

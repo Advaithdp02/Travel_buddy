@@ -2,8 +2,6 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
-
-// Routes
 import userRoutes from "./routes/userRoutes.js";
 import locationRoutes from "./routes/locationRoutes.js";
 import districtRoutes from "./routes/districtRoutes.js";
@@ -11,16 +9,17 @@ import contributionRoutes from "./routes/contributionRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 import trackRoutes from "./routes/trackRoutes.js";
 
+// Create app
 const app = express();
 
 // --------------------
 // MIDDLEWARES
 // --------------------
 app.use(cors());
-app.use(express.json());          // Parse JSON body
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded body
-app.use(cookieParser());          // Parse cookies
-app.use(morgan("combined"));      // Logging HTTP requests
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(morgan("dev"));
 
 // --------------------
 // BASE ROUTE
@@ -30,7 +29,7 @@ app.get("/", (req, res) => {
 });
 
 // --------------------
-// API ROUTES
+// ROUTES
 // --------------------
 app.use("/api/users", userRoutes);
 app.use("/api/locations", locationRoutes);
@@ -49,7 +48,7 @@ app.use((req, res) => {
 // ERROR HANDLER
 // --------------------
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error("❌ Server Error:", err);
   res.status(500).json({ message: err.message || "Server Error" });
 });
 
