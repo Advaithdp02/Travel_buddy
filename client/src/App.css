@@ -1,7 +1,7 @@
 /* App.css */
 .app-container {
   background-color: white;
-  font-family: sans-serif;
+  
 
   display: flex;
   flex-direction: column;
@@ -10,4 +10,11 @@
 
 main {
   flex: 1; 
+}
+
+@media screen and (max-width: 768px) {
+  .app-container {
+    padding-top: 20px; 
+  }
+  
 }

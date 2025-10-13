@@ -1,27 +1,25 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { HomePage } from "./components/HomePage";
-import { AboutPage } from "./components/AboutPage";
-import { DestinationPage } from "./components/DestinationPage";
-import { BlogPage } from "./components/BlogPage";
-import { ContactPage } from "./components/ContactPage";
-import { Footer } from "./components/Footer";
-import  { Login }  from "./components/Login";
-import { Registration } from "./components/Registration"; 
-import "./App.css"; 
-import { Profile } from "./components/Profile";
-import { ProfilePublic } from "./components/ProfilePublic";
 
+import "./App.css"; 
+
+import { Header } from "./components/Header";
+import { Home }from "./components/Home";
 
 const App = () => {
   
-
+ 
   return (
     <Router>
+      <Header />
+      
       
       <div className="app-container">
+        <Home/>
+        
          
-        <main>
+         
+        {/* <main>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
@@ -34,7 +32,7 @@ const App = () => {
             <Route path="/profile/:username" element={<ProfilePublic />} />
           </Routes>
         </main>
-        <Footer />
+        <Footer /> */}
       </div>
     </Router>
   );

@@ -1,73 +1,74 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
-export const Header = ({ variant = 'light' ,nearestlocation}) => {
-  const navigate = useNavigate(); 
+export const Header = ({ variant = "light", nearestlocation }) => {
+  const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-  const isLight = variant === 'light';
-  const textColor = isLight ? 'text-brand-dark' : 'text-white';
-  const buttonBg = isLight ? 'bg-brand-dark text-white' : 'bg-white text-brand-dark';
-  const buttonHover = isLight ? 'hover:bg-brand-dark/90' : 'hover:bg-gray-200';
-  
-  const links = [
-    { name: 'Home', page: '/' },
-    { name: 'About US', page: '/about' },
-    { name: 'Services', page: `/${nearestlocation}` },
-    { name: 'Blog', page: '/blog' },
-    { name: 'Contact Us', page: '/contact' },
-  ];
-  useEffect(() => {
-    const loggedIn = localStorage.getItem("isLoggedIn");
-    setIsLoggedIn(loggedIn === "true");
-  }, []);
-  return (
-    <header className={`absolute top-0 left-0 right-0 z-10 py-6 px-4 sm:px-8 md:px-16 lg:px-24`}>
-      <div className="container mx-auto flex justify-between items-center">
-        <div className="flex items-center">
-          <span
-            className={`text-3xl font-bold ${textColor} cursor-pointer`}
-            onClick={() => navigate('/')} // Navigate to home
-            aria-label="Go to homepage"
-          >
-            RE&LE
-          </span>
-        </div>
 
-        <nav className="hidden md:flex items-center space-x-8">
+  const isLight = variant === "light";
+  const textColor = isLight ? "text-brand-dark" : "text-white";
+  const buttonBg = isLight ? "bg-brand-dark text-white" : "bg-white text-brand-dark";
+  const buttonHover = isLight ? "hover:bg-brand-dark/90" : "hover:bg-gray-200";
+
+  const links = [
+    { name: "Home", page: "/" },
+    { name: "About Us", page: "/about" },
+    { name: "Services", page: `/${nearestlocation}` },
+    { name: "Blog", page: "/blog" },
+    { name: "Contact Us", page: "/contact" },
+  ];
+
+  return (
+    <header className="w-full  top-0 left-0 z-50 bg-transparent py-4 px-6 pb-0 md:px-16">
+      <div className="flex justify-between items-center w-full max-w-[1092px] mx-auto h-[40px]">
+        {/* Logo */}
+        <div className="flex-shrink-0">
+          <img
+            src="./LOGO.png"
+            alt="logo"
+            className="w-[125.69px] h-[27.49px] relative top-[2px]"
+          />
+        </div>
+        <div className="flex flex-rows gap-10 items-center">
+        {/* Navigation Links */}
+        <nav className="hidden md:flex space-x-8 font-['Baloo 2'] font-medium text-[14px] leading-[22px] gap-2 text-[#1D1D51]">
           {links.map((link) => (
             <a
               key={link.page}
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                navigate(link.page); // Navigate to the route
+                navigate(link.page);
               }}
               className={`${textColor} ${
                 window.location.pathname === link.page
-                  ? 'text-brand-yellow font-bold'
-                  : 'hover:text-brand-yellow'
+                  ? "text-[#F2B024] font-bold"
+                  : "hover:text-[#F2B024]"
               } transition-colors`}
-              aria-current={window.location.pathname === link.page ? 'page' : undefined}
+              aria-current={window.location.pathname === link.page ? "page" : undefined}
             >
               {link.name}
             </a>
           ))}
         </nav>
+
+        {/* Login / Profile Button */}
         {isLoggedIn ? (
           <button
-           className={`${buttonBg} ${buttonHover} font-semibold py-2 px-6 rounded-lg shadow-md transition-transform transform hover:scale-105`}
-            onClick={() => {
-              navigate('/profile');
-            }}
-            >Profile</button>
-          ) : (
-        <button
-          onClick={() => navigate('/login')} // Navigate to login
-          className={`${buttonBg} ${buttonHover} font-semibold py-2 px-6 rounded-lg shadow-md transition-transform transform hover:scale-105`}
-        >
-          LOGIN
-        </button>
-          )}
+            onClick={() => navigate("/profile")}
+            className={`${buttonBg} ${buttonHover} w-[100px] h-[40px] rounded-full font-semibold shadow-md flex items-center justify-center text-[13px] transition-transform hover:scale-105`}
+          >
+            Profile
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate("/login")}
+            className="w-[100px] h-[40px] bg-[#1D1D51] rounded-full text-white font-roboto font-normal text-[13px] leading-[15px] flex items-center justify-center shadow-md transition-transform hover:scale-105"
+          >
+            LOGIN
+          </button>
+        )}
+        </div>
       </div>
     </header>
   );
