@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 export const Header = ({ variant = "light", nearestlocation }) => {
   const navigate = useNavigate();
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  
 
   const isLight = variant === "light";
   const textColor = isLight ? "text-brand-dark" : "text-white";
@@ -12,19 +12,20 @@ export const Header = ({ variant = "light", nearestlocation }) => {
 
   const links = [
     { name: "Home", page: "/" },
-    { name: "About Us", page: "/about" },
-    { name: "Services", page: `/${nearestlocation}` },
-    { name: "Blog", page: "/blog" },
+    { name: "About Us", page: "#aboutUs" },
+    { name: "Services", page:"#services" },
+    { name: "Blog", page: "#blog" },
     { name: "Contact Us", page: "/contact" },
   ];
+  const isLoggedIn=localStorage.getItem("isLoggedIn")
 
   return (
     <header className="w-full  top-0 left-0 z-50 bg-transparent py-4 px-6 pb-0 md:px-16">
-      <div className="flex justify-between items-center w-full max-w-[1092px] mx-auto h-[40px]">
+      <div className="flex justify-between items-center w-full max-w-[1250px] mx-auto h-[40px]">
         {/* Logo */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 cursor-pointer" onClick={() => navigate("/")}>
           <img
-            src="./LOGO.png"
+            src="/LOGO.png"
             alt="logo"
             className="w-[125.69px] h-[27.49px] relative top-[2px]"
           />
@@ -35,11 +36,8 @@ export const Header = ({ variant = "light", nearestlocation }) => {
           {links.map((link) => (
             <a
               key={link.page}
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                navigate(link.page);
-              }}
+              href={link.page}
+              
               className={`${textColor} ${
                 window.location.pathname === link.page
                   ? "text-[#F2B024] font-bold"

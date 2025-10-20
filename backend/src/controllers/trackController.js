@@ -48,21 +48,96 @@ export const trackVisit = async (req, res) => {
 };
 
 // GET /api/track/stats - optional analytics
+// GET /api/track/stats - detailed analytics
 export const getStats = async (req, res) => {
   try {
-    const stats = await PageVisit.aggregate([
+    // Overall stats
+    const overall = await PageVisit.aggregate([
       {
         $group: {
-          _id: "$path",
+          _id: null,
           totalVisits: { $sum: 1 },
           avgTimeSpent: { $avg: "$timeSpent" },
-          totalTimeSpent: { $sum: "$timeSpent" }
-        }
+          totalTimeSpent: { $sum: "$timeSpent" },
+        },
       },
-      { $sort: { totalVisits: -1 } }
+    ]);
+    const uniqueUsers = await PageVisit.distinct("user", { user: { $ne: null } });
+
+    // Visits per location
+    const byLocation = await PageVisit.aggregate([
+      {
+        $group: {
+          _id: "$location",
+          totalVisits: { $sum: 1 },
+          avgTimeSpent: { $avg: "$timeSpent" },
+          totalTimeSpent: { $sum: "$timeSpent" },
+        },
+      },
+      { $sort: { totalVisits: -1 } },
     ]);
 
-    res.json({ success: true, stats });
+    // Visits per district
+    const byDistrict = await PageVisit.aggregate([
+      {
+        $group: {
+          _id: "$district",
+          totalVisits: { $sum: 1 },
+          avgTimeSpent: { $avg: "$timeSpent" },
+          totalTimeSpent: { $sum: "$timeSpent" },
+        },
+      },
+      { $sort: { totalVisits: -1 } },
+    ]);
+
+    // Visits per user
+    const byUser = await PageVisit.aggregate([
+      {
+        $group: {
+          _id: "$user",
+          totalVisits: { $sum: 1 },
+          avgTimeSpent: { $avg: "$timeSpent" },
+          totalTimeSpent: { $sum: "$timeSpent" },
+        },
+      },
+      { $sort: { totalVisits: -1 } },
+    ]);
+
+    // Most visited pages
+    const topPages = await PageVisit.aggregate([
+      {
+        $group: {
+          _id: "$location",
+          totalVisits: { $sum: 1 },
+        },
+      },
+      { $sort: { totalVisits: -1 } },
+      { $limit: 10 },
+    ]);
+
+    // Most active users (top visitors)
+    const topUsers = await PageVisit.aggregate([
+      {
+        $group: {
+          _id: "$user",
+          totalVisits: { $sum: 1 },
+          totalTimeSpent: { $sum: "$timeSpent" },
+        },
+      },
+      { $sort: { totalVisits: -1 } },
+      { $limit: 10 },
+    ]);
+
+    res.json({
+      success: true,
+      overall: overall[0] || {},
+      byLocation,
+      byDistrict,
+      byUser,
+      topPages,
+      topUsers,
+      uniqueUsers: uniqueUsers.length,
+    });
   } catch (err) {
     console.error("Stats error:", err);
     res.status(500).json({ success: false, message: "Failed to fetch stats" });

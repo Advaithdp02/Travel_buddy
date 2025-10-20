@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { LocationIcon, PhoneIcon, MailIcon, GenderIcon, DobIcon, JobIcon, HeartIcon } from "./Icons";
-import { Header } from "./Header";
+import { LocationProfileIcon, PhoneIcon, MailIcon, GenderIcon, DobIcon, JobIcon, HeartIcon } from "./Icons";
+
 import { AddContributionModal } from "./AddContributionModal";
 export const Profile = () => {
   const [activeTab, setActiveTab] = useState("about");
@@ -127,8 +127,8 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
 
   return (
     <>
-      <Header variant="light" />
-      <div className="min-h-screen bg-gray-100 mt-20 py-6 px-4 sm:px-8 md:px-16 lg:px-24">
+      
+      <div className="min-h-screen bg-gray-100  py-6 px-4 sm:px-8 md:px-16 lg:px-24">
         {/* Cover Image */}
         <div className="bg-white shadow-lg rounded-bl-lg rounded-br-lg overflow-hidden">
           <div className="relative h-64 bg-gray-300 rounded-bl-lg rounded-br-lg overflow-hidden">
@@ -193,7 +193,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
                   <span>{userData.email}</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <LocationIcon className="w-5 h-5 text-gray-600" />
+                  <LocationProfileIcon className="w-5 h-5 text-gray-600" />
                   <span>{userData.location || "Not specified"}</span>
                 </div>
                 <div className="flex items-center space-x-2">

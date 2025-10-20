@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Header } from "./Header";
+
 import { LocationIcon } from "./Icons";
 import { useNavigate } from "react-router-dom";
 
@@ -97,7 +97,7 @@ export const Registration = ({ currentPage }) => {
 
   return (
     <section className="relative bg-white min-h-screen flex flex-col">
-      <Header currentPage={currentPage} navigate={navigate} />
+      
 
       <div className="flex flex-1 items-center justify-center px-8 py-16">
         <div className="bg-white shadow-2xl rounded-2xl p-10 w-full max-w-md">

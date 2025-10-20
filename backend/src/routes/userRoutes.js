@@ -10,8 +10,11 @@ import {
   addToWishlist,
   removeFromWishlist,
   trackLocationVisit,
+  getAllUsers,
+  updateUserRole,
+  deleteUser,
 } from "../controllers/userController.js";
-import { protect } from "../middlewares/authMiddleware.js";
+import { protect,staffProtect } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
@@ -46,5 +49,11 @@ router.put("/wishlist/remove/:locationId", protect, removeFromWishlist);
 // ---------------- TRACK LOCATION VISITS ----------------
 // Handles both logged-in and anonymous users
 router.put("/locations/track/:locationId", trackLocationVisit);
+
+// Admin routes
+router.get("/admin/users", protect, staffProtect, getAllUsers);
+router.put("/admin/users/:id/role", protect, staffProtect, updateUserRole);
+router.delete("/admin/users/:id", protect, staffProtect, deleteUser);
+
 
 export default router;

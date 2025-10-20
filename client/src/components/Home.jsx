@@ -1,14 +1,15 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-export const Home = () => {
+export const Home = ({nearestLocation}) => {
   const navigate = useNavigate();
 
   return (
     <section
   id="home"
-  className="w-full px-10 flex flex-col md:flex-row items-center justify-between md:pr-0 md:pl-20 sd:pt-0 md:pt-10 bg-white"
+  className="w-full px-10 flex flex-col md:flex-row lg:flex-row items-center justify-between md:pr-0 md:pl-20 lg:pr-0 lg:pl-50  bg-white"
 >
+
 
       {/* ===== Left Text Section ===== */}
       <div className="flex flex-col justify-center w-full md:w-2/3 max-w-[800px]">
@@ -33,7 +34,7 @@ export const Home = () => {
 
         {/* Button */}
         <button
-          onClick={() => navigate("/explore")}
+          onClick={() => navigate("destination/{}".replace("{}", nearestLocation || ""))}
           className="mt-8 w-[180px] h-[48px] bg-[#1D1D51] text-white font-roboto rounded-full shadow-md hover:bg-[#2b2b70] transition-all duration-300"
         >
           EXPLORE NOW

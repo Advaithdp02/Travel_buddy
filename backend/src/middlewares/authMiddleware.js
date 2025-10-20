@@ -41,3 +41,13 @@ export const adminProtect = (req, res, next) => {
     res.status(403).json({ message: "Access denied, admin only" });
   }
 };
+export const staffProtect = (req, res, next) => {
+  console.log("staffProtect req.user:", req.user);
+  if (req.user && (req.user.role === "admin" || req.user.role === "staff")) {
+    next();
+    console.log('passed')
+  } else {
+    console.log("Access denied for role:", req.user?.role);
+    res.status(403).json({ message: "Access denied, staff only" });
+  }
+};

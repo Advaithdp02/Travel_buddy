@@ -90,39 +90,54 @@ export const createLocation = async (req, res) => {
   try {
     const { name, district, description, coordinates } = req.body;
 
+    // Find district
     const dist = await District.findById(district);
     if (!dist) return res.status(404).json({ message: "District not found" });
+
+    // Parse coordinates from frontend (string -> array)
+    let coordinatesObj;
+    if (coordinates) {
+      let coordsArray;
+      try {
+        coordsArray = JSON.parse(coordinates);
+      } catch (e) {
+        return res.status(400).json({ message: "Invalid coordinates format" });
+      }
+
+      if (!Array.isArray(coordsArray) || coordsArray.length !== 2 || coordsArray.some(isNaN)) {
+        return res.status(400).json({ message: "Coordinates must be an array of 2 numbers" });
+      }
+
+      coordinatesObj = { type: "Point", coordinates: coordsArray };
+    } else {
+      return res.status(400).json({ message: "Coordinates are required" });
+    }
 
     const folderName = `places/${dist.name}/${name}`;
     let images = [];
 
-    console.log("Files received:", req.files); // should log an array of uploaded files
+    console.log("Files received:", req.files);
 
-    // ✅ Upload images if provided
+    // Upload images to S3 if provided
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const url = await uploadToS3(
-          file.buffer,
-          file.originalname,
-          folderName,
-          file.mimetype
-        );
+        const url = await uploadToS3(file.buffer, file.originalname, folderName, file.mimetype);
         images.push(url);
       }
     }
 
-    // ✅ Create new location
+    // Create location
     const location = new Location({
       name,
       district,
       description,
-      coordinates,
+      coordinates: coordinatesObj,
       images,
     });
 
     await location.save();
 
-    // ✅ Add location reference to district
+    // Add location reference to district
     dist.locations.push(location._id);
     await dist.save();
 
@@ -133,53 +148,59 @@ export const createLocation = async (req, res) => {
   }
 };
 
+
 // Update location (Admin only)
 export const updateLocation = async (req, res) => {
   try {
     const location = await Location.findById(req.params.id).populate("district");
     if (!location) return res.status(404).json({ message: "Location not found" });
 
-    const fieldsToUpdate = ["name", "description", "coordinates", "district"];
-    fieldsToUpdate.forEach((field) => {
-      if (req.body[field] !== undefined) location[field] = req.body[field];
-    });
+    const { name, district, description, coordinates, images: clearImagesFlag } = req.body;
+
+    // Update basic fields
+    if (name) location.name = name;
+    if (description) location.description = description;
+    if (district) location.district = district;
+
+    // Update coordinates if provided
+    if (coordinates) {
+      let coordsArray;
+      try {
+        coordsArray = JSON.parse(coordinates);
+      } catch (e) {
+        return res.status(400).json({ message: "Invalid coordinates format" });
+      }
+
+      if (!Array.isArray(coordsArray) || coordsArray.length !== 2 || coordsArray.some(isNaN)) {
+        return res.status(400).json({ message: "Coordinates must be an array of 2 numbers" });
+      }
+
+      location.coordinates = { type: "Point", coordinates: coordsArray };
+    }
 
     const districtDoc = await District.findById(location.district);
     const folderName = `places/${districtDoc.name}/${location.name}`;
 
-    console.log("Files received:", req.files); // <-- should log an array
+    console.log("Files received:", req.files);
 
-    // Upload new images if provided
+    // Replace images if new files uploaded
     if (req.files && req.files.length > 0) {
-      // Delete old images from S3
       if (location.images?.length > 0) {
-        for (const oldUrl of location.images) {
-          await deleteFromS3(oldUrl);
-        }
+        for (const oldUrl of location.images) await deleteFromS3(oldUrl);
       }
 
-      // Upload new ones
       const uploadedUrls = [];
       for (const file of req.files) {
-        const url = await uploadToS3(
-          file.buffer,
-          file.originalname,
-          folderName,
-          file.mimetype
-        );
+        const url = await uploadToS3(file.buffer, file.originalname, folderName, file.mimetype);
         uploadedUrls.push(url);
       }
-
-      console.log("Uploaded image URLs:", uploadedUrls);
       location.images = uploadedUrls;
     }
 
-    // Handle explicit clearing of images
-    if (req.body.images === "" || req.body.images === null) {
+    // Clear images if requested
+    if (clearImagesFlag === "" || clearImagesFlag === null) {
       if (location.images?.length > 0) {
-        for (const oldUrl of location.images) {
-          await deleteFromS3(oldUrl);
-        }
+        for (const oldUrl of location.images) await deleteFromS3(oldUrl);
       }
       location.images = [];
     }
@@ -197,19 +218,34 @@ export const updateLocation = async (req, res) => {
 
 export const deleteLocation = async (req, res) => {
   try {
-    const location = await Location.findByIdAndDelete(req.params.id);
+    // Find the location first
+    const location = await Location.findById(req.params.id);
     if (!location) return res.status(404).json({ message: "Location not found" });
 
-    // Remove location from district
+    // Delete images from S3
+    if (location.images?.length > 0) {
+      for (const imgUrl of location.images) {
+        await deleteFromS3(imgUrl);
+      }
+    }
+
+    // Remove location reference from district
     const dist = await District.findById(location.district);
     if (dist) {
-      dist.locations = dist.locations.filter((locId) => locId.toString() !== location._id.toString());
+      dist.locations = dist.locations.filter(
+        (locId) => locId.toString() !== location._id.toString()
+      );
       await dist.save();
     }
 
-    res.json({ message: "Location deleted" });
+    // Finally, delete the location document
+    await Location.findByIdAndDelete(req.params.id);
+
+    
+
+    res.json({ message: "Location deleted successfully" });
   } catch (err) {
-    console.error(err);
+    console.error("Delete Location Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

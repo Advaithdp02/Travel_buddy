@@ -9,7 +9,7 @@ import {
   getAllLocationsNoDistrict,
   getNearestLocation,
 } from "../controllers/locationController.js";
-import { protect,adminProtect } from "../middlewares/authMiddleware.js";
+import { protect,adminProtect, staffProtect } from "../middlewares/authMiddleware.js";
 
 
 const storage = multer.memoryStorage();
@@ -24,8 +24,8 @@ router.get("/nearest/:lat/:lon", getNearestLocation);
 router.get("/", getAllLocationsNoDistrict);
 
 // Admin only
-router.post("/", protect, adminProtect,upload.array("images", 10), createLocation);
-router.put("/:id", protect, adminProtect,upload.array("images", 10), updateLocation);
-router.delete("/:id", protect, adminProtect, deleteLocation);
+router.post("/", protect, staffProtect,upload.array("images", 10), createLocation);
+router.put("/:id", protect, staffProtect,upload.array("images", 10), updateLocation);
+router.delete("/:id", protect, staffProtect, deleteLocation);
 
 export default router;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { LocationIcon, PhoneIcon, MailIcon, GenderIcon, DobIcon, JobIcon, HeartIcon } from "./Icons";
-import { Header } from "./Header";
+import { LocationProfileIcon, PhoneIcon, MailIcon, GenderIcon, DobIcon, JobIcon, HeartIcon } from "./Icons";
+
 import { Link, useParams } from "react-router-dom";
 
 export const ProfilePublic = () => {
@@ -63,13 +63,12 @@ export const ProfilePublic = () => {
   };
 
   if (loading) {
-    return <div className="text-center mt-20">Loading profile...</div>;
+    return <div className="text-center ">Loading profile...</div>;
   }
 
   if (error || !user) {
     return (
       <>
-        <Header variant="light" />
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-red-500">User not found</h1>
@@ -83,7 +82,7 @@ export const ProfilePublic = () => {
   return (
     <>
       <Header variant="light" />
-      <div className="min-h-screen bg-gray-100 mt-20 py-6 px-4 sm:px-8 md:px-16 lg:px-24">
+      <div className="min-h-screen bg-gray-100  py-6 px-4 sm:px-8 md:px-16 lg:px-24">
         {/* Cover Image */}
         <div className="bg-white shadow-lg rounded-bl-lg rounded-br-lg overflow-hidden">
           <div className="relative h-64 bg-gray-300 rounded-bl-lg rounded-br-lg overflow-hidden">
@@ -143,7 +142,7 @@ export const ProfilePublic = () => {
                   <span>{user.email || "N/A"}</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <LocationIcon className="w-5 h-5 text-gray-600" />
+                  <LocationProfileIcon className="w-5 h-5 text-gray-600" />
                   <span>{user.location || "N/A"}</span>
                 </div>
                 <div className="flex items-center space-x-2">

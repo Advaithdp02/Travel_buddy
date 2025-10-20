@@ -4,7 +4,18 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css"; 
 
 import { Header } from "./components/Header";
-import { Home }from "./components/Home";
+import { Footer } from "./components/Footer";
+import { HomePage } from "./pages/HomePage";
+import { DestinationPageFull } from "./pages/DestinationPageFull";
+import Login from "./components/Login";
+import { Registration } from "./components/Registration";
+import { Profile } from "./components/Profile";
+import { ProfilePublic } from "./components/ProfilePublic";
+import { AdminPage } from "./components/Admin/AdminPage";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { NotFoundPage } from "./components/ErrorPage";
+import { BlogPage } from "./components/BlogPage";
+
 
 const App = () => {
   
@@ -12,28 +23,34 @@ const App = () => {
   return (
     <Router>
       <Header />
-      
-      
-      <div className="app-container">
-        <Home/>
         
-         
-         
-        {/* <main>
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/:id" element={<DestinationPage />} />
-            <Route path="/blog" element={<BlogPage />} />
-            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/destination/:id" element={<DestinationPageFull />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Registration />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:username" element={<ProfilePublic />} />
+            <Route path="/blogs/:slug" element={<BlogPage />} />
+            
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "staff"]}>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<NotFoundPage />} />
+            {/* <Route path="/about" element={<AboutPage />} />
+            
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+             */}
           </Routes>
-        </main>
-        <Footer /> */}
-      </div>
+        
+        <Footer /> 
+      
     </Router>
   );
 };
