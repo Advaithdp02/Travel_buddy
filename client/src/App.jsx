@@ -15,6 +15,7 @@ import { AdminPage } from "./components/Admin/AdminPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { NotFoundPage } from "./components/ErrorPage";
 import { BlogPage } from "./components/BlogPage";
+import ContactUs from "./components/ContactUs";
 
 
 const App = () => {
@@ -32,6 +33,7 @@ const App = () => {
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:username" element={<ProfilePublic />} />
             <Route path="/blogs/:slug" element={<BlogPage />} />
+            <Route path="/contact" element={<ContactUs />} />
             
             <Route
               path="/admin"

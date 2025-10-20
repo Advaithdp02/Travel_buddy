@@ -10,7 +10,7 @@ import commentRoutes from "./routes/commentRoutes.js";
 import trackRoutes from "./routes/trackRoutes.js";
 import hotelRoutes from "./routes/hotelRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
-
+import contactRoutes from "./routes/contactRoutes.js";
 // Create app
 const app = express();
 
@@ -41,6 +41,7 @@ app.use("/api/comments", commentRoutes);
 app.use("/api/track", trackRoutes);
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/blogs', blogRoutes);
+app.use("/api/contact", contactRoutes);
 // --------------------
 // 404 HANDLER
 // --------------------

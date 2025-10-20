@@ -6,6 +6,8 @@ import {
   Building2 as HotelIcon,
   BarChart2 as AnalyticsIcon,
   FileText as BlogIcon,
+  Globe as GlobeIcon,
+  MessageCircle as MessageCircleIcon
 } from "lucide-react";
 import AdminUsers from "./AdminUsers";
 import AdminLocations from "./AdminLocation";
@@ -14,6 +16,8 @@ import AdminAnalysis from "./AdminAnalysis";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import AdminBlogs from "./AdminBlog";
+import AdminContributor from "./AdminContributor";
+import AdminComment from "./AdminComment";
 
 
 
@@ -73,6 +77,8 @@ export const AdminPage = () => {
     { id: "locations", label: "Locations", icon: <LocationIcon className="w-5 h-5" /> },
     { id: "hotels", label: "Hotels", icon: <HotelIcon className="w-5 h-5" /> },
     { id: "blogs", label: "Blogs", icon: <BlogIcon className="w-5 h-5" /> },
+    {id:"contributions", label:"Contributions", icon:<GlobeIcon className="w-5 h-5" />},
+    { id: "comments", label: "Comments", icon: <MessageCircleIcon  className="w-5 h-5" /> },
     // Show Analytics only to admin
     ...(userRole === "admin"
       ? [{ id: "analytics", label: "Analytics", icon: <AnalyticsIcon className="w-5 h-5" /> }]
@@ -117,6 +123,10 @@ export const AdminPage = () => {
         return userRole === "admin" ? <AdminAnalysis /> : <p className="p-6">Access Denied</p>;
       case "blogs":
         return <AdminBlogs />;
+      case "contributions":
+        return <AdminContributor />;
+      case "comments":
+        return <AdminComment />;
       default:
         return null;
     }

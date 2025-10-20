@@ -1,6 +1,6 @@
 import express from "express";
-import { protect, adminProtect } from "../middlewares/authMiddleware.js";
-import { createContribution, getContributionsByLocation, getContributionById, verifyContribution } from "../controllers/contributionController.js";
+import { protect, adminProtect, staffProtect } from "../middlewares/authMiddleware.js";
+import { createContribution, getContributionsByLocation, getContributionById, verifyContribution, getAllContributions, deleteContribution } from "../controllers/contributionController.js";
 
 const router = express.Router();
 
@@ -14,6 +14,10 @@ router.get("/location/:locationId", getContributionsByLocation);
 router.get("/:id", getContributionById);
 
 // Admin verifies a contribution
-router.put("/verify/:id", protect, adminProtect, verifyContribution);
+router.put("/verify/:id", protect, staffProtect, verifyContribution);
+
+// ✅ Admin: Get all contributions
+router.get("/", protect, staffProtect, getAllContributions);
+router.delete("/:id", protect, staffProtect, deleteContribution);
 
 export default router;

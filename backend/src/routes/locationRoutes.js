@@ -9,7 +9,7 @@ import {
   getAllLocationsNoDistrict,
   getNearestLocation,
 } from "../controllers/locationController.js";
-import { protect,adminProtect, staffProtect } from "../middlewares/authMiddleware.js";
+import { protect,staffProtect } from "../middlewares/authMiddleware.js";
 
 
 const storage = multer.memoryStorage();
