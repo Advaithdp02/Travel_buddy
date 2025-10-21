@@ -1,5 +1,6 @@
 import District from "../models/District.js";
 import Location from "../models/Location.js";
+import { uploadToS3 } from "./uploadController.js";
 
 // Get all districts
 export const getAllDistricts = async (req, res) => {
@@ -49,6 +50,30 @@ export const addLocationToDistrict = async (req, res) => {
     res.json(district);
   } catch (err) {
     console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const updateDistrict = async (req, res) => {
+  try {
+    const { name } = req.body;
+    console.log("req.file:", req.file);
+
+    const district = await District.findById(req.params.id);
+    if (!district) return res.status(404).json({ message: "District not found" });
+
+    if (name) district.name = name;
+
+    if (req.file) { // use req.file instead of req.files
+      const folderName = `districts/${district.name}`;
+      const url = await uploadToS3(req.file.buffer, req.file.originalname, folderName, req.file.mimetype);
+      district.imageURL = url; // replace existing image
+    }
+
+    await district.save();
+    res.json(district);
+  } catch (err) {
+    console.error("Update District Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

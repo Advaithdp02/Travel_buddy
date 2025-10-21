@@ -7,7 +7,8 @@ import {
   BarChart2 as AnalyticsIcon,
   FileText as BlogIcon,
   Globe as GlobeIcon,
-  MessageCircle as MessageCircleIcon
+  MessageCircle as MessageCircleIcon,
+  MapPinOff
 } from "lucide-react";
 import AdminUsers from "./AdminUsers";
 import AdminLocations from "./AdminLocation";
@@ -18,6 +19,7 @@ import { jwtDecode } from "jwt-decode";
 import AdminBlogs from "./AdminBlog";
 import AdminContributor from "./AdminContributor";
 import AdminComment from "./AdminComment";
+import AdminDistricts from "./AdminDistricts";
 
 
 
@@ -51,17 +53,19 @@ export const AdminPage = () => {
             headers: { Authorization: `Bearer ${token}` },
           });
 
+          
           const overall = res.data.overall || {};
-          const topLocations = (res.data.byLocation || [])
-            .sort((a, b) => b.totalVisits - a.totalVisits)
-            .slice(0, 3)
-            .map((loc) => loc._id);
+const topLocations = (res.data.byLocation || [])
+  .sort((a, b) => b.totalVisits - a.totalVisits)
+  .slice(0, 3)
+  .map((loc) => loc._id);
 
-          setAnalytics({
-            totalVisits: overall.totalVisits || 0,
-            uniqueUsers: overall.uniqueUsers || 0,
-            topLocations,
-          });
+setAnalytics({
+  totalVisits: overall.totalVisits || 0,
+  uniqueUsers: res.data.uniqueUsers || 0,  // ✅ FIXED HERE
+  topLocations,
+});
+
         } catch (err) {
           console.error("Error fetching analytics:", err);
         }
@@ -79,6 +83,7 @@ export const AdminPage = () => {
     { id: "blogs", label: "Blogs", icon: <BlogIcon className="w-5 h-5" /> },
     {id:"contributions", label:"Contributions", icon:<GlobeIcon className="w-5 h-5" />},
     { id: "comments", label: "Comments", icon: <MessageCircleIcon  className="w-5 h-5" /> },
+    { id: "districts", label: "Districts", icon: <MapPinOff className="w-5 h-5" /> },
     // Show Analytics only to admin
     ...(userRole === "admin"
       ? [{ id: "analytics", label: "Analytics", icon: <AnalyticsIcon className="w-5 h-5" /> }]
@@ -127,6 +132,8 @@ export const AdminPage = () => {
         return <AdminContributor />;
       case "comments":
         return <AdminComment />;
+      case "districts":
+        return <AdminDistricts />;
       default:
         return null;
     }
