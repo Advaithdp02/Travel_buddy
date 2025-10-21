@@ -13,7 +13,7 @@ import {
   LocationWithTime,
   Cloud
 } from './Icons';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { CommunityModal } from './CommunityModal';
 import usePageTimeTracker from '../hooks/usePageTimeTracker';
 
@@ -22,7 +22,7 @@ import axios from 'axios';
 const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
 const Backend_URL = import.meta.env.VITE_BACKEND_URL;
 
-export const DestinationPage = ({ currentPage, navigate }) => {
+export const DestinationPage = ({  }) => {
   usePageTimeTracker();
   const [activeTab, setActiveTab] = useState("comments");
   const locationId = useParams();
@@ -41,14 +41,12 @@ export const DestinationPage = ({ currentPage, navigate }) => {
     reviews: 836,
     images: []
   });
-
+  const navigate=useNavigate();
   const [lat, setLat] = useState(11.6856);
   const [lon, setLon] = useState(76.1310);
 
   // Community Section
   const [comments, setComments] = useState([
-    { user: "Rahul", text: "Amazing viewpoint! Totally worth the trek." },
-    { user: "Meera", text: "The misty mornings here are unforgettable." }
   ]);
 
   const [contributions, setContributions] = useState([
@@ -70,12 +68,7 @@ export const DestinationPage = ({ currentPage, navigate }) => {
       
   ]);
 
-  const [nearbyPlaces, setNearbyPlaces] = useState([
-    { name: "Kuruva Island (Kuruvadweep)", location: "Millumukku, Kaniyambetta, Wayanad,", distance: "30 km", arrival: "12.00 am", time: "6 hr 30 min", img: "https://picsum.photos/seed/nearby1/150/100" },
-    { name: "Kuruva Island (Kuruvadweep)", location: "Millumukku, Kaniyambetta, Wayanad,", distance: "30 km", arrival: "12.00 am", time: "6 hr 30 min", img: "https://picsum.photos/seed/nearby2/150/100" },
-    { name: "Kuruva Island (Kuruvadweep)", location: "Millumukku, Kaniyambetta, Wayanad,", distance: "30 km", arrival: "12.00 am", time: "6 hr 30 min", img: "https://picsum.photos/seed/nearby3/150/100" },
-    { name: "Kuruva Island (Kuruvadweep)", location: "Millumukku, Kaniyambetta, Wayanad,", distance: "30 km", arrival: "12.00 am", time: "6 hr 30 min", img: "https://picsum.photos/seed/nearby4/150/100" }
-  ]);
+  const [nearbyPlaces, setNearbyPlaces] = useState([]);
 
   // Weather
   const [weather, setWeather] = useState({
@@ -190,78 +183,67 @@ const origin = { lat: userCoords.latitude, lon: userCoords.longitude };
 useEffect(() => {
   const fetchLocationData = async () => {
     try {
+      // Fetch all districts
       const districtRes = await fetch(`${Backend_URL}/districts/`);
       const districtData = await districtRes.json();
-
-      // Store all districts separately
       setAllDistricts(districtData);
 
-      // Fetch location details from backend
+      // Fetch location details
       const res = await fetch(`${Backend_URL}/locations/${locationId.id}`);
       const data = await res.json();
       localStorage.setItem("location_id", data._id);
 
-      // Hero & About
+      // Hero Section
       setHero({
         title: data.name,
         subtitle: data.description || "Beautiful Place",
         bgImg: data.images[0] || "https://picsum.photos/seed/default/1600/900",
       });
 
+      // About Section
       setAbout({
         heading: `About ${data.name}`,
         subHeading: `Explore the beauty of ${data.name}`,
         description: data.description || "No description available",
         points: ["Stunning views", "Great for trekking", "Photographer's paradise"],
         rating: 4.5,
-        reviews: 120,
+        reviews: data.comments?.length || 0,
         images: data.images.slice(0, 2),
       });
 
-      const commentRes = await fetch(`${Backend_URL}/comments/location/${data._id}`);
-      const commentData = await commentRes.json();
-
-      setComments(commentData || []);
-      setContributions(data.contributions || []);
-      setPlaces(data.places || []);
+      // Community & Contributions
       
+      setContributions(data.contributions || []);
+
+      // Places & Nearby
+      setPlaces(data.places || []);
       setNearbyPlaces(data.nearbyPlaces || []);
 
-      // ✅ Get user coordinates (from localStorage)
-      const userCoords = JSON.parse(
-        localStorage.getItem("userCoords") || '{"latitude":0,"longitude":0}'
-      );
-
-      // ✅ Set map info with both user & destination coordinates
+      // User coordinates for map
+      const userCoords = JSON.parse(localStorage.getItem("userCoords") || '{"latitude":0,"longitude":0}');
       setMapInfo((prev) => ({
         ...prev,
         userCoordinates: [userCoords.longitude, userCoords.latitude],
         destinationCoordinates: data.coordinates.coordinates,
       }));
-      setMapKey(prev => prev + 1); 
+      setMapKey(prev => prev + 1);
 
-      // ✅ Extract lat/lon for weather
+      // Latitude & Longitude for weather
       const [lon, lat] = data.coordinates.coordinates;
       setLat(lat);
       setLon(lon);
 
-      // 🌦️ Fetch Weather Data
-      const currentRes = await fetch(
-        `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${lat},${lon}&aqi=yes`
-      );
+      // Fetch Weather
+      const currentRes = await fetch(`https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${lat},${lon}&aqi=yes`);
       const currentData = await currentRes.json();
       const current = currentData.current;
 
       const today = new Date().toISOString().split("T")[0];
-      const astroRes = await fetch(
-        `https://api.weatherapi.com/v1/astronomy.json?key=${apiKey}&q=${lat},${lon}&dt=${today}`
-      );
+      const astroRes = await fetch(`https://api.weatherapi.com/v1/astronomy.json?key=${apiKey}&q=${lat},${lon}&dt=${today}`);
       const astroData = await astroRes.json();
       const astro = astroData.astronomy.astro;
 
-      const forecastRes = await fetch(
-        `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${lat},${lon}&days=1`
-      );
+      const forecastRes = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${lat},${lon}&days=1`);
       const forecastData = await forecastRes.json();
       const chanceOfRain = forecastData.forecast.forecastday[0].day.daily_chance_of_rain;
 
@@ -283,11 +265,13 @@ useEffect(() => {
           ? `CO: ${current.air_quality.co.toFixed(1)}, PM2.5: ${current.air_quality.pm2_5.toFixed(1)}`
           : "N/A",
       });
+      const commentsRes = await fetch(`${Backend_URL}/comments/location/${data._id}`);
+      const commentsData = await commentsRes.json();
+      setComments(commentsData.comments || []);
+      const contributionsRes = await fetch(`${Backend_URL}/contributions/location/${data._id}`);
+      const contributionsData = await contributionsRes.json();
+      setContributions(contributionsData || []);
 
-      console.log("✅ Map Info Updated:", {
-        userCoords,
-        destinationCoords: data.coordinates.coordinates,
-      });
     } catch (err) {
       console.error("Error fetching location or weather data:", err);
     }
@@ -295,6 +279,7 @@ useEffect(() => {
 
   fetchLocationData();
 }, [locationId]);
+
 
 
   const handleWishlist = async () => {
@@ -524,29 +509,60 @@ useEffect(() => {
 
                 {/* -------------------- CONTRIBUTIONS TAB -------------------- */}
                 <div className="w-full pl-6">
-                  <div className="space-y-4">
-                    {contributions.length === 0 ? (
-                      <div className="bg-white p-4 rounded-xl shadow border border-gray-100 text-gray-500">
-                        No contributions yet
-                      </div>
-                    ) : (
-                      contributions.slice(0, 3).map((c, index) => (
-                        <div
-                          key={c._id || index}
-                          className="bg-white p-4 rounded-xl shadow border border-gray-100 cursor-pointer"
-                          onClick={() => setIsModalOpen(true)}
-                        >
-                          <h4 className="font-semibold text-brand-dark">{c.title}</h4>
-                          <p className="text-gray-600 text-sm mt-1">{c.detail}</p>
-                          <span className="text-xs text-brand-gray">
-                            Shared by{" "}
-                            {c.user?.name || c.user?.username || "Unknown User"}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
+  <div className="space-y-4">
+    {contributions.length === 0 ? (
+      <div className="bg-white p-4 rounded-xl shadow border border-gray-100 text-gray-500">
+        No contributions yet
+      </div>
+    ) : (
+      contributions.slice(0, 3).map((c, index) => (
+        <div
+          key={c._id || index}
+          className="bg-white p-4 rounded-xl shadow border border-gray-100 cursor-pointer hover:shadow-md transition"
+          onClick={() => setIsModalOpen(true)}
+        >
+          {/* Cover Image */}
+          {c.coverImage && (
+            <img
+              src={c.coverImage}
+              alt="Contribution cover"
+              className="w-full h-40 object-cover rounded-lg mb-3"
+            />
+          )}
+
+          {/* Description / Preview */}
+          <h4 className="font-semibold text-brand-dark text-lg">
+            {c.location?.name || "Contribution"}
+          </h4>
+          <p className="text-gray-600 text-sm mt-1 line-clamp-2">
+            {c.description || "No description provided."}
+          </p>
+
+          {/* Meta Info */}
+          <div className="text-xs text-brand-gray mt-2 flex justify-between items-center">
+            <span>
+              Shared by{" "}
+              <strong>
+                {c.user?.name || c.user?.username || "Unknown User"}
+              </strong>
+            </span>
+            {c.bestTimeToVisit && (
+              <span className="text-[11px] text-gray-500 italic">
+                Best time: {c.bestTimeToVisit}
+              </span>
+            )}
+          </div>
+
+          {/* Likes */}
+          <div className="mt-2 text-xs text-gray-500">
+            ❤️ {c.likes?.length || 0} {c.likes?.length === 1 ? "like" : "likes"}
+          </div>
+        </div>
+      ))
+    )}
+  </div>
+</div>
+
               </div>
             </div>
           </div>
@@ -660,7 +676,7 @@ useEffect(() => {
           </div>
         </div>
 
-        <button className="mt-3 w-fit bg-brand-dark text-white font-semibold py-2.5 px-5 rounded-[2.5rem] hover:bg-brand-dark/90">
+        <button className="mt-3 w-fit bg-brand-dark text-white font-semibold py-2.5 px-5 rounded-[2.5rem] hover:bg-brand-dark/90" onClick={()=>{navigate(`/destination/${place._id}`);window.scrollTo(0, 0);}}>
           Lets Go
         </button>
       </div>
@@ -946,7 +962,7 @@ useEffect(() => {
           </div>
         </div>
 
-        <button className="mt-3 w-fit bg-brand-dark text-white font-semibold py-2.5 px-5 rounded-[2.5rem] hover:bg-brand-dark/90">
+        <button className="mt-3 w-fit bg-brand-dark text-white font-semibold py-2.5 px-5 rounded-[2.5rem] hover:bg-brand-dark/90" onClick={()=>{navigate(`/destination/${place._id}`);window.scrollTo(0, 0);}}>
           Lets Go
         </button>
         </div>

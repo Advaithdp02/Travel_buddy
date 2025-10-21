@@ -3,6 +3,8 @@ import Location from "../models/Location.js";
 import User from "../models/User.js"; 
 import mongoose from "mongoose";
 import { uploadToS3, deleteFromS3 } from "./uploadController.js";
+import ContributionComment from "../models/ContributionComment.js";
+
 
 
 export const createContribution = async (req, res) => {
@@ -104,7 +106,8 @@ export const getContributionsByLocation = async (req, res) => {
       verified: true
     })
       .populate("user", "name username profilePic")
-      .populate("comments");
+      .populate("comments")
+      .populate("location", "name");
 
     res.status(200).json(contributions);
   } catch (err) {
@@ -211,5 +214,119 @@ export const getContributionsByUser = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error fetching user contributions" });
+  }
+};
+// Add comment to a contribution
+export const addContributionComment = async (req, res) => {
+  try {
+    const { text } = req.body;
+    const { id: contributionId } = req.params;
+    const userId = req.user._id;
+
+    if (!text?.trim()) return res.status(400).json({ message: "Comment cannot be empty" });
+
+    const comment = new ContributionComment({
+      user: userId,
+      contribution: contributionId,
+      text,
+    });
+
+    await comment.save();
+
+    // Add comment reference to contribution
+    const contribution = await Contribution.findById(contributionId);
+    contribution.comments.push(comment._id);
+    await contribution.save();
+
+    const populatedComment = await comment.populate("user", "name username profilePic");
+
+    res.status(201).json(populatedComment);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Like/unlike a comment
+export const toggleContributionCommentLike = async (req, res) => {
+  try {
+    const { contribId, commentId } = req.params;
+    const userId = req.user.id;
+
+    // Check contribution exists
+    const contribution = await Contribution.findById(contribId);
+    if (!contribution)
+      return res.status(404).json({ message: "Contribution not found" });
+
+    // Find comment
+    const comment = await ContributionComment.findById(commentId);
+    if (!comment)
+      return res.status(404).json({ message: "Comment not found" });
+
+    // Toggle like/unlike
+    const hasLiked = comment.likes.some((id) => id.toString() === userId);
+
+    if (hasLiked) {
+      comment.likes = comment.likes.filter((id) => id.toString() !== userId);
+    } else {
+      comment.likes.push(userId);
+    }
+
+    await comment.save();
+
+    res.status(200).json({
+      message: hasLiked ? "Comment unliked" : "Comment liked",
+      likesCount: comment.likes.length,
+    });
+  } catch (err) {
+    console.error("❌ toggleContributionCommentLike Error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get all comments for a contribution
+export const getContributionComments = async (req, res) => {
+  try {
+    const { id: contributionId } = req.params;
+    const comments = await ContributionComment.find({ contribution: contributionId })
+      .populate("user", "name username profilePic")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(comments);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const toggleContributionLike = async (req, res) => {
+  try {
+    const { id } = req.params; // contribution ID
+    const userId = req.user.id; // from protect middleware
+
+    if (!id) return res.status(400).json({ message: "Contribution ID is required" });
+
+    const contribution = await Contribution.findById(id);
+    if (!contribution) return res.status(404).json({ message: "Contribution not found" });
+
+    const hasLiked = contribution.likes.some((uid) => uid.toString() === userId);
+
+    if (hasLiked) {
+      // Unlike
+      contribution.likes = contribution.likes.filter((uid) => uid.toString() !== userId);
+    } else {
+      // Like
+      contribution.likes.push(userId);
+    }
+
+    await contribution.save();
+
+    res.status(200).json({
+      message: hasLiked ? "Contribution unliked" : "Contribution liked",
+      likes: contribution.likes.length,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 };

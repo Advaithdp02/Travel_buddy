@@ -51,7 +51,9 @@ export const getNearestLocation = async (req, res) => {
           }
         }
       }
-    }).populate("district");
+    }).populate("district")
+    .populate("contributions") 
+      .populate("comments"); ;
 
     if (!nearest) {
       return res.status(404).json({ message: "No nearby locations found" });
@@ -69,7 +71,13 @@ export const getNearestLocation = async (req, res) => {
 export const getLocationById = async (req, res) => {
   try {
     // Find the location by ID
-    const location = await Location.findById(req.params.id);
+    const location = await Location.findById(req.params.id).populate({
+  path: "contributions",
+  populate: { path: "user", select: "username name profilePic" }
+}).populate({
+  path: "comments",
+  populate: { path: "user", select: "username name profilePic" }
+})
 
     // Check if it exists
     if (!location) {

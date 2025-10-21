@@ -3,6 +3,7 @@ import Location from "../models/Location.js";
 import User from "../models/User.js";
 
 // Add a comment
+// Add a comment
 export const createComment = async (req, res) => {
   try {
     const { location, text } = req.body;
@@ -13,11 +14,16 @@ export const createComment = async (req, res) => {
     const locationDoc = await Location.findById(location);
     if (!locationDoc) return res.status(404).json({ message: "Location not found" });
 
+    // Create the comment
     const comment = await Comment.create({
       user: req.user.id,
       location,
       text,
     });
+
+    // Push the comment ID to the location's comments array
+    locationDoc.comments.push(comment._id);
+    await locationDoc.save();
 
     res.status(201).json(comment);
   } catch (error) {
@@ -25,6 +31,7 @@ export const createComment = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // Add a reply to a comment
 export const addReply = async (req, res) => {
@@ -46,17 +53,51 @@ export const addReply = async (req, res) => {
 };
 
 // Get comments by location
+
+
 export const getCommentsByLocation = async (req, res) => {
   try {
-    const comments = await Comment.find({ location: req.params.locationId })
+    // 1️⃣ Fetch comments for the location
+    let comments = await Comment.find({ location: req.params.locationId })
       .populate("user", "name username profilePic")
-      .populate("replies.user", "name username profilePic");
-    res.status(200).json(comments);
+      .lean(); // convert to plain JS objects
+
+    // 2️⃣ Collect all unique user IDs from replies
+    const replyUserIds = [];
+    comments.forEach(comment => {
+      comment.replies.forEach(reply => {
+        if (reply.user) replyUserIds.push(reply.user.toString());
+      });
+    });
+
+    const uniqueUserIds = [...new Set(replyUserIds)];
+
+    // 3️⃣ Fetch all users at once
+    const users = await User.find({ _id: { $in: uniqueUserIds } })
+      .select("name username profilePic");
+
+    // Map users by ID for easy lookup
+    const userMap = {};
+    users.forEach(user => {
+      userMap[user._id.toString()] = user;
+    });
+
+    // 4️⃣ Replace each reply.user with full user object
+    comments.forEach(comment => {
+      comment.replies = comment.replies.map(reply => ({
+        ...reply,
+        user: userMap[reply.user.toString()] || null
+      }));
+    });
+    
+    // 5️⃣ Return
+    res.json({ comments });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // Get all comments (with optional filters: district, location)
 export const getAllComments = async (req, res) => {

@@ -37,7 +37,7 @@ export const Header = ({ variant = "light" }) => {
   };
 
   return (
-    <header className="w-full top-0 left-0 z-50 bg-transparent py-4 px-6 pb-0 md:px-16">
+    <header className="w-full top-0 left-0 z-50 bg-transparent py-4 px-6  md:px-16">
       <div className="flex justify-between items-center w-full max-w-[1250px] mx-auto h-[40px]">
         {/* Logo */}
         <div className="flex-shrink-0 cursor-pointer" onClick={() => navigate("/")}>
