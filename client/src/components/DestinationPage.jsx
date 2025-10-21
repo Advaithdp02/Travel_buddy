@@ -16,7 +16,8 @@ import {
 import { useParams } from 'react-router-dom';
 import { CommunityModal } from './CommunityModal';
 import usePageTimeTracker from '../hooks/usePageTimeTracker';
-import MapComponent from './MapComponent';
+
+import axios from 'axios';
 
 const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
 const Backend_URL = import.meta.env.VITE_BACKEND_URL;
@@ -296,7 +297,37 @@ useEffect(() => {
 }, [locationId]);
 
 
-  
+  const handleWishlist = async () => {
+  try {
+    const location_id = locationId.id; // assuming locationId is an object like { id: "123" }
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      console.error("User not authenticated");
+      return alert("Please log in to add items to your wishlist");
+    }
+
+    const response = await axios.put(
+      `${Backend_URL}/users/wishlist/add/${location_id}`, // adjust your backend URL
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    console.log("Wishlist updated:", response.data);
+    alert(response.data.message);
+  } catch (error) {
+    console.error("Error adding to wishlist:", error);
+    if (error.response) {
+      alert(error.response.data.message || "Failed to add to wishlist");
+    } else {
+      alert("Network error. Please try again.");
+    }
+  }
+};
  
   
   return (
@@ -393,8 +424,8 @@ useEffect(() => {
                 </ul>
 
                 {/* Wishlist Button */}
-                <button className="bg-brand-yellow text-brand-dark font-semibold py-3 px-8 rounded-lg shadow-lg hover:bg-yellow-400 transition-transform transform hover:scale-105">
-                  {about.buttonText || "WishList"}
+                <button onClick={handleWishlist}className="bg-brand-yellow text-brand-dark font-semibold py-3 px-8 rounded-lg shadow-lg hover:bg-yellow-400 transition-transform transform hover:scale-105">
+                  WishList
                 </button>
               </div>
 

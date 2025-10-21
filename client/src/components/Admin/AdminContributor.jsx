@@ -183,89 +183,82 @@ const AdminContributor = () => {
 
       {/* Modal for details */}
       <Modal open={!!selected} onClose={() => setSelected(null)}>
-        <Box className="bg-white rounded-xl shadow-lg p-6 w-[90%] max-w-3xl mx-auto mt-24 overflow-y-auto max-h-[80vh]">
-          {selected && (
-            <>
-              {selected.coverImage && (
-                <img
-                  src={selected.coverImage}
-                  alt="Cover"
-                  className="w-full h-[300px] object-cover rounded-lg mb-4"
-                />
-              )}
-              <Typography variant="h5" fontWeight="bold" gutterBottom>
-                {selected.location?.name || "Unknown Location"}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                By: {selected.user?.name || "Anonymous"}
-              </Typography>
+  <Box className="bg-white rounded-xl shadow-lg p-6 w-[90%] max-w-3xl mx-auto mt-24 overflow-y-auto max-h-[80vh]">
+    {selected && (
+      <>
+        {/* Image Gallery */}
+        <div className="flex overflow-x-auto gap-2 mb-4">
+          {selected.coverImage && (
+            <img
+              src={selected.coverImage}
+              alt="Cover"
+              className="h-60 w-auto object-cover rounded-lg flex-shrink-0"
+            />
+          )}
+          {selected.images && selected.images.length > 0 && selected.images.map((img, idx) => (
+            <img
+              key={idx}
+              src={img}
+              alt={`Image ${idx + 1}`}
+              className="h-60 w-auto object-cover rounded-lg flex-shrink-0"
+            />
+          ))}
+        </div>
 
-              <Typography className="mt-3">{selected.description}</Typography>
+        <Typography variant="h5" fontWeight="bold" gutterBottom>
+          {selected.location?.name || "Unknown Location"}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          By: {selected.user?.name || "Anonymous"}
+        </Typography>
 
-              <Box className="mt-4 text-sm text-gray-600">
-                <p>🏖️ Best time: {selected.bestTimeToVisit || "N/A"}</p>
-                <p>👨‍👩‍👧 Family Friendly: {selected.familyFriendly ? "Yes" : "No"}</p>
-                <p>🐶 Pet Friendly: {selected.petFriendly ? "Yes" : "No"}</p>
-                <p>♿ Accessibility: {selected.accessibility || "N/A"}</p>
-                <p>🎯 Activities: {selected.activities?.join(", ") || "None"}</p>
+        <Typography className="mt-3">{selected.description}</Typography>
 
-                {/* Ratings */}
-                {selected?.ratings && (
-                  <div className="mt-4 border-t border-gray-200 pt-3">
-                    <h4 className="font-semibold text-lg mb-2 text-gray-800">
-                      Ratings
-                    </h4>
-                    <div className="grid grid-cols-2 gap-x-6 text-sm text-gray-700">
-                      <p>
-                        <strong>Overall:</strong>{" "}
-                        {selected.ratings.overall ?? "N/A"}
-                      </p>
-                      <p>
-                        <strong>Cleanliness:</strong>{" "}
-                        {selected.ratings.cleanliness ?? "N/A"}
-                      </p>
-                      <p>
-                        <strong>Safety:</strong>{" "}
-                        {selected.ratings.safety ?? "N/A"}
-                      </p>
-                      <p>
-                        <strong>Crowd:</strong>{" "}
-                        {selected.ratings.crowd ?? "N/A"}
-                      </p>
-                      <p>
-                        <strong>Value for Money:</strong>{" "}
-                        {selected.ratings.valueForMoney ?? "N/A"}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </Box>
+        <Box className="mt-4 text-sm text-gray-600">
+          <p>🏖️ Best time: {selected.bestTimeToVisit || "N/A"}</p>
+          <p>👨‍👩‍👧 Family Friendly: {selected.familyFriendly ? "Yes" : "No"}</p>
+          <p>🐶 Pet Friendly: {selected.petFriendly ? "Yes" : "No"}</p>
+          <p>♿ Accessibility: {selected.accessibility || "N/A"}</p>
+          <p>🎯 Activities: {selected.activities?.join(", ") || "None"}</p>
 
-              <Box className="flex justify-end gap-3 mt-6">
-                <Button variant="outlined" onClick={() => setSelected(null)}>
-                  Close
-                </Button>
-                {!selected.verified && (
-                  <Button
-                    variant="contained"
-                    color="success"
-                    onClick={() => handleApprove(selected._id)}
-                  >
-                    Approve
-                  </Button>
-                )}
-                <Button
-                  variant="contained"
-                  color="error"
-                  onClick={() => handleDelete(selected._id)}
-                >
-                  Delete
-                </Button>
-              </Box>
-            </>
+          {/* Ratings */}
+          {selected?.ratings && (
+            <div className="mt-4 border-t border-gray-200 pt-3">
+              <h4 className="font-semibold text-lg mb-2 text-gray-800">Ratings</h4>
+              <div className="grid grid-cols-2 gap-x-6 text-sm text-gray-700">
+                <p><strong>Overall:</strong> {selected.ratings.overall ?? "N/A"}</p>
+                <p><strong>Cleanliness:</strong> {selected.ratings.cleanliness ?? "N/A"}</p>
+                <p><strong>Safety:</strong> {selected.ratings.safety ?? "N/A"}</p>
+                <p><strong>Crowd:</strong> {selected.ratings.crowd ?? "N/A"}</p>
+                <p><strong>Value for Money:</strong> {selected.ratings.valueForMoney ?? "N/A"}</p>
+              </div>
+            </div>
           )}
         </Box>
-      </Modal>
+
+        <Box className="flex justify-end gap-3 mt-6">
+          <Button variant="outlined" onClick={() => setSelected(null)}>Close</Button>
+          {!selected.verified && (
+            <Button
+              variant="contained"
+              color="success"
+              onClick={() => handleApprove(selected._id)}
+            >
+              Approve
+            </Button>
+          )}
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => handleDelete(selected._id)}
+          >
+            Delete
+          </Button>
+        </Box>
+      </>
+    )}
+  </Box>
+</Modal>
     </Box>
   );
 };

@@ -133,11 +133,17 @@ export const toggleFollow = async (req, res) => {
 export const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
-      .select("-password") // exclude password
-      .populate("followers", "username profilePic")
-      .populate("following", "username profilePic")
-      .populate("wishlist", "name location"); // if you have Location model
-
+  .select("-password") // exclude password
+  .populate("followers", "username profilePic")
+  .populate("following", "username profilePic")
+  .populate({
+    path: "wishlist",
+    select: "_id name district images",
+    populate: {
+      path: "district",
+      select: "name", 
+    },
+  });
     if (!user) return res.status(404).json({ message: "User not found" });
 
     res.json(user);
@@ -234,7 +240,14 @@ export const getOtherUserProfile = async (req, res) => {
           { path: "comments", select: "user text createdAt", populate: { path: "user", select: "username profilePic" } } // nested populate
         ]
       })
-      .populate("wishlist", "name location");
+      .populate({
+    path: "wishlist",
+    select: "_id name district images",
+    populate: {
+      path: "district",
+      select: "name", 
+    },
+  });
 
     if (!user) return res.status(404).json({ message: "User not found" });
 

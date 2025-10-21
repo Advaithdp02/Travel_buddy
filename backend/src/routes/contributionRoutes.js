@@ -1,11 +1,17 @@
 import express from "express";
 import { protect, adminProtect, staffProtect } from "../middlewares/authMiddleware.js";
-import { createContribution, getContributionsByLocation, getContributionById, verifyContribution, getAllContributions, deleteContribution } from "../controllers/contributionController.js";
+import { createContribution, getContributionsByLocation, getContributionById, verifyContribution, getAllContributions, deleteContribution, getContributionsByUser } from "../controllers/contributionController.js";
+import multer from "multer";
 
 const router = express.Router();
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 // Create a contribution (logged-in user)
-router.post("/", protect, createContribution);
+router.post("/", protect, upload.fields([{ name: "images", maxCount: 10 },{ name: "coverImage", maxCount: 1 }]),createContribution);
+
+
+router.get("/user", protect, getContributionsByUser);
 
 // Get all verified contributions for a location
 router.get("/location/:locationId", getContributionsByLocation);

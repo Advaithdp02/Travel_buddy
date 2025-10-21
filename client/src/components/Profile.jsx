@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { LocationProfileIcon, PhoneIcon, MailIcon, GenderIcon, DobIcon, JobIcon, HeartIcon } from "./Icons";
-
+import axios from "axios";
 import { AddContributionModal } from "./AddContributionModal";
+import { useNavigate } from "react-router-dom";
+
 export const Profile = () => {
   const [activeTab, setActiveTab] = useState("about");
   const [contribSubTab, setContribSubTab] = useState("all");
@@ -9,12 +11,16 @@ export const Profile = () => {
   const [userData, setUserData] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({});
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
+  const [wishlist,setWishlist]=useState([]);
 
+  const navigate=useNavigate()
   const logout = () => {
   localStorage.clear();
   window.location.href = "/";
 };
-
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 useEffect(() => {
   const token = localStorage.getItem("token");
   console.log("Token:", token);
@@ -25,7 +31,7 @@ useEffect(() => {
 
   const fetchUser = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/profile`, {
+      const res = await fetch(`${BACKEND_URL}/users/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -35,6 +41,7 @@ useEffect(() => {
       console.log("Fetched user JSON:", data); // see JSON
 
       const user = data.user ?? data; // normalize
+      
 
       const initialForm = {
         name: user.name ?? "",
@@ -50,22 +57,64 @@ useEffect(() => {
         profileImage: user.profilePic ?? "", // fallback if missing
         coverImage: user.coverPhoto ?? "",
       };
-
+      setFollowers(user.followers || []);
+      setFollowing(user.following || [])
+      setWishlist(user.wishlist ||[]);
+      
       setUserData(user);
       setFormData(initialForm);
     } catch (err) {
       console.error("Error fetching user:", err);
     }
   };
+  
 
   fetchUser();
 }, []);
 
+const removeFromWishlist = async (locationId) => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return alert("Please log in first");
+
+    const res = await axios.put(
+      `${BACKEND_URL}/users/wishlist/remove/${locationId}`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    alert(res.data.message);
+    setWishlist(res.data.wishlist);
+    console.log("Updated wishlist:", res.data.wishlist);
+  } catch (err) {
+    console.error("Error removing:", err.response?.data || err.message);
+  }
+};
 
 const handleInputChange = (e) => {
   const { name, value } = e.target;
   setFormData((prev) => ({ ...prev, [name]: value }));
 };
+const [userContributions, setUserContributions] = useState([]);
+
+useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  const fetchContributions = async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/contributions/user`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setUserContributions(data.contributions || data || []);
+    } catch (err) {
+      console.error("Failed to fetch contributions:", err);
+    }
+  };
+
+  fetchContributions();
+}, []);
 
 const handleSave = async () => {
   const token = localStorage.getItem("token");
@@ -93,7 +142,7 @@ const handleSave = async () => {
   Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
 
   try {
-    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/profile`, {
+    const res = await fetch(`${BACKEND_URL}/users/profile`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -210,7 +259,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
 
           {/* Tabs Section */}
           <div className="col-span-2 flex flex-col gap-4">
-            <div className="bg-white shadow-lg rounded-bl-lg rounded-br-lg overflow-hidden pt-4">
+            <div className="bg-white shadow-lg rounded-bl-lg rounded-br-lg overflow-hidden pt-4 pb-4">
               <div className="flex border-b">
                 {["followers", "following", "contribution", "wishlist"].map((tab) => (
                   <button
@@ -226,35 +275,197 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
               </div>
 
               <div className="mt-6 px-6">
-                {["followers", "following", "wishlist"].includes(activeTab) && (
-                  <div className="text-center text-gray-600 py-10">
-                    {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} page content here...
+      {/* Wishlist */}
+      {["wishlist"].includes(activeTab) && (
+        <div className="mt-4">
+          {wishlist.length ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {wishlist.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={item.images[0]}
+                      alt={item.name}
+                      className="w-16 h-16 rounded-lg object-cover border border-gray-200"
+                    />
+                    <div className="flex flex-col">
+                    <p className="font-medium text-gray-800">{item.name}</p>
+                    <p className="font-medium text-gray-800">{item.district.name}</p>
+                    </div>
                   </div>
-                )}
+                  <button
+                    onClick={() => removeFromWishlist(item._id)}
+                    className="text-red-500 hover:text-red-600 font-semibold transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-10">
+              Your wishlist is empty.
+            </p>
+          )}
+        </div>
+      )}
+                
+{activeTab === "followers" && (
+  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+    {followers.length ? (
+      followers.map((f) => (
+        <div
+          key={f._id}
+          className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={(e) => {
+            if (e.target.tagName !== "BUTTON") {
+              navigate(`/profile/${f.username}`);
+            }
+          }}
+        >
+          <div className="flex items-center gap-4">
+            <img
+              src={f.profilePic || "https://i.pravatar.cc/50"}
+              alt={f.username}
+              className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
+            />
+            <div>
+              <p className="font-semibold text-gray-800">{f.username}</p>
+            </div>
+          </div>
+
+          
+        </div>
+      ))
+    ) : (
+      <p className="text-gray-500 text-center col-span-full mt-4">No followers yet</p>
+    )}
+  </div>
+)}
+
+{/* Following Tab */}
+{activeTab === "following" && (
+  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+    {following.length ? (
+      following.map((f) => (
+        <div
+          key={f._id}
+          className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={(e) => {
+            if (e.target.tagName !== "BUTTON") {
+              navigate(`/profile/${f.username}`);
+            }
+          }}
+        >
+          <div className="flex items-center gap-4">
+            <img
+              src={f.profilePic || "https://i.pravatar.cc/50"}
+              alt={f.username}
+              className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
+            />
+            <div>
+              <p className="font-semibold text-gray-800">{f.username}</p>
+            </div>
+          </div>
+
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              try {
+                const token = localStorage.getItem("token");
+                if (!token) return;
+
+                const res = await fetch(
+                  `${BACKEND_URL}/users/${f.username}/toggle-follow`,
+                  {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${token}` },
+                  }
+                );
+
+                if (!res.ok) throw new Error("Failed to unfollow");
+
+                setFollowing((prev) => prev.filter((u) => u._id !== f._id));
+              } catch (err) {
+                console.error(err);
+                alert("Error unfollowing user");
+              }
+            }}
+            className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors"
+          >
+            Unfollow
+          </button>
+        </div>
+      ))
+    ) : (
+      <p className="text-gray-500 text-center col-span-full mt-4">Not following anyone yet</p>
+    )}
+  </div>
+)}
 
                 {activeTab === "contribution" && (
-                  <div>
-                    <button className="w-full bg-yellow-400 text-white py-2 rounded-lg flex items-center justify-center mb-4 hover:bg-yellow-500" onClick={() => setIsAddContributionOpen(true)}>
-                      <span className="mr-2">+</span> Add New Place
-                    </button>
-                    <div className="flex space-x-4 mb-4">
-                      {["all", "approved", "pending"].map((sub) => (
-                        <button
-                          key={sub}
-                          className={`flex-1 py-2 font-semibold rounded-lg transition-colors ${
-                            contribSubTab === sub
-                              ? "bg-blue-600 text-white"
-                              : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                          }`}
-                          onClick={() => setContribSubTab(sub)}
-                        >
-                          {sub.charAt(0).toUpperCase() + sub.slice(1)}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="text-gray-600">Showing {contribSubTab} contributions here...</div>
-                  </div>
-                )}
+  <div>
+    <button
+      className="w-full bg-yellow-400 text-white py-2 rounded-lg flex items-center justify-center mb-4 hover:bg-yellow-500"
+      onClick={() => setIsAddContributionOpen(true)}
+    >
+      <span className="mr-2">+</span> Add New Place
+    </button>
+
+    <div className="flex space-x-4 mb-4">
+      {["all", "approved", "pending"].map((sub) => (
+        <button
+          key={sub}
+          className={`flex-1 py-2 font-semibold rounded-lg transition-colors ${
+            contribSubTab === sub
+              ? "bg-blue-600 text-white"
+              : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+          }`}
+          onClick={() => setContribSubTab(sub)}
+        >
+          {sub.charAt(0).toUpperCase() + sub.slice(1)}
+        </button>
+      ))}
+    </div>
+
+    {/* Filtered Contributions */}
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {userContributions
+        .filter((c) => {
+          if (contribSubTab === "all") return true;
+          if (contribSubTab === "approved") return c.verified;
+          if (contribSubTab === "pending") return !c.verified;
+        })
+        .map((c) => (
+          <div
+            key={c._id}
+            className={`bg-white rounded-lg shadow p-4 cursor-pointer border-t-4 ${
+              c.verified ? "border-green-500" : "border-yellow-500"
+            }`}
+          >
+            <img
+              src={c.coverImage || "https://picsum.photos/200/120"}
+              alt={c.description || "Contribution"}
+              className="w-full h-40 object-cover rounded mb-2"
+            />
+            <h4 className="font-bold">{c.location?.name || "Unknown Location"}</h4>
+            <p className="text-sm text-gray-600 line-clamp-2">{c.description}</p>
+            <p
+              className={`mt-1 text-xs font-semibold ${
+                c.verified ? "text-green-600" : "text-yellow-600"
+              }`}
+            >
+              {c.verified ? "✅ Approved" : "🕒 Pending"}
+            </p>
+          </div>
+        ))}
+    </div>
+  </div>
+)}
+
               </div>
             </div>
           </div>
@@ -371,9 +582,10 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
         )}
         <AddContributionModal
   isOpen={isAddContributionOpen}
+
   onClose={() => setIsAddContributionOpen(false)}
   onSave={(contributionData) => handleSaveContribution(contributionData)}
-  locationId={location._id} // assuming you have the location object
+  locationId={location._id} 
 />
 
 

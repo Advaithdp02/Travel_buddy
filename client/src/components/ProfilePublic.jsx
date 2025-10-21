@@ -81,7 +81,7 @@ export const ProfilePublic = () => {
 
   return (
     <>
-      <Header variant="light" />
+      
       <div className="min-h-screen bg-gray-100  py-6 px-4 sm:px-8 md:px-16 lg:px-24">
         {/* Cover Image */}
         <div className="bg-white shadow-lg rounded-bl-lg rounded-br-lg overflow-hidden">
@@ -177,33 +177,83 @@ export const ProfilePublic = () => {
               </div>
 
               <div className="mt-6 px-6">
-                {["followers", "following", "contribution", "wishlist"].includes(activeTab) && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pb-10">
-                        {(user[activeTab]?.length ?? 0) === 0 ? (
-                          <p className="text-gray-500 col-span-full text-center py-10">
-                            No {activeTab} yet.
-                          </p>
-                        ) : (
-                          user[activeTab]?.map((u) => (
-                            <Link to={`/profile/${u.username}`} key={u._id}>
-                              <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg shadow-sm">
-                                <img
-                                  src={u.profilePic || "https://i.pravatar.cc/40"}
-                                  alt={u.username}
-                                  className="w-10 h-10 rounded-full object-cover"
-                                />
-                                <span className="font-semibold text-gray-700">@{u.username}</span>
-                              </div>
-                            </Link>
-                          ))
-                        )}
-                      </div>
-                    )}
+  {activeTab === "followers" || activeTab === "following" ? (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pb-10">
+      {(user[activeTab]?.length ?? 0) === 0 ? (
+        <p className="text-gray-500 col-span-full text-center py-10">
+          No {activeTab} yet.
+        </p>
+      ) : (
+        user[activeTab].map((u) => (
+          <Link to={`/profile/${u.username}`} key={u._id}>
+            <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg shadow-sm">
+              <img
+                src={u.profilePic || "https://i.pravatar.cc/40"}
+                alt={u.username}
+                className="w-10 h-10 rounded-full object-cover"
+              />
+              <span className="font-semibold text-gray-700">@{u.username}</span>
+            </div>
+          </Link>
+        ))
+      )}
+    </div>
+  ) : activeTab === "contribution" ? (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4 pb-10">
+      {(user.contributions?.length ?? 0) === 0 ? (
+        <p className="text-gray-500 col-span-full text-center py-10">
+          No approved contributions yet.
+        </p>
+      ) : (
+        user.contributions.map((c) => (
+          <div
+            key={c._id}
+            className="bg-gray-50 p-4 rounded-lg shadow hover:shadow-md transition"
+          >
+            <img
+              src={c.images?.[0] || "https://via.placeholder.com/300x200"}
+              alt={c.title}
+              className="w-full h-40 object-cover rounded-md mb-3"
+            />
+            <h3 className="text-lg font-semibold mb-1">{c.title}</h3>
+            <p className="text-gray-600 text-sm mb-2 line-clamp-3">
+              {c.description}
+            </p>
+            <div className="flex justify-between text-sm text-gray-500">
+              <span>{c.likes?.length || 0} Likes</span>
+              <span>{c.comments?.length || 0} Comments</span>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  ) : activeTab === "wishlist" ? (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4 pb-10">
+      {(user.wishlist?.length ?? 0) === 0 ? (
+        <p className="text-gray-500 col-span-full text-center py-10">
+          No wishlist items yet.
+        </p>
+      ) : (
+        user.wishlist.map((w) => (
+          <Link to={`/location/${w._id}`} key={w._id}>
+            <div className="bg-gray-50 p-4 rounded-lg shadow hover:shadow-md transition">
+              <img
+                src={w.images?.[0] || "https://via.placeholder.com/300x200"}
+                alt={w.name}
+                className="w-full h-40 object-cover rounded-md mb-3"
+              />
+              <h3 className="text-lg font-semibold mb-1">{w.name}</h3>
+              <p className="text-gray-600 text-sm">
+                {w.district?.name || "Unknown district"}
+              </p>
+            </div>
+          </Link>
+        ))
+      )}
+    </div>
+  ) : null}
+</div>
 
-
-
-                
-              </div>
             </div>
           </div>
         </div>

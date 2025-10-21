@@ -4,10 +4,10 @@ import User from "../models/User.js";
 import mongoose from "mongoose";
 import { uploadToS3, deleteFromS3 } from "./uploadController.js";
 
+
 export const createContribution = async (req, res) => {
   try {
     const {
-      user,
       location,
       description,
       bestTimeToVisit,
@@ -22,8 +22,13 @@ export const createContribution = async (req, res) => {
       hiddenGems,
     } = req.body;
 
-    const locationId = new mongoose.Types.ObjectId(location);
-    const userId = new mongoose.Types.ObjectId(req.user);
+    // Make sure user is authenticated
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const userId = req.user._id; // from auth middleware
+    const locationId =new  mongoose.Types.ObjectId(location);
 
     const folderName = `contributions/${locationId}/${userId}`;
 
@@ -32,44 +37,53 @@ export const createContribution = async (req, res) => {
 
     console.log("Files received:", req.files);
 
-    if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
-        // If you want one image as cover, you can decide by name or order
-        if (file.fieldname === "coverImage") {
-          coverImage = await uploadToS3(file.buffer, file.originalname, folderName, file.mimetype);
-        } else {
-          const url = await uploadToS3(file.buffer, file.originalname, folderName, file.mimetype);
-          images.push(url);
-        }
-      }
-    }
+    // Upload images to S3 if any
+    if (req.files) {
+  // Cover Image
+  if (req.files.coverImage && req.files.coverImage.length > 0) {
+    const file = req.files.coverImage[0];
+    coverImage = await uploadToS3(file.buffer, file.originalname, folderName, file.mimetype);
+  }
 
-    const contribution = await Contribution.create({
+  // Other Images
+  if (req.files.images && req.files.images.length > 0) {
+    for (const file of req.files.images) {
+      const url = await uploadToS3(file.buffer, file.originalname, folderName, file.mimetype);
+      images.push(url);
+    }
+  }
+}
+
+
+    // Create contribution
+    const contribution = new Contribution({
       user: userId,
       location: locationId,
       description,
-      images,
       coverImage,
-      bestTimeToVisit,
-      crowded,
-      familyFriendly,
-      petFriendly,
-      accessibility,
-      activities,
-      facilities,
-      ratings,
-      tips,
-      hiddenGems,
+      images,
+      bestTimeToVisit: bestTimeToVisit || "",
+      crowded: crowded === "true" || crowded === true,
+      familyFriendly: familyFriendly === "true" || familyFriendly === true,
+      petFriendly: petFriendly === "true" || petFriendly === true,
+      accessibility: accessibility || "Unknown",
+      activities: activities ? JSON.parse(activities) : [],
+      facilities: facilities ? JSON.parse(facilities) : [],
+      ratings: ratings ? JSON.parse(ratings) : {},
+      tips: tips || "",
+      hiddenGems: hiddenGems ? JSON.parse(hiddenGems) : [],
       verified: false,
     });
 
-    // Add contribution ID to the location
+    await contribution.save();
+
+    // Update Location
     const loc = await Location.findById(locationId);
     if (!loc) return res.status(404).json({ message: "Location not found" });
-
     loc.contributions.push(contribution._id);
     await loc.save();
 
+    // Update User
     const userDoc = await User.findById(userId);
     if (userDoc) {
       userDoc.contributions.push(contribution._id);
@@ -78,11 +92,10 @@ export const createContribution = async (req, res) => {
 
     res.status(201).json(contribution);
   } catch (err) {
-    console.error("Error creating contribution:", err);
+    console.error("Create Contribution Error:", err);
     res.status(500).json({ message: err.message });
   }
 };
-
 // Get verified contributions for a specific location
 export const getContributionsByLocation = async (req, res) => {
   try {
@@ -183,5 +196,20 @@ export const deleteContribution = async (req, res) => {
   } catch (err) {
     console.error("Delete contribution error:", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getContributionsByUser = async (req, res) => {
+  try {
+    const userId = req.user.id; // set by protect middleware
+    const contributions = await Contribution.find({ user: userId });
+
+    res.status(200).json({
+      success: true,
+      contributions,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error fetching user contributions" });
   }
 };
