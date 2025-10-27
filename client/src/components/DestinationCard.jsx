@@ -1,5 +1,6 @@
 import React from "react";
 import { DiningHand } from "./Icons";
+import { useNavigate } from "react-router-dom";
 
 export default function DestinationCard({ destination }) {
   const hardcodedStats = [
@@ -7,6 +8,8 @@ export default function DestinationCard({ destination }) {
     { count: "90+", label: "Hotels" },
     { count: "80+", label: "Restaurants" },
   ];
+  const navigate=useNavigate();
+  const id=destination._id;
 
   return (
     <div className="w-[315px] h-[354px] bg-white rounded-xl shadow-md relative overflow-hidden flex-shrink-0">
@@ -54,7 +57,7 @@ export default function DestinationCard({ destination }) {
           ))}
         </div>
 
-        <button className="mt-4 bg-[#37377B] text-white text-sm py-2 px-6 rounded-full hover:bg-[#5050A0]">
+        <button className="mt-4 bg-[#37377B] text-white text-sm py-2 px-6 rounded-full hover:bg-[#5050A0]" onClick={()=>navigate(`district/${id}`)}>
           LETS GO
         </button>
       </div>

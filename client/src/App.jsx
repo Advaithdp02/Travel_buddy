@@ -16,6 +16,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { NotFoundPage } from "./components/ErrorPage";
 import { BlogPage } from "./components/BlogPage";
 import ContactUs from "./components/ContactUs";
+import { DistrictPage } from "./components/DistrictPage";
 
 
 const App = () => {
@@ -34,7 +35,7 @@ const App = () => {
             <Route path="/profile/:username" element={<ProfilePublic />} />
             <Route path="/blogs/:slug" element={<BlogPage />} />
             <Route path="/contact" element={<ContactUs />} />
-            
+            <Route path="/district/:id" element={<DistrictPage />} />
             <Route
               path="/admin"
               element={

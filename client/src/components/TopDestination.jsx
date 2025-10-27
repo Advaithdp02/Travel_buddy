@@ -55,7 +55,7 @@ export const TopDestinations = ({ userCoords }) => {
             .sort((a, b) => a.distance - b.distance); // nearest first
 
           setDestinations([...sorted]); // force re-render
-          console.log("Sorted Destinations by Distance:", sorted);
+          
         } else {
           setDestinations(data);
         }

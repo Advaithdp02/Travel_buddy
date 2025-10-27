@@ -90,7 +90,6 @@ export const updateDistrict = async (req, res) => {
       district.coordinates = {
         type: "Point",
         coordinates: [
-          
           parseFloat(coordinates.longitude),
           parseFloat(coordinates.latitude)
         ],
@@ -176,6 +175,32 @@ export const getDistrictByState = async (req, res) => {
     res.json(districts);
   } catch (err) {
     console.error("Get District By State Error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getCommentsForDistrict = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1️⃣ Find the district and populate its locations
+    const district = await District.findById(id).populate("locations");
+    if (!district) {
+      return res.status(404).json({ message: "District not found" });
+    }
+
+    // 2️⃣ Extract all location IDs
+    const locationIds = district.locations.map((loc) => loc._id);
+
+    // 3️⃣ Find all comments where location is in those IDs
+    const comments = await Comment.find({ location: { $in: locationIds } })
+      .populate("user", "name profileImage")
+      .populate("location", "name")
+      .sort({ createdAt: -1 });
+
+    res.json(comments);
+  } catch (err) {
+    console.error("Get District Comments Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

@@ -1,6 +1,7 @@
 import Contribution from "../models/Contribution.js";
 import Location from "../models/Location.js";
 import User from "../models/User.js"; 
+import District from "../models/District.js";
 import mongoose from "mongoose";
 import { uploadToS3, deleteFromS3 } from "./uploadController.js";
 import ContributionComment from "../models/ContributionComment.js";
@@ -130,6 +131,26 @@ export const getContributionById = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+export const getContributionsForDistrict = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const district = await District.findById(id).populate("locations");
+    if (!district) return res.status(404).json({ message: "District not found" });
+
+    const locationIds = district.locations.map((loc) => loc._id);
+    const contributions = await Contribution.find({ location: { $in: locationIds } })
+      .populate("user", "name profileImage")
+      .populate("location", "name")
+      .sort({ createdAt: -1 });
+
+    res.json(contributions);
+  } catch (err) {
+    console.error("Get District Contributions Error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 
 // Admin: Verify a contribution
 export const verifyContribution = async (req, res) => {

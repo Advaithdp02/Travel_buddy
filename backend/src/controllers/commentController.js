@@ -1,6 +1,7 @@
 import Comment from "../models/Comments.js";
 import Location from "../models/Location.js";
 import User from "../models/User.js";
+import District from "../models/District.js";
 
 // Add a comment
 // Add a comment
@@ -160,3 +161,26 @@ export const deleteComment = async (req, res) => {
   }
 };
 
+export const getCommentsForDistrict = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // ✅ Fetch the district with its locations
+    const district = await District.findById(id).populate("locations");
+    if (!district) return res.status(404).json({ message: "District not found" });
+
+    // ✅ Collect all location IDs under this district
+    const locationIds = district.locations.map((loc) => loc._id);
+
+    // ✅ Fetch comments belonging to those locations
+    const comments = await Comment.find({ location: { $in: locationIds } })
+      .populate("user", "name profileImage")
+      .populate("location", "name")
+      .sort({ createdAt: -1 });
+
+    res.json(comments);
+  } catch (err) {
+    console.error("Get District Comments Error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

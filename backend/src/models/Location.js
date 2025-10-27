@@ -8,6 +8,7 @@ const locationSchema = new mongoose.Schema(
     subtitle: { type: String },
     points: [{ type: String }],
     images: [{ type: String }],
+    terrain: { type: String },
 
     // GeoJSON coordinates
     coordinates: {

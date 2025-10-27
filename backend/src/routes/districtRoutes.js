@@ -7,7 +7,8 @@ import {
   addLocationToDistrict,
   updateDistrict,
   getNearestDistrict,
-  getDistrictByState, 
+  getDistrictByState,
+  getCommentsForDistrict, 
 } from "../controllers/districtController.js";
 import { protect, adminProtect } from "../middlewares/authMiddleware.js";
 
@@ -21,6 +22,7 @@ const upload = multer({ storage });
 router.get("/", getAllDistricts);
 router.get("/:id", getDistrictById);
 router.get("/state/:state", getDistrictByState); 
+router.get("/:id/comments", getCommentsForDistrict);
 
 // ✅ Get nearest district by coordinates (Public)
 router.get("/nearest/:lat/:lon", getNearestDistrict);

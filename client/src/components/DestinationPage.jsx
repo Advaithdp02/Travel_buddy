@@ -419,154 +419,156 @@ useEffect(() => {
 
       {/* Comments & Contributions */}
       <section className="py-16 px-8 bg-gray-50">
-          <div className="container mx-auto">
-            <h2 className="text-3xl font-bold text-brand-dark mb-6">Community Insights</h2>
+  <div className="container mx-auto">
+    <h2 className="text-3xl font-bold text-brand-dark mb-6">Community Insights</h2>
 
-            {/* Tabs */}
-            <div className="flex gap-6 mb-8 border-b border-gray-200">
-              <button
-                onClick={() => setActiveTab("comments")}
-                className={`pb-2 font-semibold transition-colors ${
-                  activeTab === "comments"
-                    ? "border-b-2 border-brand-yellow text-brand-dark"
-                    : "text-brand-gray"
-                }`}
-              >
-                Comments
-              </button>
-              <button
-                onClick={() => setActiveTab("contributions")}
-                className={`pb-2 font-semibold transition-colors ${
-                  activeTab === "contributions"
-                    ? "border-b-2 border-brand-yellow text-brand-dark"
-                    : "text-brand-gray"
-                }`}
-              >
-                Contributions
-              </button>
-            </div>
+    {/* Tabs */}
+    <div className="flex gap-6 mb-8 border-b border-gray-200">
+      <button
+        onClick={() => setActiveTab("comments")}
+        className={`pb-2 font-semibold transition-colors ${
+          activeTab === "comments"
+            ? "border-b-2 border-brand-yellow text-brand-dark"
+            : "text-brand-gray"
+        }`}
+      >
+        Comments
+      </button>
+      <button
+        onClick={() => setActiveTab("contributions")}
+        className={`pb-2 font-semibold transition-colors ${
+          activeTab === "contributions"
+            ? "border-b-2 border-brand-yellow text-brand-dark"
+            : "text-brand-gray"
+        }`}
+      >
+        Contributions
+      </button>
+    </div>
 
-            {/* Tab Content */}
-            <div className="relative overflow-hidden">
-              <div
-                className="flex transition-transform duration-500"
-                style={{
-                  transform:
-                    activeTab === "comments" ? "translateX(0%)" : "translateX(-50%)",
-                  width: "200%",
-                }}
-              >
-                {/* -------------------- COMMENTS TAB -------------------- */}
-                <div className="w-full pr-6">
-                  <div className="space-y-4">
-                    {comments.length === 0 && (
-                      <div className="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center">
-                        <span className="text-gray-500">No comments yet</span>
-                        <button
-                          className="bg-brand-yellow text-brand-dark font-semibold py-1 px-3 rounded"
-                          onClick={() => setIsModalOpen(true)}
-                        >
-                          Add Comment
-                        </button>
-                      </div>
-                    )}
+    {/* Tab Content */}
+    <div className="relative overflow-hidden">
+      <div
+        className="flex transition-transform duration-500"
+        style={{
+          transform:
+            activeTab === "comments" ? "translateX(0%)" : "translateX(-50%)",
+          width: "200%",
+        }}
+      >
+        {/* -------------------- COMMENTS TAB -------------------- */}
+        <div className="w-full pr-6">
+          <div className="space-y-4 h-[300px] overflow-y-auto">
+            {comments.length === 0 && (
+              <div className="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center">
+                <span className="text-gray-500">No comments yet</span>
+                <button
+                  className="bg-brand-yellow text-brand-dark font-semibold py-1 px-3 rounded"
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  Add Comment
+                </button>
+              </div>
+            )}
 
-                    {comments.length > 0 &&
-                      comments.slice(0, 3).map((c, index) => (
-                        <div
-                          key={c._id || index}
-                          className="bg-white p-4 rounded-xl shadow border border-gray-100 cursor-pointer flex gap-3"
-                          onClick={() => setIsModalOpen(true)}
-                        >
-                          {/* Profile Picture */}
-                          {c.user?.profilePic && (
-                            <img
-                              src={c.user.profilePic}
-                              alt={c.user.name || c.user.username}
-                              className="w-10 h-10 rounded-full object-cover"
-                            />
-                          )}
+            {comments.length > 0 &&
+              comments.map((c, index) => (
+                <div
+                  key={c._id || index}
+                  className="bg-white p-4 rounded-xl shadow border border-gray-100 cursor-pointer flex gap-3 hover:shadow-md transition"
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  {/* Profile Picture */}
+                  {c.user?.profilePic && (
+                    <img
+                      src={c.user.profilePic}
+                      alt={c.user.name || c.user.username}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  )}
 
-                          <div className="flex-1">
-                            <p className="text-sm text-brand-dark font-semibold">
-                              {c.user?.name || c.user?.username || "Unknown User"}
-                            </p>
-                            <p className="text-gray-600 text-sm mt-1">{c.text}</p>
-                          </div>
-                        </div>
-                      ))}
-
-                    {comments.length > 0 && comments.length <= 3 && (
-                      <button
-                        className="bg-brand-yellow text-brand-dark font-semibold py-2 px-4 rounded mt-2"
-                        onClick={() => setIsModalOpen(true)}
-                      >
-                        Add Comment
-                      </button>
-                    )}
+                  <div className="flex-1">
+                    <p className="text-sm text-brand-dark font-semibold">
+                      {c.user?.name || c.user?.username || "Unknown User"}
+                    </p>
+                    <p className="text-gray-600 text-sm mt-1">{c.text}</p>
                   </div>
                 </div>
+              ))}
 
-                {/* -------------------- CONTRIBUTIONS TAB -------------------- */}
-                <div className="w-full pl-6">
-  <div className="space-y-4">
-    {contributions.length === 0 ? (
-      <div className="bg-white p-4 rounded-xl shadow border border-gray-100 text-gray-500">
-        No contributions yet
-      </div>
-    ) : (
-      contributions.slice(0, 3).map((c, index) => (
-        <div
-          key={c._id || index}
-          className="bg-white p-4 rounded-xl shadow border border-gray-100 cursor-pointer hover:shadow-md transition"
-          onClick={() => setIsModalOpen(true)}
-        >
-          {/* Cover Image */}
-          {c.coverImage && (
-            <img
-              src={c.coverImage}
-              alt="Contribution cover"
-              className="w-full h-40 object-cover rounded-lg mb-3"
-            />
-          )}
-
-          {/* Description / Preview */}
-          <h4 className="font-semibold text-brand-dark text-lg">
-            {c.location?.name || "Contribution"}
-          </h4>
-          <p className="text-gray-600 text-sm mt-1 line-clamp-2">
-            {c.description || "No description provided."}
-          </p>
-
-          {/* Meta Info */}
-          <div className="text-xs text-brand-gray mt-2 flex justify-between items-center">
-            <span>
-              Shared by{" "}
-              <strong>
-                {c.user?.name || c.user?.username || "Unknown User"}
-              </strong>
-            </span>
-            {c.bestTimeToVisit && (
-              <span className="text-[11px] text-gray-500 italic">
-                Best time: {c.bestTimeToVisit}
-              </span>
+            {comments.length > 0 && comments.length <= 3 && (
+              <button
+                className="bg-brand-yellow text-brand-dark font-semibold py-2 px-4 rounded mt-2"
+                onClick={() => setIsModalOpen(true)}
+              >
+                Add Comment
+              </button>
             )}
           </div>
+        </div>
 
-          {/* Likes */}
-          <div className="mt-2 text-xs text-gray-500">
-            ❤️ {c.likes?.length || 0} {c.likes?.length === 1 ? "like" : "likes"}
+        {/* -------------------- CONTRIBUTIONS TAB -------------------- */}
+        <div className="w-full pl-6">
+          <div className="space-y-4 h-[300px] overflow-y-auto">
+            {contributions.length === 0 ? (
+              <div className="bg-white p-4 rounded-xl shadow border border-gray-100 text-gray-500">
+                No contributions yet
+              </div>
+            ) : (
+              contributions.map((c, index) => (
+                <div
+                  key={c._id || index}
+                  className="bg-white p-4 rounded-xl shadow border border-gray-100 cursor-pointer hover:shadow-md transition"
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  {/* Cover Image */}
+                  {c.coverImage && (
+                    <img
+                      src={c.coverImage}
+                      alt="Contribution cover"
+                      className="w-full h-32 object-cover rounded-lg mb-3"
+                    />
+                  )}
+
+                  {/* Description / Preview */}
+                  <h4 className="font-semibold text-brand-dark text-lg">
+                    {c.location?.name || "Contribution"}
+                  </h4>
+                  <p className="text-gray-600 text-sm mt-1 line-clamp-2">
+                    {c.description || "No description provided."}
+                  </p>
+
+                  {/* Meta Info */}
+                  <div className="text-xs text-brand-gray mt-2 flex justify-between items-center">
+                    <span>
+                      Shared by{" "}
+                      <strong>
+                        {c.user?.name || c.user?.username || "Unknown User"}
+                      </strong>
+                    </span>
+                    {c.bestTimeToVisit && (
+                      <span className="text-[11px] text-gray-500 italic">
+                        Best time: {c.bestTimeToVisit}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Likes */}
+                  <div className="mt-2 text-xs text-gray-500">
+                    ❤️ {c.likes?.length || 0}{" "}
+                    {c.likes?.length === 1 ? "like" : "likes"}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
-      ))
-    )}
+      </div>
+    </div>
   </div>
-</div>
+</section>
 
-              </div>
-            </div>
-          </div>
-        </section>
+
 
 
           <CommunityModal
@@ -579,42 +581,99 @@ useEffect(() => {
 
 
       {/* Filter & Places Section */}
-      <section className="bg-brand-light-purple py-12 px-8">
-        <div className="container mx-auto">
-          <div className="bg-brand-dark rounded-xl p-6 flex flex-wrap items-center justify-between gap-4 mb-10">
-            <span className="text-white text-2xl font-bold">Filter</span>
-            <div className="flex-grow flex flex-wrap items-center gap-4">
-              <select
-                className="flex-grow bg-white p-3 rounded-lg w-full sm:w-auto"
-                value={filters.state}
-                onChange={(e) => setFilters({ ...filters, state: e.target.value })}
-              >
-                <option>Kerala</option>
-              </select>
-              <select
-                className="flex-grow bg-white p-3 rounded-lg w-full sm:w-auto"
-                value={filters.district}
-                onChange={(e) => setFilters({ ...filters, district: e.target.value })}
-              >
-                {allDistricts.map((district) => (
-                  <option key={district._id} value={district.name}>
-                    {district.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="flex-grow bg-white p-3 rounded-lg w-full sm:w-auto"
-                value={filters.terrain}
-                onChange={(e) => setFilters({ ...filters, terrain: e.target.value })}
-              >
-                <option>Mountain</option>
-                <option>Hill</option>
-              </select>
-            </div>
-            <button className="bg-brand-yellow text-brand-dark font-bold py-3 px-8 rounded-lg w-full sm:w-auto">
-              SEARCH
-            </button>
-          </div>
+      {/* 🌍 Filter Section */}
+<section className="bg-brand-light-purple py-12 px-8">
+  <div className="container mx-auto">
+    <div className="bg-brand-dark rounded-xl p-6 flex flex-wrap items-center justify-between gap-4 mb-10">
+      <span className="text-white text-2xl font-bold">Filter</span>
+      <div className="flex-grow flex flex-wrap items-center gap-4">
+        {/* 🏠 State Selector */}
+        <select
+          className="flex-grow bg-white p-3 rounded-lg w-full sm:w-auto"
+          value={filters.state}
+          onChange={(e) => {
+            const selectedState = e.target.value;
+            setFilters({
+              ...filters,
+              state: selectedState,
+              district: "", // reset district
+            });
+          }}
+        >
+          <option value="">Select State</option>
+          {[
+            "Andhra Pradesh",
+            "Arunachal Pradesh",
+            "Assam",
+            "Bihar",
+            "Chhattisgarh",
+            "Goa",
+            "Gujarat",
+            "Haryana",
+            "Himachal Pradesh",
+            "Jharkhand",
+            "Karnataka",
+            "Kerala",
+            "Madhya Pradesh",
+            "Maharashtra",
+            "Manipur",
+            "Meghalaya",
+            "Mizoram",
+            "Nagaland",
+            "Odisha",
+            "Punjab",
+            "Rajasthan",
+            "Sikkim",
+            "Tamil Nadu",
+            "Telangana",
+            "Tripura",
+            "Uttar Pradesh",
+            "Uttarakhand",
+            "West Bengal",
+            "Delhi",
+            "Jammu and Kashmir",
+            "Ladakh",
+          ].map((state) => (
+            <option key={state} value={state}>
+              {state}
+            </option>
+          ))}
+        </select>
+
+        {/* 📍 District Selector */}
+        <select
+          className="flex-grow bg-white p-3 rounded-lg w-full sm:w-auto"
+          value={filters.district}
+          onChange={(e) => setFilters({ ...filters, district: e.target.value })}
+        >
+          <option value="">Select District</option>
+          {allDistricts
+            .filter((d) => d.State === filters.state)
+            .map((district) => (
+              <option key={district._id} value={district.name}>
+                {district.name}
+              </option>
+            ))}
+        </select>
+
+        {/* 🏔 Terrain */}
+        <select
+          className="flex-grow bg-white p-3 rounded-lg w-full sm:w-auto"
+          value={filters.terrain}
+          onChange={(e) => setFilters({ ...filters, terrain: e.target.value })}
+        >
+          <option>Mountain</option>
+          <option>Hill</option>
+          <option>Coastal</option>
+          <option>Plain</option>
+        </select>
+      </div>
+
+      <button className="bg-brand-yellow text-brand-dark font-bold py-3 px-8 rounded-lg w-full sm:w-auto">
+        SEARCH
+      </button>
+    </div>
+
 
           <div className="relative w-full">
   {/* Horizontal Scroll Container */}
