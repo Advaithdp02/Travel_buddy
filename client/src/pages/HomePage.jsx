@@ -10,7 +10,11 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 // ------------------------------
 // Custom Hook: useGeolocation
 // ------------------------------
-function useGeolocation({ enableFallback = true, ipFallbackUrl = "https://ipapi.co/json/" } = {}) {
+function useGeolocation({
+  enableFallback = true,
+  ipFallbackUrl = "https://ipapi.co/json/",
+  refreshInterval = 2 * 60 * 1000 // 2 minutes in ms
+} = {}) {
   const [coords, setCoords] = useState(null);
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState(null);
@@ -64,8 +68,10 @@ function useGeolocation({ enableFallback = true, ipFallbackUrl = "https://ipapi.
   }, [enableFallback, fallbackToIP]);
 
   useEffect(() => {
-    requestGeolocation();
-  }, [requestGeolocation]);
+    requestGeolocation(); // initial request
+    const interval = setInterval(requestGeolocation, refreshInterval); // repeat every 2 mins
+    return () => clearInterval(interval); // cleanup on unmount
+  }, [requestGeolocation, refreshInterval]);
 
   return { coords, status, error };
 }
@@ -102,7 +108,7 @@ export const HomePage = () => {
       <Home nearestLocation={nearestLocation} />
       <AboutUs />
       <Service />
-      <TopDestinations />
+      <TopDestinations userCoords={coords} />
       <BlogSection />
     </div>
   );

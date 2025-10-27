@@ -31,6 +31,8 @@ export default function AdminLocations() {
     description: "",
     longitude: "",
     latitude: "",
+    subtitle: "",
+    points: [],
     images: [],
     existingImages: [],
   });
@@ -93,6 +95,8 @@ export default function AdminLocations() {
       name: loc.name,
       district: loc.district?._id || "",
       description: loc.description,
+      subtitle: loc.subtitle || "",
+      points: loc.points ? loc.points.join(",") : "",
       longitude: loc.coordinates?.coordinates[0] || "",
       latitude: loc.coordinates?.coordinates[1] || "",
       images: [],
@@ -111,6 +115,13 @@ export default function AdminLocations() {
         "coordinates",
         JSON.stringify([parseFloat(formData.longitude), parseFloat(formData.latitude)])
       );
+      data.append("subtitle", formData.subtitle);
+      const pointsArray = formData.points.split(',').map(p => p.trim()); // split string into array and remove extra spaces
+
+      pointsArray.forEach(point => {
+        data.append("points", point);
+      });
+
 
       if (formData.images?.length > 0) {
         for (const file of formData.images) {
@@ -262,7 +273,26 @@ export default function AdminLocations() {
             value={formData.description}
             onChange={handleFormChange}
           />
-
+          <TextField
+            label="Subtitle"
+            name="subtitle"
+            fullWidth
+            margin="dense"
+            multiline
+            minRows={3}
+            value={formData.subtitle}
+            onChange={handleFormChange}
+          />
+          <TextField
+            label="Points(seperated with commas)"
+            name="points"
+            fullWidth
+            margin="dense"
+            multiline
+            minRows={3}
+            value={formData.points}
+            onChange={handleFormChange}
+          />
           <Box className="flex gap-2 mt-2">
             <TextField
               label="Longitude"

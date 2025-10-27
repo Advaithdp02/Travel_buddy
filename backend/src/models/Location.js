@@ -5,6 +5,8 @@ const locationSchema = new mongoose.Schema(
     name: { type: String, required: true },
     district: { type: mongoose.Schema.Types.ObjectId, ref: "District", required: true },
     description: { type: String },
+    subtitle: { type: String },
+    points: [{ type: String }],
     images: [{ type: String }],
 
     // GeoJSON coordinates

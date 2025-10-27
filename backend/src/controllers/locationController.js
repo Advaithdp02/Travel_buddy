@@ -96,7 +96,7 @@ export const getLocationById = async (req, res) => {
 // Create new location (Admin only)
 export const createLocation = async (req, res) => {
   try {
-    const { name, district, description, coordinates } = req.body;
+    const { name, district, description, coordinates,subtitle,points } = req.body;
 
     // Find district
     const dist = await District.findById(district);
@@ -139,6 +139,8 @@ export const createLocation = async (req, res) => {
       name,
       district,
       description,
+      subtitle,
+      points,
       coordinates: coordinatesObj,
       images,
     });
@@ -163,12 +165,14 @@ export const updateLocation = async (req, res) => {
     const location = await Location.findById(req.params.id).populate("district");
     if (!location) return res.status(404).json({ message: "Location not found" });
 
-    const { name, district, description, coordinates, images: clearImagesFlag } = req.body;
+    const { name, district, description, coordinates, images: clearImagesFlag ,subtitle,points} = req.body;
 
     // Update basic fields
     if (name) location.name = name;
     if (description) location.description = description;
     if (district) location.district = district;
+    if (subtitle) location.subtitle = subtitle;
+    if (points) location.points = points;
 
     // Update coordinates if provided
     if (coordinates) {

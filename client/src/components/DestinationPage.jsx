@@ -36,6 +36,7 @@ export const DestinationPage = ({  }) => {
     heading: "",
     subHeading: "",
     description: "",
+    subtitle: "",
     points: [],
     rating: 4.8,
     reviews: 836,
@@ -50,8 +51,6 @@ export const DestinationPage = ({  }) => {
   ]);
 
   const [contributions, setContributions] = useState([
-    { user: "Anita", title: "Best Time to Visit", detail: "Early morning before 9 AM gives the best views." },
-    { user: "Suresh", title: "Travel Tip", detail: "Carry water bottles and wear proper shoes for the trek." }
   ]);
 
   // Places, Hotels, Nearby Places
@@ -205,10 +204,11 @@ useEffect(() => {
         heading: `About ${data.name}`,
         subHeading: `Explore the beauty of ${data.name}`,
         description: data.description || "No description available",
-        points: ["Stunning views", "Great for trekking", "Photographer's paradise"],
+        points: data.points || [],
         rating: 4.5,
         reviews: data.comments?.length || 0,
         images: data.images.slice(0, 2),
+        subtitle: data.subtitle || "A Window to Wayanad's Scenic Splendor"
       });
 
       // Community & Contributions

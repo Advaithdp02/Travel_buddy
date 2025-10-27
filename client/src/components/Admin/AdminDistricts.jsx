@@ -9,21 +9,30 @@ import {
   TextField,
   Modal,
   Grid,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
 } from "@mui/material";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default function AdminDistricts() {
   const [districts, setDistricts] = useState([]);
+  const [filteredDistricts, setFilteredDistricts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     _id: null,
     name: "",
+    State: "",
     image: null,
     existingImage: "",
   });
+
+  const [states, setStates] = useState([]);
+  const [selectedState, setSelectedState] = useState("");
 
   const token = localStorage.getItem("token");
 
@@ -33,6 +42,10 @@ export default function AdminDistricts() {
       try {
         const res = await axios.get(`${BACKEND_URL}/districts`);
         setDistricts(res.data);
+
+        // Extract unique states for dropdown
+        const uniqueStates = [...new Set(res.data.map((d) => d.State))];
+        setStates(uniqueStates);
       } catch (err) {
         console.error("Failed to fetch districts:", err);
       } finally {
@@ -41,6 +54,15 @@ export default function AdminDistricts() {
     };
     fetchDistricts();
   }, []);
+
+  // ---------------- Filter districts by state ----------------
+  useEffect(() => {
+    if (selectedState) {
+      setFilteredDistricts(districts.filter((d) => d.State === selectedState));
+    } else {
+      setFilteredDistricts(districts);
+    }
+  }, [selectedState, districts]);
 
   // ---------------- CRUD Handlers ----------------
   const handleDelete = async (id) => {
@@ -68,6 +90,7 @@ export default function AdminDistricts() {
     setFormData({
       _id: district._id,
       name: district.name,
+      State: district.State,
       image: null,
       existingImage: district.imageURL || "",
     });
@@ -78,9 +101,8 @@ export default function AdminDistricts() {
     try {
       const data = new FormData();
       data.append("name", formData.name);
-      if (formData.image) {
-        data.append("image", formData.image);
-      }
+      data.append("State", formData.State);
+      if (formData.image) data.append("image", formData.image);
 
       let res;
       if (formData._id) {
@@ -102,12 +124,7 @@ export default function AdminDistricts() {
       }
 
       setOpen(false);
-      setFormData({
-        _id: null,
-        name: "",
-        image: null,
-        existingImage: "",
-      });
+      setFormData({ _id: null, name: "", State: "", image: null, existingImage: "" });
     } catch (err) {
       console.error("Submit failed:", err);
     }
@@ -117,16 +134,33 @@ export default function AdminDistricts() {
 
   return (
     <Box className="p-6 bg-gray-100 min-h-screen">
-      <Typography variant="h4" className="mb-6 font-bold">
+      <Typography variant="h4" className="mb-6 font-bold flex gap-2 ">
         Manage Districts
       </Typography>
+
+      {/* State Filter */}
+      <FormControl fullWidth className="mb-4">
+        <InputLabel>Select State</InputLabel>
+        <Select
+          value={selectedState}
+          label="Select State"
+          onChange={(e) => setSelectedState(e.target.value)}
+        >
+          <MenuItem value="">All States</MenuItem>
+          {states.map((state) => (
+            <MenuItem key={state} value={state}>
+              {state}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
       <Button variant="contained" onClick={() => setOpen(true)} className="mb-4">
         + Add New District
       </Button>
 
       <Grid container spacing={4}>
-        {districts.map((district) => (
+        {filteredDistricts.map((district) => (
           <Grid item xs={12} sm={6} md={4} key={district._id}>
             <Card className="shadow-md rounded-xl bg-white overflow-hidden">
               {district.imageURL && (
@@ -138,6 +172,9 @@ export default function AdminDistricts() {
               )}
               <CardContent>
                 <Typography variant="h6">{district.name}</Typography>
+                <Typography variant="body2" color="textSecondary">
+                  {district.State}
+                </Typography>
 
                 <Box className="flex gap-2 mt-4">
                   <Button
@@ -177,7 +214,30 @@ export default function AdminDistricts() {
             onChange={handleFormChange}
           />
 
-          <input type="file" name="image" accept="image/*" onChange={handleFormChange} className="mt-2" />
+          {/* State Dropdown */}
+          <FormControl fullWidth margin="dense">
+            <InputLabel>State</InputLabel>
+            <Select
+              name="State"
+              value={formData.State}
+              onChange={handleFormChange}
+              label="State"
+            >
+              {states.map((state) => (
+                <MenuItem key={state} value={state}>
+                  {state}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <input
+            type="file"
+            name="image"
+            accept="image/*"
+            onChange={handleFormChange}
+            className="mt-2"
+          />
 
           {formData.existingImage && (
             <Box className="flex gap-2 mt-2">
