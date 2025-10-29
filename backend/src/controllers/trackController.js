@@ -48,7 +48,7 @@ export const trackVisit = async (req, res) => {
 };
 
 // GET /api/track/stats - optional analytics
-// GET /api/track/stats - detailed analytics
+
 export const getStats = async (req, res) => {
   try {
     // Overall stats
@@ -141,5 +141,39 @@ export const getStats = async (req, res) => {
   } catch (err) {
     console.error("Stats error:", err);
     res.status(500).json({ success: false, message: "Failed to fetch stats" });
+  }
+};
+
+export const recordExit = async (req, res) => {
+  try {
+    const {
+      sessionId,
+      userId,
+      location,
+      district,
+      timeSpent,
+      exitReason,
+      isSiteExit,
+    } = req.body;
+
+    if (!sessionId || !location) {
+      return res.status(400).json({ success: false, message: "Missing sessionId or location" });
+    }
+    console.log("Exit tracking data received:", req.body);
+    const visit = await PageVisit.create({
+      user: new mongoose.Types.ObjectId(req.body.user),
+      sessionId,
+      location,
+      district: district || "Unknown",
+      timeSpent: timeSpent || 0,
+      isAnonymous: !userId,
+      exitReason: exitReason || "unknown",
+      isSiteExit: isSiteExit || false,
+    });
+
+    return res.status(201).json({ success: true, visit });
+  } catch (err) {
+    console.error("Exit tracking error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

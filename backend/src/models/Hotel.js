@@ -31,6 +31,9 @@ const hotelSchema = new mongoose.Schema({
       type: [Number], // [longitude, latitude]
       required: true,
     },
+    link : {
+      type: String, 
+    }
   },
   createdAt: {
     type: Date,

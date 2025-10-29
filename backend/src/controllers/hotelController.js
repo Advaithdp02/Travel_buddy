@@ -32,7 +32,7 @@ export const getHotelById = async (req, res) => {
 // ------------------ Create new hotel ------------------
 export const createHotel = async (req, res) => {
   try {
-    const { name, location, district, coordinates, locationId } = req.body;
+    const { name, location, district, coordinates, locationId ,link} = req.body;
 
     // Validate district
     let dist = null;
@@ -75,6 +75,7 @@ export const createHotel = async (req, res) => {
       locationId: locationId || null,
       coordinates: coords,
       img: imgUrl,
+      link:link,
     });
 
     await hotel.save();
@@ -91,12 +92,13 @@ export const updateHotel = async (req, res) => {
     const hotel = await Hotel.findById(req.params.id);
     if (!hotel) return res.status(404).json({ message: "Hotel not found" });
 
-    const { name, location, district, coordinates } = req.body;
+    const { name, location, district, coordinates,link } = req.body;
 
     if (name) hotel.name = name;
     if (location) hotel.location = location;
     if (district) hotel.district = district;
     if (coordinates) hotel.coordinates = typeof coordinates === "string" ? JSON.parse(coordinates) : coordinates;
+    if(link) hotel.link=link;
 
     // Handle new image upload
     if (req.files && req.files.length > 0) {

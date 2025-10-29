@@ -15,7 +15,7 @@ import {
 } from './Icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { CommunityModal } from './CommunityModal';
-import usePageTimeTracker from '../hooks/usePageTimeTracker';
+
 
 import axios from 'axios';
 
@@ -23,7 +23,7 @@ const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
 const Backend_URL = import.meta.env.VITE_BACKEND_URL;
 
 export const DestinationPage = ({  }) => {
-  usePageTimeTracker();
+  
   const [activeTab, setActiveTab] = useState("comments");
   const locationId = useParams();
   const[isModalOpen,setIsModalOpen] = useState(false);
@@ -59,7 +59,7 @@ export const DestinationPage = ({  }) => {
   ]);
 
   const [hotels, setHotels] = useState([
-    { name: "DoubleTree by Hilton Hotel Orlando at SeaWorld", location: "Millumukku, Kaniyambetta, Wayanad, Kerala", distance: "15.2 km from centre", rating: 4.8, img: "https://picsum.photos/seed/hotel1/150/100" },
+    { name: "DoubleTree by Hilton Hotel Orlando at SeaWorld with liunk", location: "Millumukku, Kaniyambetta, Wayanad, Kerala", distance: "15.2 km from centre", rating: 4.8, img: "https://picsum.photos/seed/hotel1/150/100",link:"https://www.hilton.com/en/hotels/orldtddoubletree-orlando-at-seaworld/" },
     { name: "DoubleTree by Hilton Hotel Orlando at SeaWorld", location: "Millumukku, Kaniyambetta, Wayanad, Kerala", distance: "15.2 km from centre", rating: 4.8, img: "https://picsum.photos/seed/hotel2/150/100" },
     { name: "DoubleTree by Hilton Hotel Orlando at SeaWorld", location: "Millumukku, Kaniyambetta, Wayanad, Kerala", distance: "15.2 km from centre", rating: 4.8, img: "https://picsum.photos/seed/hotel3/150/100" },
      { name: "DoubleTree by Hilton Hotel Orlando at SeaWorld", location: "Millumukku, Kaniyambetta, Wayanad, Kerala", distance: "15.2 km from centre", rating: 4.8, img: "https://picsum.photos/seed/hotel3/150/100" },
@@ -180,6 +180,12 @@ const origin = { lat: userCoords.latitude, lon: userCoords.longitude };
 
   }, [filters.district]);
 useEffect(() => {
+  let sessionId = localStorage.getItem("sessionId");
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem("sessionId", sessionId);
+  }
+
   const fetchLocationData = async () => {
     try {
       // Fetch all districts
@@ -314,7 +320,43 @@ useEffect(() => {
   }
 };
  
-  
+ const handleExternalLinkClick = async (url, hotel) => {
+  const sessionId = localStorage.getItem("sessionId");
+  let userId = localStorage.getItem("userId");
+  if (!userId) {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        userId = JSON.parse(storedUser)._id;
+      } catch {
+        userId = null;
+      }
+    }
+  }
+
+  console.log("📦 Tracking userId:", userId);
+  try {
+    await fetch(`${Backend_URL}/track/exit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user: userId,
+        sessionId,
+        exitReason: `Clicked on ${hotel.name}`,
+        destinationUrl: url,
+        location: about.heading,
+        timestamp: new Date().toISOString(),
+        isSiteExit: true,
+        isAnonymous: !userId,
+      }),
+    });
+  } catch (err) {
+    console.error("Error logging external exit:", err);
+  } finally {
+    window.open(url, "_blank");
+  }
+};
+
   return (
     <div className='pl-[80px] pr-[80px] pt-[40px]'>
       
@@ -941,7 +983,10 @@ useEffect(() => {
           <div className="flex items-center bg-yellow-400 text-gray-900 font-bold px-2 py-1 rounded-md">
             <StarIcon className="w-3 h-3 mr-1" /> {hotel.rating}
           </div>
-          <button className="bg-brand-dark text-white font-semibold py-2 px-5 rounded-lg text-sm">
+          <button className="bg-brand-dark text-white font-semibold py-2 px-5 rounded-lg text-sm" onClick={()=>{handleExternalLinkClick(
+      hotel.link,
+      hotel
+    )}}>
             View More
           </button>
         </div>

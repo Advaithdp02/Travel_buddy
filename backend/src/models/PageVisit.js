@@ -36,7 +36,10 @@ const pageVisitSchema = new mongoose.Schema(
     isAnonymous: {
       type: Boolean,
       default: true
-    }
+    },
+    exitReason: { type: String, default: "unknown" },
+isSiteExit: { type: Boolean, default: false }
+
   },
   { timestamps: true }
 );
