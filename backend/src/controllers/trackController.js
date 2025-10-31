@@ -1,5 +1,6 @@
 import PageVisit from "../models/PageVisit.js";
 import Location from "../models/Location.js";
+import User from "../models/User.js"
 import mongoose from "mongoose";
 
 // POST /api/track
@@ -174,6 +175,121 @@ export const recordExit = async (req, res) => {
     return res.status(201).json({ success: true, visit });
   } catch (err) {
     console.error("Exit tracking error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// GET /api/track/user-stats
+
+export const getUserStats = async (req, res) => {
+  try {
+    const stats = await PageVisit.aggregate([
+      {
+        $group: {
+          _id: "$user",
+          totalVisits: { $sum: 1 },
+          totalTimeSpent: { $sum: "$timeSpent" },
+          uniqueLocations: { $addToSet: "$location" },
+          uniqueDistricts: { $addToSet: "$district" },
+        },
+      },
+      { $sort: { totalVisits: -1 } },
+    ]);
+
+    // --- populate usernames ---
+    const populatedStats = await Promise.all(
+      stats.map(async (item) => {
+        if (item._id) {
+          const user = await User.findById(item._id).select("username");
+          return {
+            ...item,
+            user: item._id,
+            username: user ? user.username : "Unknown User",
+          };
+        } else {
+          return {
+            ...item,
+            user: null,
+            username: "Anonymous",
+          };
+        }
+      })
+    );
+
+    res.json({ success: true, data: populatedStats });
+  } catch (err) {
+    console.error("Error fetching user stats:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch user stats" });
+  }
+};
+// GET /api/track/user-details/:userId
+export const getUserDetails = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Determine if it's an anonymous user or logged-in user
+    const matchStage =
+      userId === "anonymous"
+        ? { user: null }
+        : { user: new mongoose.Types.ObjectId(userId) };
+
+    // Fetch all visit records for that user
+    const visits = await PageVisit.aggregate([
+      { $match: matchStage },
+      {
+        $project: {
+          _id: 0,
+          location: 1,
+          district: 1,
+          timeSpent: 1,
+          visitedAt: 1,
+          exitReason: 1,
+          isSiteExit: 1,
+        },
+      },
+      { $sort: { visitedAt: -1 } }, // latest visit first
+    ]);
+
+    if (!visits.length) {
+      return res.json({ success: true, data: [] });
+    }
+
+    res.json({ success: true, data: visits });
+  } catch (err) {
+    console.error("User details error:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch user details" });
+  }
+};
+
+// GET /api/track/location-stats
+export const getLocationStats = async (req, res) => {
+  try {
+    const locationStats = await PageVisit.aggregate([
+      {
+        $group: {
+          _id: "$location",
+          totalVisits: { $sum: 1 },
+          totalTimeSpent: { $sum: "$timeSpent" },
+          avgTimeSpent: { $avg: "$timeSpent" },
+          uniqueUsers: { $addToSet: "$user" }, 
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          location: "$_id",
+          totalVisits: 1,
+          totalTimeSpent: 1,
+          avgTimeSpent: { $round: ["$avgTimeSpent", 2] },
+          uniqueUsersCount: { $size: "$uniqueUsers" },
+        },
+      },
+      { $sort: { totalVisits: -1 } },
+    ]);
+
+    res.status(200).json({ success: true, data: locationStats });
+  } catch (err) {
+    console.error("Error fetching location stats:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };

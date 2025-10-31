@@ -10,14 +10,19 @@ import {
   Box,
   CircularProgress,
   Alert,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
 
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState([]); // always an array
+  const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]); // 👈 filtered list
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // for error handling
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState(""); // 👈 search term
 
   const token = localStorage.getItem("token");
 
@@ -29,13 +34,12 @@ export default function AdminUsers() {
         const res = await axios.get(`${BACKEND_URL}/users/admin/users`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        
 
-        // Ensure users is always an array
         const usersArray = Array.isArray(res.data)
           ? res.data
           : res.data.users || [];
         setUsers(usersArray);
+        setFilteredUsers(usersArray); // initialize filtered list
       } catch (err) {
         console.error("Failed to fetch users:", err);
         setError("Failed to fetch users. Please try again later.");
@@ -47,6 +51,22 @@ export default function AdminUsers() {
     fetchUsers();
   }, [token]);
 
+  // ---------------- Search Filter ----------------
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredUsers(users);
+      return;
+    }
+
+    const lowerSearch = searchTerm.toLowerCase();
+    const filtered = users.filter(
+      (u) =>
+        u.name?.toLowerCase().includes(lowerSearch) ||
+        u.email?.toLowerCase().includes(lowerSearch)
+    );
+    setFilteredUsers(filtered);
+  }, [searchTerm, users]);
+
   // ---------------- Delete User ----------------
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
@@ -54,7 +74,9 @@ export default function AdminUsers() {
       await axios.delete(`${BACKEND_URL}/users/admin/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUsers(users.filter((u) => u._id !== id));
+      const updatedUsers = users.filter((u) => u._id !== id);
+      setUsers(updatedUsers);
+      setFilteredUsers(updatedUsers);
     } catch (err) {
       console.error("Delete failed:", err);
       alert("Failed to delete user. Try again.");
@@ -72,9 +94,11 @@ export default function AdminUsers() {
         }
       );
 
-      // Update the local user array
-      setUsers((prevUsers) =>
-        prevUsers.map((u) => (u._id === id ? res.data.user || u : u))
+      setUsers((prev) =>
+        prev.map((u) => (u._id === id ? res.data.user || u : u))
+      );
+      setFilteredUsers((prev) =>
+        prev.map((u) => (u._id === id ? res.data.user || u : u))
       );
     } catch (err) {
       console.error("Role update failed:", err);
@@ -98,16 +122,34 @@ export default function AdminUsers() {
     );
 
   return (
-    <Box className="p-6 bg-gray-100 min-h-screen">
-      <Typography variant="h4" className="mb-6 font-bold">
+    <Box className="p-6 bg-gray-100 min-h-screen space-y-6">
+      <Typography variant="h4" className="font-bold">
         Manage Users
       </Typography>
 
-      {users.length === 0 ? (
+      {/* 🔍 Search Bar */}
+      <Box className="flex justify-end mb-4">
+        <TextField
+          size="small"
+          placeholder="Search by name or email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          sx={{ width: 300 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon color="action" />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+
+      {filteredUsers.length === 0 ? (
         <Typography>No users found.</Typography>
       ) : (
         <div className="grid gap-4">
-          {users.map((user) => (
+          {filteredUsers.map((user) => (
             <Card key={user._id} className="shadow-md rounded-xl bg-white">
               <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <Box>
@@ -124,9 +166,7 @@ export default function AdminUsers() {
                   <Select
                     size="small"
                     value={user.role}
-                    onChange={(e) =>
-                      handleRoleChange(user._id, e.target.value)
-                    }
+                    onChange={(e) => handleRoleChange(user._id, e.target.value)}
                   >
                     <MenuItem value="user">User</MenuItem>
                     <MenuItem value="staff">Staff</MenuItem>

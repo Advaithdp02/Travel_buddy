@@ -77,16 +77,16 @@ setAnalytics({
 
   const menuItems = [
     { id: "home", label: "Home", icon: <HomeIcon className="w-5 h-5" /> },
-    { id: "users", label: "Users", icon: <UsersIcon className="w-5 h-5" /> },
     { id: "locations", label: "Locations", icon: <LocationIcon className="w-5 h-5" /> },
     { id: "hotels", label: "Hotels", icon: <HotelIcon className="w-5 h-5" /> },
     { id: "blogs", label: "Blogs", icon: <BlogIcon className="w-5 h-5" /> },
     {id:"contributions", label:"Contributions", icon:<GlobeIcon className="w-5 h-5" />},
     { id: "comments", label: "Comments", icon: <MessageCircleIcon  className="w-5 h-5" /> },
     { id: "districts", label: "Districts", icon: <MapPinOff className="w-5 h-5" /> },
-    // Show Analytics only to admin
+    
     ...(userRole === "admin"
-      ? [{ id: "analytics", label: "Analytics", icon: <AnalyticsIcon className="w-5 h-5" /> }]
+      ? [{ id: "analytics", label: "Analytics", icon: <AnalyticsIcon className="w-5 h-5" /> },
+    { id: "users", label: "Users", icon: <UsersIcon className="w-5 h-5" /> }]
       : []),
   ];
 
