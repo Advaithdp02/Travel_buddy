@@ -7,7 +7,7 @@ import {
   DistanceArrow,
   TimeClock,
   LocationWithTime,
-} from "./Icons"; // adjust path as needed
+} from "./Icons"; 
 import CommunityModal from "../components/CommunityModal";
 
 export const DistrictPage = () => {
@@ -170,10 +170,6 @@ useEffect(() => {
 }, [filters.district]);
 
 
-
-
-  const handleWishlist = () => alert("Added to wishlist!");
-
   if (!district)
     return <div className="text-center py-20 text-gray-600">Loading...</div>;
 
@@ -263,12 +259,7 @@ useEffect(() => {
               ))}
             </ul>
 
-            <button
-              onClick={handleWishlist}
-              className="bg-brand-yellow text-brand-dark font-semibold py-3 px-8 rounded-lg shadow-lg hover:bg-yellow-400 transition-transform transform hover:scale-105"
-            >
-              WishList
-            </button>
+            
           </div>
         </div>
       </section>
@@ -318,12 +309,7 @@ useEffect(() => {
             {comments.length === 0 && (
               <div className="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center">
                 <span className="text-gray-500">No comments yet</span>
-                <button
-                  className="bg-brand-yellow text-brand-dark font-semibold py-1 px-3 rounded"
-                  onClick={() => setIsModalOpen(true)}
-                >
-                  Add Comment
-                </button>
+                
               </div>
             )}
 
@@ -353,12 +339,7 @@ useEffect(() => {
               ))}
 
             {comments.length > 0 && comments.length <= 3 && (
-              <button
-                className="bg-brand-yellow text-brand-dark font-semibold py-2 px-4 rounded mt-2"
-                onClick={() => setIsModalOpen(true)}
-              >
-                Add Comment
-              </button>
+              <></>
             )}
           </div>
         </div>
@@ -431,6 +412,7 @@ useEffect(() => {
         activeTab={activeTab}
         comments={comments}
         contributions={contributions}
+        districtPage={true}
       />
       {/* Filter & Places Section */}
             {/* 🌍 Filter Section */}

@@ -6,19 +6,39 @@ import { uploadToS3, deleteFromS3 } from "./uploadController.js";
 // Get all locations
 export const getAllLocations = async (req, res) => {
   try {
-    const { district } = req.params;
+    const { district } = req.params; // can be name or ObjectId
 
-    // Find the district document by name first
-    const districtDoc = await District.findOne({ name: district });
+    if (!district) {
+      return res.status(400).json({ message: "District parameter is required" });
+    }
+
+    let districtDoc;
+
+    // 🧠 Check if `district` looks like a MongoDB ObjectId (24 hex chars)
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(district);
+
+    if (isObjectId) {
+      // Find district directly by _id
+      districtDoc = await District.findById(district);
+    } else {
+      // Otherwise, find by district name (case-insensitive)
+      districtDoc = await District.findOne({ name: { $regex: new RegExp(`^${district}$`, "i") } });
+    }
+
     if (!districtDoc) {
       return res.status(404).json({ message: "District not found" });
     }
 
-    // Now get all locations under this district
+    // ✅ Fetch all locations under that district
     const locations = await Location.find({ district: districtDoc._id }).populate("district");
-    res.json(locations);
+
+    if (!locations.length) {
+      return res.status(404).json({ message: "No locations found for this district" });
+    }
+
+    res.status(200).json(locations);
   } catch (err) {
-    console.error(err);
+    console.error("Error fetching locations:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

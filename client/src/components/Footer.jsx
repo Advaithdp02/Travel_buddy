@@ -10,7 +10,7 @@ export const Footer = () => {
           
           {/* Column 1: Logo + About + Follow Us */}
           <div className="relative z-10">
-            <img src="./LOGO.png" alt="Moliva Logo" className="mb-4 w-32 filter brightness-0 invert" />
+            <img src="./LOGO.png" alt="Moliva Logo" className="mb-4 w-32  " />
             <p className="text-gray-400 mb-6 text-sm leading-6">
               Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.
             </p>

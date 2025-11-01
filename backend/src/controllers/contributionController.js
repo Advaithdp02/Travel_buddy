@@ -143,6 +143,8 @@ export const getContributionsForDistrict = async (req, res) => {
       .populate("user", "name profileImage")
       .populate("location", "name")
       .sort({ createdAt: -1 });
+    console.log("District ID:", id);
+console.log("District locations:", district.locations);
 
     res.json(contributions);
   } catch (err) {

@@ -29,7 +29,7 @@ const AdminComment = () => {
 
   const token = localStorage.getItem("token");
 
-  // Fetch districts for filter
+  // Fetch all districts
   useEffect(() => {
     const fetchDistricts = async () => {
       try {
@@ -38,7 +38,7 @@ const AdminComment = () => {
         });
         setDistricts(res.data);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching districts:", err);
       }
     };
     fetchDistricts();
@@ -46,59 +46,75 @@ const AdminComment = () => {
 
   // Fetch locations when district changes
   useEffect(() => {
-    if (!selectedDistrict) {
-      setLocations([]);
-      return;
-    }
     const fetchLocations = async () => {
+      if (!selectedDistrict) {
+        setLocations([]);
+        return;
+      }
+
       try {
-        console.log("Fetching locations for district:", selectedDistrict);
         const res = await axios.get(
           `${BACKEND_URL}/locations/district/${selectedDistrict}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setLocations(res.data);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching locations:", err);
       }
     };
+
     fetchLocations();
   }, [selectedDistrict, token]);
 
-  // Fetch comments
-  useEffect(() => {
-    const fetchComments = async () => {
-      try {
-        setLoading(true);
-        let url = `${BACKEND_URL}/comments`;
-        if (selectedLocation) url += `?location=${selectedLocation}`;
-        const res = await axios.get(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setComments(res.data);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to fetch comments.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchComments();
-  }, [selectedLocation, token]);
+  // Fetch comments (with filters)
+// Fetch comments (with filters)
+useEffect(() => {
+  const fetchComments = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
+      // Build the query params properly
+      const queryParams = new URLSearchParams();
+      if (selectedDistrict) queryParams.append("districtId", selectedDistrict);
+      if (selectedLocation) queryParams.append("locationId", selectedLocation);
+
+      const url = `${BACKEND_URL}/comments${
+        queryParams.toString() ? `?${queryParams.toString()}` : ""
+      }`;
+
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setComments(res.data);
+    } catch (err) {
+      console.error("Error fetching comments:", err);
+      setError("Failed to fetch comments.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔁 Trigger refetch whenever filters change
+  fetchComments();
+}, [selectedDistrict, selectedLocation, token]);
+
+  // Delete comment
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this comment?")) return;
     try {
       await axios.delete(`${BACKEND_URL}/comments/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setComments(comments.filter((c) => c._id !== id));
+      setComments((prev) => prev.filter((c) => c._id !== id));
     } catch (err) {
       console.error("Delete failed:", err);
       alert("Failed to delete comment.");
     }
   };
 
+  // Loading / error UI
   if (loading)
     return (
       <Box className="flex justify-center items-center min-h-screen">
@@ -133,7 +149,7 @@ const AdminComment = () => {
           >
             <MenuItem value="">All Districts</MenuItem>
             {districts.map((d) => (
-              <MenuItem key={d._id} value={d.name}>
+              <MenuItem key={d._id} value={d._id}>
                 {d.name}
               </MenuItem>
             ))}
@@ -157,13 +173,13 @@ const AdminComment = () => {
         </FormControl>
       </Box>
 
-      {/* Comments List */}
+      {/* Comments */}
       {comments.length === 0 ? (
         <Typography>No comments found.</Typography>
       ) : (
         <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {comments.map((c) => (
-            <Card key={c._id} className="shadow-md rounded-xl bg-white cursor-pointer hover:shadow-lg transition">
+            <Card key={c._id} className="shadow-md rounded-xl bg-white">
               <CardContent>
                 <Typography variant="body1" fontWeight="bold" gutterBottom>
                   {c.location?.name || "Unknown Location"}
@@ -174,14 +190,21 @@ const AdminComment = () => {
                 <Typography
                   variant="body2"
                   color="text.secondary"
-                  className="line-clamp-3 mt-2"
+                  className="line-clamp-3 mt-2 cursor-pointer"
                   onClick={() => setModalComment(c)}
                 >
                   {c.text}
                 </Typography>
                 <Box className="flex justify-between mt-4">
-                  <Typography variant="caption">Likes: {c.likes?.length || 0}</Typography>
-                  <Button variant="outlined" color="error" size="small" onClick={() => handleDelete(c._id)}>
+                  <Typography variant="caption">
+                    Likes: {c.likes?.length || 0}
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    onClick={() => handleDelete(c._id)}
+                  >
                     Delete
                   </Button>
                 </Box>
@@ -191,22 +214,30 @@ const AdminComment = () => {
         </div>
       )}
 
-      {/* Modal for comment details */}
+      {/* Modal */}
       <Modal open={!!modalComment} onClose={() => setModalComment(null)}>
         <Box className="bg-white rounded-xl shadow-lg p-6 w-[90%] max-w-3xl mx-auto mt-24 overflow-y-auto max-h-[80vh]">
           {modalComment && (
             <>
               <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Comment by {modalComment.user?.name || "Anonymous"} on {modalComment.location?.name || "Unknown Location"}
+                Comment by {modalComment.user?.name || "Anonymous"} on{" "}
+                {modalComment.location?.name || "Unknown Location"}
               </Typography>
               <Typography className="mb-4">{modalComment.text}</Typography>
 
               {modalComment.replies?.length > 0 && (
                 <Box>
-                  <Typography fontWeight="bold" gutterBottom>Replies</Typography>
+                  <Typography fontWeight="bold" gutterBottom>
+                    Replies
+                  </Typography>
                   {modalComment.replies.map((r, idx) => (
-                    <Box key={idx} className="pl-4 mb-2 border-l border-gray-300">
-                      <Typography variant="body2" fontWeight="bold">{r.user?.name || "Anonymous"}</Typography>
+                    <Box
+                      key={idx}
+                      className="pl-4 mb-2 border-l border-gray-300"
+                    >
+                      <Typography variant="body2" fontWeight="bold">
+                        {r.user?.name || "Anonymous"}
+                      </Typography>
                       <Typography variant="body2">{r.text}</Typography>
                     </Box>
                   ))}
@@ -214,7 +245,10 @@ const AdminComment = () => {
               )}
 
               <Box className="flex justify-end gap-3 mt-6">
-                <Button variant="outlined" onClick={() => setModalComment(null)}>
+                <Button
+                  variant="outlined"
+                  onClick={() => setModalComment(null)}
+                >
                   Close
                 </Button>
               </Box>

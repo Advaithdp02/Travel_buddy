@@ -14,6 +14,7 @@ export const CommunityModal = ({
   contributions,
   refreshComments,
   refreshContributions,
+  districtPage
 }) => {
   const [newComment, setNewComment] = useState("");
   const [localComments, setLocalComments] = useState([]);
@@ -260,21 +261,22 @@ export const CommunityModal = ({
                 })}
               </div>
 
-              <div className="flex gap-2 mt-2">
+              
+                {districtPage?<></>:<div className="flex gap-2 mt-2">
                 <input
                   type="text"
                   placeholder="Add a comment..."
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   className="flex-grow border rounded-lg p-2"
-                />
-                <button
+                /><button
                   onClick={handleAddComment}
                   className="bg-brand-yellow text-brand-dark font-semibold px-4 rounded-lg"
                 >
                   Add
-                </button>
-              </div>
+                </button></div>}
+                
+              
             </>
           ) : (
             <>

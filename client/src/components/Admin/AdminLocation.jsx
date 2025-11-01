@@ -293,6 +293,7 @@ export default function AdminLocations() {
             value={formData.points}
             onChange={handleFormChange}
           />
+           <InputLabel>Terrain</InputLabel>
           <Box className="flex gap-2 mt-2">
             <TextField
               label="Longitude"

@@ -104,28 +104,40 @@ export const getCommentsByLocation = async (req, res) => {
 export const getAllComments = async (req, res) => {
   try {
     const { districtId, locationId } = req.query;
-    let filter = {};
+    const filter = {};
 
-    if (locationId) filter.location = locationId;
-
-    let commentsQuery = Comment.find(filter)
-      .populate("user", "name username profilePic")
-      .populate("replies.user", "name username profilePic")
-      .sort({ createdAt: -1 });
-
-    if (districtId) {
-      // Get all locations in the district
-      const locations = await Location.find({ district: districtId }).select("_id");
-      commentsQuery = commentsQuery.where("location").in(locations.map((l) => l._id));
+    // 🔹 If specific location selected, only show that
+    if (locationId) {
+      filter.location = locationId;
     }
 
-    const comments = await commentsQuery.exec();
+    // 🔹 Else if district selected, get all locations under that district
+    else if (districtId) {
+      const locations = await Location.find({ district: districtId }).select("_id");
+      if (!locations.length) {
+        return res.status(200).json([]); // no locations found
+      }
+      filter.location = { $in: locations.map((l) => l._id) };
+    }
+
+    // 🔹 Build query
+    const comments = await Comment.find(filter)
+      .populate("user", "name username profilePic")
+      .populate("replies.user", "name username profilePic")
+      .populate({
+        path: "location",
+        select: "name district",
+        populate: { path: "district", select: "name" },
+      })
+      .sort({ createdAt: -1 });
+
     res.status(200).json(comments);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+    console.error("Error fetching comments:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // Toggle like/unlike
 export const toggleLike = async (req, res) => {
@@ -165,16 +177,16 @@ export const getCommentsForDistrict = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // ✅ Fetch the district with its locations
-    const district = await District.findById(id).populate("locations");
+    // ✅ Fetch the district and populate its locations
+    const district = await District.findById(id).populate("locations", "name district");
     if (!district) return res.status(404).json({ message: "District not found" });
 
-    // ✅ Collect all location IDs under this district
+    // ✅ Collect all location IDs
     const locationIds = district.locations.map((loc) => loc._id);
 
     // ✅ Fetch comments belonging to those locations
     const comments = await Comment.find({ location: { $in: locationIds } })
-      .populate("user", "name profileImage")
+      .populate("user", "name username profilePic")
       .populate("location", "name")
       .sort({ createdAt: -1 });
 
