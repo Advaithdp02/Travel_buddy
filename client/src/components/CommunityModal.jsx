@@ -21,6 +21,10 @@ export const CommunityModal = ({
   const [localContributions, setLocalContributions] = useState([]);
   const [contribComments, setContribComments] = useState({}); // { contribId: [comments] }
   const [loading, setLoading] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+const [replyText, setReplyText] = useState("");
+
+
 
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
@@ -28,6 +32,35 @@ export const CommunityModal = ({
   // Sync props to local state
   useEffect(() => setLocalComments(comments), [comments]);
   useEffect(() => setLocalContributions(contributions), [contributions]);
+  const toggleReplyInput = (commentId) => {
+  setReplyingTo(replyingTo === commentId ? null : commentId);
+};
+
+const handleReplySubmit = async (commentId) => {
+  if (!replyText.trim()) return;
+  if (!token) return alert("You must be logged in");
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/comments/reply/${commentId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ text: replyText.trim() }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to post reply");
+
+    setReplyText("");
+    setReplyingTo(null);
+    refreshComments?.(); // refresh comment list
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+};
 
   // Fetch all comments for a contribution
   const fetchContributionComments = async (contribId) => {
@@ -246,16 +279,56 @@ export const CommunityModal = ({
                       </div>
                       <p className="text-gray-700 mb-2">{c.text}</p>
                       <div className="flex items-center gap-3 text-sm">
-                        <button
-                          className={`flex items-center gap-1 px-2 py-1 rounded-full ${
-                            hasLiked ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-500"
-                          }`}
-                          onClick={() => handleLikeComment(c._id)}
-                        >
-                          <ThumbsUp className="w-4 h-4" />
-                          {c.likes.length}
-                        </button>
-                      </div>
+  {/* Like Button */}
+  <button
+    className={`flex items-center gap-1 px-2 py-1 rounded-full ${
+      hasLiked ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-500"
+    }`}
+    onClick={() => handleLikeComment(c._id)}
+  >
+    <ThumbsUp className="w-4 h-4" />
+    {c.likes.length}
+  </button>
+
+  {/* Reply Button */}
+  <button
+    className="text-gray-500 hover:text-blue-600 font-medium"
+    onClick={() => toggleReplyInput(c._id)}
+  >
+    Reply
+  </button>
+</div>
+{c.replies && c.replies.length > 0 && (
+  <div className="ml-6 mt-2 space-y-1">
+    {c.replies.map((r) => (
+      <div key={r._id} className="bg-gray-50 p-2 rounded-lg text-sm">
+        <p className="font-semibold">{r.user?.name || "Unknown"}</p>
+        <p>{r.text}</p>
+      </div>
+    ))}
+  </div>
+)}
+
+
+{/* Reply Input (shown conditionally) */}
+{replyingTo === c._id && (
+  <div className="ml-6 mt-2 flex gap-2">
+    <input
+      type="text"
+      placeholder="Write a reply..."
+      value={replyText}
+      onChange={(e) => setReplyText(e.target.value)}
+      className="flex-grow border rounded-lg p-2 text-sm"
+    />
+    <button
+      onClick={() => handleReplySubmit(c._id)}
+      className="bg-brand-yellow text-brand-dark font-semibold px-3 rounded-lg"
+    >
+      Send
+    </button>
+  </div>
+)}
+
                     </div>
                   );
                 })}
