@@ -40,7 +40,8 @@ export const DestinationPage = ({  }) => {
     points: [],
     rating: 4.8,
     reviews: 836,
-    images: []
+    images: [],
+    terrain:""
   });
   const navigate=useNavigate();
   const [lat, setLat] = useState(11.6856);
@@ -202,7 +203,6 @@ useEffect(() => {
       setHero({
         title: data.name,
         subtitle: data.description || "Beautiful Place",
-        bgImg: data.images[0] || "https://picsum.photos/seed/default/1600/900",
       });
 
       // About Section
@@ -211,9 +211,10 @@ useEffect(() => {
         subHeading: `Explore the beauty of ${data.name}`,
         description: data.description || "No description available",
         points: data.points || [],
-        rating: 4.5,
-        reviews: data.comments?.length || 0,
+        rating: data.review||4.5,
+        reviews: data.reviewLength || 0,
         images: data.images.slice(0, 2),
+        terrain:data.terrain || "",
         subtitle: data.subtitle || "A Window to Wayanad's Scenic Splendor"
       });
 
@@ -356,6 +357,24 @@ useEffect(() => {
     window.open(url, "_blank");
   }
 };
+const getBackgroundImage = (terrain) => {
+  console.log(terrain)
+  switch (terrain) {
+    case "Beach":
+      return "/beach.jpg";
+    case "Mountain":
+      return "/mountain.jpg";
+    case "Forest":
+      return "/forest.jpg";
+    case "Desert":
+      return "/desert.jpg";
+    case "Plains":
+      return "/plains.jpg";
+    default:
+      return "/default.jpg";
+  }
+};
+
 
   return (
     <div className='pl-[80px] pr-[80px] pt-[40px]'>
@@ -368,7 +387,7 @@ useEffect(() => {
           <div
             className="absolute inset-0 rounded-[20px] bg-cover bg-center"
             style={{
-              backgroundImage: `url(${hero.bgImg})`,
+              backgroundImage: `url(${getBackgroundImage(about.terrain)})`,
             }}
           ></div>
           <div className="absolute inset-0 rounded-[20px] bg-gradient-to-r from-transparent to-[#1D1D51]"></div>
@@ -610,11 +629,7 @@ useEffect(() => {
   </div>
 </section>
 
-
-
-
-          <CommunityModal
-            isOpen={isModalOpen}
+          <CommunityModal isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             activeTab={activeTab}
             comments={comments}
@@ -704,10 +719,11 @@ useEffect(() => {
           value={filters.terrain}
           onChange={(e) => setFilters({ ...filters, terrain: e.target.value })}
         >
-          <option>Mountain</option>
-          <option>Hill</option>
-          <option>Coastal</option>
-          <option>Plain</option>
+          <option>Mountains</option>
+          <option>Beaches</option>
+          <option>Forests</option>
+          <option>Deserts</option>
+          <option>Plains</option>
         </select>
       </div>
 

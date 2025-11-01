@@ -27,6 +27,7 @@ export default function AdminLocations() {
   const [formData, setFormData] = useState({
     _id: null,
     name: "",
+    terrain:"",
     district: "",
     description: "",
     longitude: "",
@@ -93,6 +94,7 @@ export default function AdminLocations() {
     setFormData({
       _id: loc._id,
       name: loc.name,
+      terrain:loc.terrain,
       district: loc.district?._id || "",
       description: loc.description,
       subtitle: loc.subtitle || "",
@@ -109,6 +111,7 @@ export default function AdminLocations() {
     try {
       const data = new FormData();
       data.append("name", formData.name);
+      data.append("terrain",formData.terrain);
       data.append("district", formData.district);
       data.append("description", formData.description);
       data.append(
@@ -161,6 +164,7 @@ export default function AdminLocations() {
         longitude: "",
         latitude: "",
         images: [],
+        terrain:"",
         existingImages: [],
       });
     } catch (err) {
@@ -293,7 +297,25 @@ export default function AdminLocations() {
             value={formData.points}
             onChange={handleFormChange}
           />
-           <InputLabel>Terrain</InputLabel>
+           <FormControl fullWidth margin="dense">
+            <InputLabel>Terrain</InputLabel>
+            <Select
+              name="terrain"
+              value={formData.terrain}
+              onChange={handleFormChange}
+              label="terrain"
+            >
+              
+                <MenuItem key="Mountain" value="Mountain">
+                  Mountains</MenuItem>
+          <MenuItem key="Beach" value="Beach">Beaches</MenuItem>
+          <MenuItem key="Forest" value="Forest">Forests</MenuItem>
+          <MenuItem key="Desert" value="Desert">Deserts</MenuItem>
+          <MenuItem key="Plains" value="Plains">Plains</MenuItem>
+                
+              
+            </Select>
+          </FormControl>
           <Box className="flex gap-2 mt-2">
             <TextField
               label="Longitude"
