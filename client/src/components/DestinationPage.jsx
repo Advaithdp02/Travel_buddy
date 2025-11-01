@@ -18,11 +18,17 @@ import { CommunityModal } from './CommunityModal';
 
 
 import axios from 'axios';
+import { useRef } from 'react';
 
 const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
 const Backend_URL = import.meta.env.VITE_BACKEND_URL;
 
 export const DestinationPage = ({  }) => {
+  const [hotels, setHotels] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [skip, setSkip] = useState(0);
+  const limit = 10; // number of hotels per batch
+  const loaderRef = useRef();
   
   const [activeTab, setActiveTab] = useState("comments");
   const locationId = useParams();
@@ -59,14 +65,6 @@ export const DestinationPage = ({  }) => {
     
   ]);
 
-  const [hotels, setHotels] = useState([
-    { name: "DoubleTree by Hilton Hotel Orlando at SeaWorld with liunk", location: "Millumukku, Kaniyambetta, Wayanad, Kerala", distance: "15.2 km from centre", rating: 4.8, img: "https://picsum.photos/seed/hotel1/150/100",link:"https://www.hilton.com/en/hotels/orldtddoubletree-orlando-at-seaworld/" },
-    { name: "DoubleTree by Hilton Hotel Orlando at SeaWorld", location: "Millumukku, Kaniyambetta, Wayanad, Kerala", distance: "15.2 km from centre", rating: 4.8, img: "https://picsum.photos/seed/hotel2/150/100" },
-    { name: "DoubleTree by Hilton Hotel Orlando at SeaWorld", location: "Millumukku, Kaniyambetta, Wayanad, Kerala", distance: "15.2 km from centre", rating: 4.8, img: "https://picsum.photos/seed/hotel3/150/100" },
-     { name: "DoubleTree by Hilton Hotel Orlando at SeaWorld", location: "Millumukku, Kaniyambetta, Wayanad, Kerala", distance: "15.2 km from centre", rating: 4.8, img: "https://picsum.photos/seed/hotel3/150/100" },
-      { name: "DoubleTree by Hilton Hotel Orlando at SeaWorld", location: "Millumukku, Kaniyambetta, Wayanad, Kerala", distance: "15.2 km from centre", rating: 4.8, img: "https://picsum.photos/seed/hotel3/150/100" }
-      
-  ]);
 
   const [nearbyPlaces, setNearbyPlaces] = useState([]);
 
@@ -139,6 +137,34 @@ const calculateTime = (distanceKm, speedKmph = 60) => {
   return `${hours} hr ${minutes} min`;
 };
 
+const fetchHotels = async (reset = false) => {
+  if (!hasMore && !reset) return;
+
+  try {
+    const userCoords = JSON.parse(localStorage.getItem("userCoords") || '{"latitude":0,"longitude":0}');
+    const userLat = userCoords.latitude;
+    const userLon = userCoords.longitude;
+
+    const hotelRes = await fetch(
+      `${Backend_URL}/hotels/nearest/${locationId.id}?skip=${reset ? 0 : skip}&limit=${limit}`
+    );
+    const hotelData = await hotelRes.json();
+
+    // Add distance from user
+    const enrichedHotels = hotelData.map((h) => ({
+      ...h,
+      distance: calculateDistance(userLat, userLon, h.coordinates.coordinates[1], h.coordinates.coordinates[0]),
+    }));
+
+    // Append or reset hotels
+    setHotels((prev) => (reset ? enrichedHotels : [...prev, ...enrichedHotels]));
+    setSkip((prev) => (reset ? enrichedHotels.length : prev + enrichedHotels.length));
+    
+    if (enrichedHotels.length < limit) setHasMore(false); // no more hotels
+  } catch (err) {
+    console.error("Error fetching hotels:", err);
+  }
+};
 
 
 
@@ -239,6 +265,9 @@ useEffect(() => {
       const [lon, lat] = data.coordinates.coordinates;
       setLat(lat);
       setLon(lon);
+      fetchHotels(true);
+      
+
 
       // Fetch Weather
       const currentRes = await fetch(`https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${lat},${lon}&aqi=yes`);
@@ -287,6 +316,20 @@ useEffect(() => {
   fetchLocationData();
 }, [locationId]);
 
+useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          fetchHotels(); // call without arguments
+        }
+      },
+      { threshold: 1 }
+    );
+
+    if (loaderRef.current) observer.observe(loaderRef.current);
+    return () => loaderRef.current && observer.unobserve(loaderRef.current);
+  }, [loaderRef.current, hasMore]);
+
 
 
   const handleWishlist = async () => {
@@ -322,6 +365,11 @@ useEffect(() => {
 };
  
  const handleExternalLinkClick = async (url, hotel) => {
+  if (!url) {
+    console.warn("No URL provided for hotel:", hotel.name);
+    return;
+  }
+
   const sessionId = localStorage.getItem("sessionId");
   let userId = localStorage.getItem("userId");
   if (!userId) {
@@ -336,6 +384,7 @@ useEffect(() => {
   }
 
   console.log("📦 Tracking userId:", userId);
+
   try {
     await fetch(`${Backend_URL}/track/exit`, {
       method: "POST",
@@ -345,7 +394,7 @@ useEffect(() => {
         sessionId,
         exitReason: `Clicked on ${hotel.name}`,
         destinationUrl: url,
-        location: about.heading,
+        location: locationId,
         timestamp: new Date().toISOString(),
         isSiteExit: true,
         isAnonymous: !userId,
@@ -354,9 +403,11 @@ useEffect(() => {
   } catch (err) {
     console.error("Error logging external exit:", err);
   } finally {
-    window.open(url, "_blank");
+    // Open URL in new tab after tracking
+    window.open(url.startsWith("http") ? url : `https://${url}`, "_blank");
   }
 };
+
 const getBackgroundImage = (terrain) => {
   console.log(terrain)
   switch (terrain) {
@@ -968,47 +1019,71 @@ const getBackgroundImage = (terrain) => {
     <h3 className="text-2xl font-bold text-brand-dark text-white mb-4">Hotels & Resorts</h3>
     <div className="space-y-4 max-h-[780px] overflow-y-auto pr-2">
   {hotels.map((hotel, index) => (
-    <div
-      key={index}
-      className="flex bg-white shadow-md rounded-lg overflow-hidden"
-    >
-      {/* Left Image */}
-      <div className="flex-shrink-0 w-56 h-52">
-        <img
-          src={hotel.img}
-          alt={hotel.name}
-          className="w-full h-full object-cover"
-        />
+  <div
+    key={index}
+    className="flex bg-white shadow-md rounded-lg overflow-hidden mb-4"
+  >
+    {/* Left Image */}
+    <div className="flex-shrink-0 w-56 h-52">
+      <img
+        src={hotel.img}
+        alt={hotel.name}
+        className="w-full h-full object-cover"
+      />
+    </div>
+
+    {/* Right Content */}
+    <div className="flex flex-col justify-between flex-grow p-4">
+      <div>
+        <h4 className="text-lg font-medium text-brand-dark">{hotel.name}</h4>
+        <p className="text-sm text-gray-500">{hotel.location}</p>
+
+        {/* Amenities */}
+        {hotel.amenities?.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2 text-xs text-gray-600">
+            {hotel.amenities.map((amenity, i) => (
+              <span
+                key={i}
+                className="bg-gray-100 px-2 py-1 rounded-md"
+              >
+                {amenity}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Show on Map */}
+        {hotel.coordinates?.link && (
+          <div className="mt-2">
+            <a
+              href={hotel.coordinates.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline text-sm"
+            >
+              Show on map
+            </a>
+          </div>
+        )}
       </div>
 
-      {/* Right Content */}
-      <div className="flex flex-col justify-between flex-grow p-4">
-        <div>
-          <h4 className="text-lg font-medium text-brand-dark">{hotel.name}</h4>
-          <p className="text-sm text-gray-500">{hotel.location}</p>
-
-          <div className="flex items-center gap-2 text-xs mt-2">
-            <LocationPinIcon className="w-3 h-3 text-gray-400" />
-            <span className="text-gray-700">{hotel.distance}</span>
-            <a href="#" className="text-blue-600 underline ml-2">Show on map</a>
-          </div>
+      {/* Bottom Row: Rating + Button */}
+      <div className="flex items-center justify-between mt-4">
+        <div className="flex items-center bg-yellow-400 text-gray-900 font-bold px-2 py-1 rounded-md">
+          <StarIcon className="w-3 h-3 mr-1" /> {hotel.review || "N/A"}
         </div>
-
-        {/* Bottom Row: Rating + Button */}
-        <div className="flex items-center justify-between mt-4">
-          <div className="flex items-center bg-yellow-400 text-gray-900 font-bold px-2 py-1 rounded-md">
-            <StarIcon className="w-3 h-3 mr-1" /> {hotel.rating}
-          </div>
-          <button className="bg-brand-dark text-white font-semibold py-2 px-5 rounded-lg text-sm" onClick={()=>{handleExternalLinkClick(
-      hotel.link,
-      hotel
-    )}}>
-            View More
-          </button>
-        </div>
+        <button
+          className="bg-brand-dark text-white font-semibold py-2 px-5 rounded-lg text-sm"
+          onClick={() => handleExternalLinkClick(hotel.coordinates.link, hotel)}
+        >
+          View More
+        </button>
       </div>
     </div>
-  ))}
+  </div>
+))}
+<div ref={loaderRef} className="h-10"></div>
+
 </div>
 
   </div>

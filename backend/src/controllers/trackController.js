@@ -150,8 +150,7 @@ export const recordExit = async (req, res) => {
     const {
       sessionId,
       userId,
-      location,
-      district,
+      location,  // could be string or object with id
       timeSpent,
       exitReason,
       isSiteExit,
@@ -160,24 +159,55 @@ export const recordExit = async (req, res) => {
     if (!sessionId || !location) {
       return res.status(400).json({ success: false, message: "Missing sessionId or location" });
     }
-    console.log("Exit tracking data received:", req.body);
+
+    let locationName = typeof location === "string" ? location : location.name || "";
+    let districtName = "Unknown";
+
+    // Resolve location ID if needed
+    try {
+      let locationId = "";
+      if (typeof location === "object" && location.id) {
+        locationId = location.id;
+      } else if (typeof location === "string") {
+        const segments = location.split("/");
+        const possibleId = segments[segments.length - 1];
+        if (mongoose.Types.ObjectId.isValid(possibleId)) {
+          locationId = possibleId;
+        }
+      }
+
+      if (locationId) {
+        const locationDoc = await Location.findById(locationId)
+          .populate("district", "name")
+          .select("name district");
+        if (locationDoc) {
+          locationName = locationDoc.name;
+          districtName = locationDoc.district?.name || "Unknown";
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to resolve location ID:", err);
+    }
+
+    // Save exit record
     const visit = await PageVisit.create({
-      user: new mongoose.Types.ObjectId(req.body.user),
+      user: userId || null,
       sessionId,
-      location,
-      district: district || "Unknown",
+      location: locationName,
+      district: districtName,
       timeSpent: timeSpent || 0,
-      isAnonymous: !userId,
       exitReason: exitReason || "unknown",
-      isSiteExit: isSiteExit || false,
+      isSiteExit: !!isSiteExit,
+      isAnonymous: !userId,
     });
 
-    return res.status(201).json({ success: true, visit });
+    res.status(201).json({ success: true, visit });
   } catch (err) {
     console.error("Exit tracking error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 // GET /api/track/user-stats
 

@@ -1,47 +1,23 @@
 import mongoose from "mongoose";
 
 const hotelSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  location: {
-    type: String, // human-readable address
-    required: true,
-  },
-  district: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "District",
-    required: true,
-  },
-  locationId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Location", // reference the location it's near (optional)
-  },
-  img: {
-    type: String, // main image URL
-  },
+  name: { type: String, required: true },
+  review: { type: Number, min: 0, max: 5, default: 0 },
+  description: { type: String },
+  amenities: [String],
+  location: { type: String, required: true }, // human-readable address
+  district: { type: mongoose.Schema.Types.ObjectId, ref: "District", required: true },
+  locationId: { type: mongoose.Schema.Types.ObjectId, ref: "Location" }, // optional reference
+  img: { type: String },
   coordinates: {
-    type: {
-      type: String,
-      enum: ["Point"],
-      default: "Point",
-    },
-    coordinates: {
-      type: [Number], // [longitude, latitude]
-      required: true,
-    },
-    link : {
-      type: String, 
-    }
+    type: { type: String, enum: ["Point"], default: "Point" },
+    coordinates: { type: [Number], required: true },
+    link: { type: String },
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+  createdAt: { type: Date, default: Date.now },
 });
 
-// Create 2dsphere index for geospatial queries
 hotelSchema.index({ coordinates: "2dsphere" });
 
 export default mongoose.model("Hotel", hotelSchema);
+

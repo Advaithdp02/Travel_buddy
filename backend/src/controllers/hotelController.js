@@ -7,13 +7,27 @@ import mongoose from "mongoose";
 // ------------------ Get all hotels ------------------
 export const getAllHotels = async (req, res) => {
   try {
-    const hotels = await Hotel.find().populate("district").populate("locationId");
-    res.json(hotels);
+    const hotels = await Hotel.find()
+      .populate("district", "name") // get district name
+      .populate({
+        path: "locationId",
+        select: "name", // only include human-readable name
+        strictPopulate: false, // bypass Mongoose strict populate
+      });
+
+    // Map to make human-readable location easily accessible
+    const hotelsFormatted = hotels.map((h) => ({
+      ...h.toObject(),
+      locationName: h.locationId?.name || h.location,
+    }));
+
+    res.status(200).json(hotelsFormatted);
   } catch (err) {
-    console.error(err);
+    console.error("Fetch Hotels Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // ------------------ Get single hotel by ID ------------------
 export const getHotelById = async (req, res) => {
@@ -30,9 +44,10 @@ export const getHotelById = async (req, res) => {
 };
 
 // ------------------ Create new hotel ------------------
+// ------------------ Create Hotel ------------------
 export const createHotel = async (req, res) => {
   try {
-    const { name, location, district, coordinates, locationId ,link} = req.body;
+    const { name, location, district, coordinates, link } = req.body;
 
     // Validate district
     let dist = null;
@@ -53,7 +68,7 @@ export const createHotel = async (req, res) => {
     }
 
     // Parse coordinates
-    let coords = { type: "Point", coordinates: [0, 0] };
+    let coords = { type: "Point", coordinates: [0, 0], link: "" };
     if (coordinates) {
       if (typeof coordinates === "string") {
         try {
@@ -68,14 +83,15 @@ export const createHotel = async (req, res) => {
       }
     }
 
+    // Attach link if provided
+    if (link) coords.link = link;
+
     const hotel = new Hotel({
       name,
       location,
       district: dist._id,
-      locationId: locationId || null,
       coordinates: coords,
       img: imgUrl,
-      link:link,
     });
 
     await hotel.save();
@@ -86,19 +102,35 @@ export const createHotel = async (req, res) => {
   }
 };
 
-// ------------------ Update hotel ------------------
+// ------------------ Update Hotel ------------------
 export const updateHotel = async (req, res) => {
   try {
     const hotel = await Hotel.findById(req.params.id);
     if (!hotel) return res.status(404).json({ message: "Hotel not found" });
 
-    const { name, location, district, coordinates,link } = req.body;
+    const { name, location, district, coordinates, link } = req.body;
 
     if (name) hotel.name = name;
     if (location) hotel.location = location;
-    if (district) hotel.district = district;
-    if (coordinates) hotel.coordinates = typeof coordinates === "string" ? JSON.parse(coordinates) : coordinates;
-    if(link) hotel.link=link;
+    if (district) {
+      if (mongoose.Types.ObjectId.isValid(district)) {
+        hotel.district = district;
+      } else {
+        const distDoc = await District.findOne({ name: district });
+        if (distDoc) hotel.district = distDoc._id;
+      }
+    }
+
+    if (coordinates) {
+      const parsedCoords = typeof coordinates === "string" ? JSON.parse(coordinates) : coordinates;
+      hotel.coordinates = {
+        type: parsedCoords.type || "Point",
+        coordinates: parsedCoords.coordinates || [0, 0],
+        link: link || parsedCoords.link || "",
+      };
+    } else if (link) {
+      hotel.coordinates.link = link;
+    }
 
     // Handle new image upload
     if (req.files && req.files.length > 0) {
@@ -134,7 +166,8 @@ export const deleteHotel = async (req, res) => {
 // ------------------ Get nearest hotels by location ID ------------------
 export const getNearestHotels = async (req, res) => {
   try {
-    const { locationId, maxDistance = 5000 } = req.params;
+    const { locationId } = req.params;
+    const { maxDistance = 5000, skip = 0, limit = 10 } = req.query;
 
     const loc = await Location.findById(locationId).populate("district");
     if (!loc) return res.status(404).json({ message: "Location not found" });
@@ -150,7 +183,11 @@ export const getNearestHotels = async (req, res) => {
           $maxDistance: parseInt(maxDistance),
         },
       },
-    });
+    })
+      .skip(parseInt(skip))
+      .limit(parseInt(limit))
+      .populate("district")
+      .populate("locationId");
 
     res.json(hotels);
   } catch (err) {
