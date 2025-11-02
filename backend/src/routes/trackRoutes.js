@@ -1,5 +1,5 @@
 import express from "express";
-import { trackVisit, getStats, recordExit, getUserStats, getUserDetails, getLocationStats } from "../controllers/trackController.js";
+import { trackVisit, getStats, recordExit, getUserStats, getUserDetails, getLocationStats, getLocationDetails, getTopHotels, getHotelDetails, getHotelStats } from "../controllers/trackController.js";
 
 const router = express.Router();
 
@@ -13,7 +13,10 @@ router.get("/stats", getStats);
 router.get("/user-stats", getUserStats);
 router.get("/user-details/:userId", getUserDetails);
 router.get("/location-stats", getLocationStats);
-
+router.get("/location-details/:location", getLocationDetails);
+router.get("/top-hotels",getTopHotels);
+router.get("/hotel-details/:hotelId",getHotelDetails);
+router.get("/hotel-stats",getHotelStats);
 
 router.post("/exit", recordExit);
 

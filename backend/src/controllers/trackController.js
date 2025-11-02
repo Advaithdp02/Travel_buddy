@@ -150,12 +150,14 @@ export const recordExit = async (req, res) => {
     const {
       sessionId,
       userId,
-      location,  // could be string or object with id
+      location,
       timeSpent,
       exitReason,
       isSiteExit,
+      hotelId,         // <--- Add this
+      destinationUrl,  // <--- Add this
     } = req.body;
-
+    console.log(hotelId)
     if (!sessionId || !location) {
       return res.status(400).json({ success: false, message: "Missing sessionId or location" });
     }
@@ -163,17 +165,13 @@ export const recordExit = async (req, res) => {
     let locationName = typeof location === "string" ? location : location.name || "";
     let districtName = "Unknown";
 
-    // Resolve location ID if needed
     try {
       let locationId = "";
-      if (typeof location === "object" && location.id) {
-        locationId = location.id;
-      } else if (typeof location === "string") {
+      if (typeof location === "object" && location.id) locationId = location.id;
+      else if (typeof location === "string") {
         const segments = location.split("/");
         const possibleId = segments[segments.length - 1];
-        if (mongoose.Types.ObjectId.isValid(possibleId)) {
-          locationId = possibleId;
-        }
+        if (mongoose.Types.ObjectId.isValid(possibleId)) locationId = possibleId;
       }
 
       if (locationId) {
@@ -188,8 +186,9 @@ export const recordExit = async (req, res) => {
     } catch (err) {
       console.warn("Failed to resolve location ID:", err);
     }
-
-    // Save exit record
+    console.log("userID:",userId)
+    console.log("hotelID:",hotelId)
+    // ✅ Save exit with hotel and URL
     const visit = await PageVisit.create({
       user: userId || null,
       sessionId,
@@ -199,6 +198,8 @@ export const recordExit = async (req, res) => {
       exitReason: exitReason || "unknown",
       isSiteExit: !!isSiteExit,
       isAnonymous: !userId,
+      hotelId: hotelId || null,
+      destinationUrl: destinationUrl || null,
     });
 
     res.status(201).json({ success: true, visit });
@@ -213,18 +214,28 @@ export const recordExit = async (req, res) => {
 
 export const getUserStats = async (req, res) => {
   try {
-    const stats = await PageVisit.aggregate([
-      {
-        $group: {
-          _id: "$user",
-          totalVisits: { $sum: 1 },
-          totalTimeSpent: { $sum: "$timeSpent" },
-          uniqueLocations: { $addToSet: "$location" },
-          uniqueDistricts: { $addToSet: "$district" },
-        },
-      },
-      { $sort: { totalVisits: -1 } },
-    ]);
+    const { from, to } = req.query;
+
+const matchStage = {};
+if (from && to) {
+  matchStage.visitedAt = {
+    $gte: new Date(from),
+    $lte: new Date(to),
+  };
+}
+
+const stats = await PageVisit.aggregate([
+  { $match: matchStage },
+  {
+    $group: {
+      _id: "$user",
+      totalVisits: { $sum: 1 },
+      totalTimeSpent: { $sum: "$timeSpent" },
+      uniqueLocations: { $addToSet: "$location" },
+      uniqueDistricts: { $addToSet: "$district" },
+    },
+  },
+]);
 
     // --- populate usernames ---
     const populatedStats = await Promise.all(
@@ -294,32 +305,201 @@ export const getUserDetails = async (req, res) => {
 // GET /api/track/location-stats
 export const getLocationStats = async (req, res) => {
   try {
-    const locationStats = await PageVisit.aggregate([
+    const { from, to } = req.query;
+const matchStage = {};
+if (from && to) {
+  matchStage.visitedAt = {
+    $gte: new Date(from),
+    $lte: new Date(to),
+  };
+}
+
+const locationStats = await PageVisit.aggregate([
+  { $match: matchStage },
+  { $group: { _id: "$location", totalVisits: { $sum: 1 }, totalTimeSpent: { $sum: "$timeSpent" }, avgTimeSpent: { $avg: "$timeSpent" }, uniqueUsers: { $addToSet: "$user" } } },
+  { $project: { _id: 0, location: "$_id", totalVisits: 1, totalTimeSpent: 1, avgTimeSpent: 1, uniqueUsersCount: { $size: "$uniqueUsers" } } },
+  { $sort: { totalVisits: -1 } },
+]);
+    res.status(200).json({ success: true, data: locationStats });
+  } catch (err) {
+    console.error("Error fetching location stats:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// GET /api/track/location-details/:location
+export const getLocationDetails = async (req, res) => {
+  try {
+    const { location } = req.params;
+
+    if (!location) {
+      return res.status(400).json({ success: false, message: "Location parameter is required" });
+    }
+
+    // Match visits for that specific location
+    const visits = await PageVisit.aggregate([
+      { $match: { location } },
       {
-        $group: {
-          _id: "$location",
-          totalVisits: { $sum: 1 },
-          totalTimeSpent: { $sum: "$timeSpent" },
-          avgTimeSpent: { $avg: "$timeSpent" },
-          uniqueUsers: { $addToSet: "$user" }, 
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "userInfo",
         },
       },
       {
         $project: {
           _id: 0,
-          location: "$_id",
+          username: {
+            $cond: [
+              { $gt: [{ $size: "$userInfo" }, 0] },
+              { $arrayElemAt: ["$userInfo.username", 0] },
+              "Anonymous",
+            ],
+          },
+          visitedAt: 1,
+          timeSpent: 1,
+          exitReason: 1,
+        },
+      },
+      { $sort: { visitedAt: -1 } }, // newest first
+    ]);
+
+    res.json({ success: true, data: visits });
+  } catch (err) {
+    console.error("Error fetching location details:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch location details" });
+  }
+};
+// GET /api/track/hotel-stats
+export const getHotelStats = async (req, res) => {
+  try {
+    const stats = await PageVisit.aggregate([
+      { $match: { hotelId: { $ne: null } } }, // only track visits tied to a hotel
+      {
+        $group: {
+          _id: "$hotelId",
+          totalVisits: { $sum: 1 },
+          avgTimeSpent: { $avg: "$timeSpent" },
+          totalTimeSpent: { $sum: "$timeSpent" },
+          externalClicks: {
+            $sum: {
+              $cond: [{ $eq: ["$isSiteExit", true] }, 1, 0],
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "hotels",
+          localField: "_id",
+          foreignField: "_id",
+          as: "hotelInfo",
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          hotelId: "$_id",
+          hotelName: { $arrayElemAt: ["$hotelInfo.name", 0] },
           totalVisits: 1,
+          avgTimeSpent: 1,
           totalTimeSpent: 1,
-          avgTimeSpent: { $round: ["$avgTimeSpent", 2] },
-          uniqueUsersCount: { $size: "$uniqueUsers" },
+          externalClicks: 1,
         },
       },
       { $sort: { totalVisits: -1 } },
     ]);
 
-    res.status(200).json({ success: true, data: locationStats });
+    res.status(200).json({ success: true, data: stats });
   } catch (err) {
-    console.error("Error fetching location stats:", err);
+    console.error("Error fetching hotel stats:", err);
     res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+// GET /api/track/hotel-details/:hotelId
+export const getHotelDetails = async (req, res) => {
+  try {
+    const { hotelId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(hotelId)) {
+      return res.status(400).json({ success: false, message: "Invalid hotelId" });
+    }
+
+    const details = await PageVisit.aggregate([
+      { $match: { hotelId: new mongoose.Types.ObjectId(hotelId) } },
+
+      // Join with User collection to get username
+      {
+        $lookup: {
+          from: "users",           // MongoDB collection name for users
+          localField: "user",
+          foreignField: "_id",
+          as: "userInfo",
+        },
+      },
+      { $unwind: { path: "$userInfo", preserveNullAndEmptyArrays: true } },
+
+      // Group by user
+      {
+        $group: {
+          _id: "$user",                   // user ObjectId (null for anonymous)
+          username: { $first: "$userInfo.username" }, // now populated
+          totalClicks: { $sum: 1 },
+          locations: {
+            $push: {
+              location: "$location",
+              district: "$district",
+              timeSpent: "$timeSpent",
+              exitReason: "$exitReason",
+              visitedAt: "$visitedAt",
+              isSiteExit: "$isSiteExit",
+              destinationUrl: "$destinationUrl",
+            },
+          },
+        },
+      },
+
+      { $sort: { totalClicks: -1 } },
+    ]);
+
+    res.status(200).json({ success: true, data: details });
+  } catch (err) {
+    console.error("Error fetching hotel details:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+// GET /api/track/top-hotels
+export const getTopHotels = async (req, res) => {
+  try {
+    const topHotels = await PageVisit.aggregate([
+      { $match: { hotelId: { $ne: null } } },
+      { $group: { _id: "$hotelId", totalVisits: { $sum: 1 } } },
+      { $sort: { totalVisits: -1 } },
+      { $limit: 10 },
+      {
+        $lookup: {
+          from: "hotels",
+          localField: "_id",
+          foreignField: "_id",
+          as: "hotelInfo",
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          hotelId: "$_id",
+          name: { $arrayElemAt: ["$hotelInfo.name", 0] },
+          totalVisits: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json({ success: true, data: topHotels });
+  } catch (err) {
+    console.error("Top hotels error:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch top hotels" });
   }
 };

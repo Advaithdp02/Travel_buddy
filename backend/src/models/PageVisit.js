@@ -33,6 +33,7 @@ const pageVisitSchema = new mongoose.Schema(
       os: String,
       deviceType: String
     },
+    hotelId: { type: mongoose.Schema.Types.ObjectId, ref: "Hotel", default: null },
     isAnonymous: {
       type: Boolean,
       default: true

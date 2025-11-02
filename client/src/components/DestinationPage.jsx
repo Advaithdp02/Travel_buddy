@@ -158,6 +158,7 @@ const fetchHotels = async (reset = false) => {
 
     // Append or reset hotels
     setHotels((prev) => (reset ? enrichedHotels : [...prev, ...enrichedHotels]));
+    console.log("Fetched Hotels:", enrichedHotels);
     setSkip((prev) => (reset ? enrichedHotels.length : prev + enrichedHotels.length));
     
     if (enrichedHotels.length < limit) setHasMore(false); // no more hotels
@@ -369,9 +370,11 @@ useEffect(() => {
     console.warn("No URL provided for hotel:", hotel.name);
     return;
   }
+  console.log(hotel._id)
 
   const sessionId = localStorage.getItem("sessionId");
   let userId = localStorage.getItem("userId");
+  console.log(userId)
   if (!userId) {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -383,15 +386,16 @@ useEffect(() => {
     }
   }
 
-  console.log("📦 Tracking userId:", userId);
+  
 
   try {
     await fetch(`${Backend_URL}/track/exit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        user: userId,
+        userId: userId,
         sessionId,
+        hotelId: hotel._id,
         exitReason: `Clicked on ${hotel.name}`,
         destinationUrl: url,
         location: locationId,
@@ -428,40 +432,41 @@ const getBackgroundImage = (terrain) => {
 
 
   return (
-    <div className='pl-[80px] pr-[80px] pt-[40px]'>
+    <div className='md:pl-[80px] md:pr-[80px] md:pt-[40px] mx-0'>
       
 
       {/* Hero Section */}
       
-        <section className="relative h-[60vh] w-full flex items-center ">
-          {/* Background Image with gradient overlay */}
-          <div
-            className="absolute inset-0 rounded-[20px] bg-cover bg-center"
-            style={{
-              backgroundImage: `url(${getBackgroundImage(about.terrain)})`,
-            }}
-          ></div>
-          <div className="absolute inset-0 rounded-[20px] bg-gradient-to-r from-transparent to-[#1D1D51]"></div>
+        <section className="relative h-[60vh] w-full flex items-center sm:h-[70vh] md:h-[60vh]">
+  {/* Background Image with gradient overlay */}
+  <div
+    className="absolute inset-0 rounded-[20px] bg-cover bg-center"
+    style={{
+      backgroundImage: `url(${getBackgroundImage(about.terrain)})`,
+    }}
+  ></div>
+  <div className="absolute inset-0 rounded-[20px] bg-gradient-to-r from-transparent to-[#1D1D51]"></div>
 
-          {/* Text Content */}
-          <div className="relative z-10 text-left max-w-[724px] left-[25px] px-4">
-            {/* Small Subtitle */}
-            <h3
-              className="text-[#F2B024] font-schoolbell text-[30px]  leading-[42px]"
-              style={{ fontFamily: 'Schoolbell, cursive' }}
-            >
-              {hero.title}
-            </h3>
+  {/* Text Content */}
+  <div className="relative z-10 text-left max-w-[724px] left-[25px] px-4 sm:left-3 sm:px-3">
+    {/* Small Subtitle */}
+    <h3
+      className="text-[#F2B024] font-schoolbell text-[30px] leading-[42px] sm:text-[20px] sm:leading-[28px]"
+      style={{ fontFamily: "Schoolbell, cursive" }}
+    >
+      {hero.title}
+    </h3>
 
-                {/* Main Heading */}
-                <h1
-                  className="text-white font-baloo text-[65px] leading-[70px] mt-2"
-                  style={{ fontFamily: 'Baloo, cursive' }}
-                >
-                  {hero.subtitle}
-                </h1>
-              </div>
-            </section>
+    {/* Main Heading */}
+    <h1
+      className="text-white font-baloo text-[65px] leading-[70px] mt-2 sm:text-[32px] sm:leading-[38px] sm:mt-1"
+      style={{ fontFamily: "Baloo, cursive" }}
+    >
+      {hero.subtitle}
+    </h1>
+  </div>
+</section>
+
 
 
       {/* About Section */}
@@ -1010,10 +1015,10 @@ const getBackgroundImage = (terrain) => {
           </div>
         </div>
           
-            <div className="flex flex-col md:flex-row w-full min-h-screen px-4 pb-0 md:px-12 py-8">
+            <div className="flex flex-col md:flex-row w-[115%] md:w-full min-h-screen px-4 pb-0 md:px-12 py-8">
   {/* Hotels & Resorts */}
   <div
-    className="flex-1 p-6 ml-[-170px] bg-cover bg-center shadow-md rounded-tl-none rounded-tr-[100px] pl-[120px] z-10 relative"
+    className="flex-1 p-6 ml-[-50px] md:ml-[-170px] bg-cover bg-center shadow-md rounded-tl-none rounded-tr-[100px] md:pl-[120px] z-10 relative"
     style={{ backgroundImage: "url('/Destination_hotel.png')" }}
   >
     <h3 className="text-2xl font-bold text-brand-dark text-white mb-4">Hotels & Resorts</h3>
@@ -1021,10 +1026,10 @@ const getBackgroundImage = (terrain) => {
   {hotels.map((hotel, index) => (
   <div
     key={index}
-    className="flex bg-white shadow-md rounded-lg overflow-hidden mb-4"
+    className="md:flex bg-white shadow-md rounded-lg overflow-hidden mb-4"
   >
     {/* Left Image */}
-    <div className="flex-shrink-0 w-56 h-52">
+    <div className="flex-shrink-0 md:w-56 h-52">
       <img
         src={hotel.img}
         alt={hotel.name}
@@ -1090,7 +1095,7 @@ const getBackgroundImage = (terrain) => {
 
   {/* Nearby Places */}
   <div
-    className="flex-1 p-6 bg-cover bg-center shadow-md rounded-xl mt-0  relative z-0 ml-[-90px] pl-[100px]  mr-[-170px] "
+    className="flex-1 p-6 bg-cover bg-center shadow-md rounded-xl mt-0  relative z-0 ml-[-90px] pl-[100px]  md:mr-[-170px] "
     style={{ backgroundImage: "url('/Destination_nearby.png')",backgroundColor:"#EFEFFF" }}
   >
     <h3 className="text-2xl font-bold text-brand-dark  mb-4">Nearby Places</h3>
@@ -1103,15 +1108,15 @@ const getBackgroundImage = (terrain) => {
         className="flex-shrink-0 w-[90%] bg-white  shadow-lg p-0 snap-start"
         style={{borderRadius:"0px 20px 20px 0px"}}
       >
-        <div className='flex  flex-row gap-10'>
+        <div className='md:flex  flex-row gap-10'>
         <img 
           src={place.images[0]}
           alt={place.name}
-          className="w-48 h-[210px] object-cover rounded-xl "
+          className="md:w-48 w-[100%] h-[210px] object-cover rounded-xl "
           style={{borderRadius:"20px 0px 0px 20px"}}
         />
         <div>
-        <h3 className="text-lg pt-2 font-bold text-brand-dark">{place.name}</h3>
+        <h3 className="text-lg pt-2  font-bold text-brand-dark">{place.name}</h3>
         <p className="text-xs text-brand-gray mb-3 truncate">
           {place.location }
         </p>

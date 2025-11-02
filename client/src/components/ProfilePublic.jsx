@@ -1,40 +1,42 @@
 import React, { useEffect, useState } from "react";
-import { LocationProfileIcon, PhoneIcon, MailIcon, GenderIcon, DobIcon, JobIcon, HeartIcon } from "./Icons";
-
-import { Link, useParams } from "react-router-dom";
+import {
+  LocationProfileIcon,
+  PhoneIcon,
+  MailIcon,
+  GenderIcon,
+  DobIcon,
+  JobIcon,
+  HeartIcon,
+} from "./Icons";
+import { useParams, useNavigate } from "react-router-dom";
 
 export const ProfilePublic = () => {
   const { username } = useParams();
-  const [activeTab, setActiveTab] = useState("about");
+  const [activeTab, setActiveTab] = useState("followers");
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+  const navigate = useNavigate();
 
-  const logout = () => {
-    sessionStorage.clear();
-    window.location.reload();
-  };
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-  // Fetch profile
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/users/profile/${username}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const res = await fetch(`${BACKEND_URL}/users/profile/${username}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (!res.ok) throw new Error("User not found");
         const data = await res.json();
         setUser(data);
-        console.log(data);
 
+        // check following
         const currentUserId = JSON.parse(atob(token.split(".")[1])).id;
-        setIsFollowing(data.followers.some(f => f._id === currentUserId));
+        setIsFollowing(data.followers.some((f) => f._id === currentUserId));
       } catch (err) {
+        console.error(err);
         setError(true);
       } finally {
         setLoading(false);
@@ -42,222 +44,254 @@ export const ProfilePublic = () => {
     };
 
     fetchUser();
-  }, [username,isFollowing]);
+  }, [username, isFollowing]);
 
-  // Toggle Follow
   const handleToggleFollow = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/users/follow/${username}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        }
-      );
-      if (!res.ok) throw new Error("Failed to toggle follow");
+      const res = await fetch(`${BACKEND_URL}/users/follow/${username}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error("Failed to follow/unfollow");
       setIsFollowing(!isFollowing);
     } catch (err) {
       console.error(err);
     }
   };
 
-  if (loading) {
-    return <div className="text-center ">Loading profile...</div>;
-  }
+  if (loading) return <p className="text-center mt-20">Loading profile...</p>;
 
-  if (error || !user) {
+  if (error || !user)
     return (
-      <>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-red-500">User not found</h1>
-            <p className="text-gray-600 mt-2">The username @{username} does not exist.</p>
-          </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-500">User not found</h1>
+          <p className="text-gray-600 mt-2">
+            The username @{username} does not exist.
+          </p>
         </div>
-      </>
+      </div>
     );
-  }
 
   return (
-    <>
-      
-      <div className="min-h-screen bg-gray-100  py-6 px-4 sm:px-8 md:px-16 lg:px-24">
-        {/* Cover Image */}
-        <div className="bg-white shadow-lg rounded-bl-lg rounded-br-lg overflow-hidden">
-          <div className="relative h-64 bg-gray-300 rounded-bl-lg rounded-br-lg overflow-hidden">
-            <img src="https://picsum.photos/1200/400" alt="cover" className="w-full h-full object-cover" />
-          </div>
-
-          {/* Profile info */}
-          <div className="relative -mt-16 flex-col items-start space-x-6">
-            <div className="flex-shrink-0 ml-10">
-              <img
-                src={user.profilePic || "https://i.pravatar.cc/150"}
-                alt="profile"
-                className="w-32 h-32 rounded-full border-4 border-white shadow-lg"
-              />
-            </div>
-            <div className="flex flex-row ml-10 mt-4 justify-between px-4 w-full">
-              <div className="flex flex-col justify-center mb-5">
-                <h1 className="text-3xl font-bold">{user.name}</h1>
-                <p className="text-gray-500">@{user.username}</p>
-                <p className="mt-1 text-gray-600">{user.bio}</p>
-              </div>
-              <div className="flex flex-col gap-4 px-10">
-                <button
-                  onClick={handleToggleFollow}
-                  className={`${
-                    isFollowing ? "bg-gray-400" : "bg-blue-600"
-                  } text-white font-semibold py-2 px-4 rounded-lg`}
-                >
-                  {isFollowing ? "Unfollow" : "Follow"}
-                </button>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-100 py-6 px-4 sm:px-8 md:px-16 lg:px-24">
+      {/* Cover Image */}
+      <div className="bg-white shadow-lg rounded-bl-lg rounded-br-lg overflow-hidden">
+        <div className="relative h-48 md:h-64 bg-gray-300">
+          <img
+            src={user.coverPhoto || "https://picsum.photos/1200/400"}
+            alt="cover"
+            className="w-full h-full object-cover"
+          />
         </div>
 
-        {/* Tabs */}
-        <div className="grid grid-cols-3 gap-8 w-full pt-5">
-          <div className="col-span-1 flex flex-col gap-4">
-            <div className="bg-white shadow-lg rounded-bl-lg rounded-br-lg overflow-hidden p-6">
-              <h3 className="text-2xl font-bold mb-4">About</h3>
-              {/* Replace with real user data */}
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <GenderIcon className="w-5 h-5 text-gray-600" />
-                  <span>{user.gender || "N/A"}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <DobIcon className="w-5 h-5 text-gray-600" />
-                  <span>{user.dob ? new Date(user.dob).toLocaleDateString("en-GB") : "Not provided"}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <PhoneIcon className="w-5 h-5 text-gray-600" />
-                  <span>{user.phone || "N/A"}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <MailIcon className="w-5 h-5 text-gray-600" />
-                  <span>{user.email || "N/A"}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <LocationProfileIcon className="w-5 h-5 text-gray-600" />
-                  <span>{user.location || "N/A"}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <JobIcon className="w-5 h-5 text-gray-600" />
-                  <span>{user.job || "N/A"}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <HeartIcon className="w-5 h-5 text-gray-600" />
-                  <span>{user.status || "N/A"}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="col-span-2 flex flex-col gap-4">
-            <div className="bg-white shadow-lg rounded-bl-lg rounded-br-lg overflow-hidden pt-4">
-              <div className="flex border-b">
-                {["followers", "following", "contribution", "wishlist"].map((tab) => (
-                  <button
-                    key={tab}
-                    className={`flex-1 text-center py-3 font-semibold transition-transform duration-150 ${
-                      activeTab === tab
-                        ? "border-b-2 border-blue-600 text-blue-600 -translate-y-1"
-                        : "text-gray-500"
-                    }`}
-                    onClick={() => setActiveTab(tab)}
-                  >
-                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-6 px-6">
-  {activeTab === "followers" || activeTab === "following" ? (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pb-10">
-      {(user[activeTab]?.length ?? 0) === 0 ? (
-        <p className="text-gray-500 col-span-full text-center py-10">
-          No {activeTab} yet.
-        </p>
-      ) : (
-        user[activeTab].map((u) => (
-          <Link to={`/profile/${u.username}`} key={u._id}>
-            <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg shadow-sm">
-              <img
-                src={u.profilePic || "https://i.pravatar.cc/40"}
-                alt={u.username}
-                className="w-10 h-10 rounded-full object-cover"
-              />
-              <span className="font-semibold text-gray-700">@{u.username}</span>
-            </div>
-          </Link>
-        ))
-      )}
-    </div>
-  ) : activeTab === "contribution" ? (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4 pb-10">
-      {(user.contributions?.length ?? 0) === 0 ? (
-        <p className="text-gray-500 col-span-full text-center py-10">
-          No approved contributions yet.
-        </p>
-      ) : (
-        user.contributions.map((c) => (
-          <div
-            key={c._id}
-            className="bg-gray-50 p-4 rounded-lg shadow hover:shadow-md transition"
-          >
+        {/* Profile Info */}
+        <div className="relative -mt-12 md:-mt-16 flex flex-col items-start space-x-0 md:space-x-6">
+          <div className="ml-6 md:ml-10">
             <img
-              src={c.images?.[0] || "https://via.placeholder.com/300x200"}
-              alt={c.title}
-              className="w-full h-40 object-cover rounded-md mb-3"
+              src={user.profilePic || "https://i.pravatar.cc/150"}
+              alt="profile"
+              className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg"
             />
-            <h3 className="text-lg font-semibold mb-1">{c.title}</h3>
-            <p className="text-gray-600 text-sm mb-2 line-clamp-3">
-              {c.description}
-            </p>
-            <div className="flex justify-between text-sm text-gray-500">
-              <span>{c.likes?.length || 0} Likes</span>
-              <span>{c.comments?.length || 0} Comments</span>
-            </div>
           </div>
-        ))
-      )}
-    </div>
-  ) : activeTab === "wishlist" ? (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4 pb-10">
-      {(user.wishlist?.length ?? 0) === 0 ? (
-        <p className="text-gray-500 col-span-full text-center py-10">
-          No wishlist items yet.
-        </p>
-      ) : (
-        user.wishlist.map((w) => (
-          <Link to={`/location/${w._id}`} key={w._id}>
-            <div className="bg-gray-50 p-4 rounded-lg shadow hover:shadow-md transition">
-              <img
-                src={w.images?.[0] || "https://via.placeholder.com/300x200"}
-                alt={w.name}
-                className="w-full h-40 object-cover rounded-md mb-3"
-              />
-              <h3 className="text-lg font-semibold mb-1">{w.name}</h3>
-              <p className="text-gray-600 text-sm">
-                {w.district?.name || "Unknown district"}
+
+          <div className="flex flex-col md:flex-row ml-6 md:ml-10 mt-4 justify-between md:px-4 w-full">
+            <div className="flex flex-col justify-center mb-3 md:mb-5">
+              <h1 className="text-2xl md:text-3xl font-bold">{user.name}</h1>
+              <p className="text-gray-500">@{user.username}</p>
+              <p className="mt-1 text-gray-600 text-sm md:text-base">
+                {user.bio || "No bio provided"}
               </p>
             </div>
-          </Link>
-        ))
-      )}
-    </div>
-  ) : null}
-</div>
 
+            <div className="flex md:flex-col gap-2 md:gap-4">
+              <button
+                onClick={handleToggleFollow}
+                className={`${
+                  isFollowing ? "bg-gray-500" : "bg-blue-600"
+                } text-white font-semibold py-2 px-3 md:px-4 rounded-lg text-sm md:text-base`}
+              >
+                {isFollowing ? "Unfollow" : "Follow"}
+              </button>
             </div>
           </div>
         </div>
       </div>
-    </>
+
+      {/* Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 w-full pt-4 md:pt-5">
+        {/* About Section */}
+        <div className="col-span-1 flex flex-col gap-4">
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden p-4 md:p-6">
+            <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">About</h3>
+            <div className="space-y-2 md:space-y-3 text-sm md:text-base">
+              <div className="flex items-center space-x-2">
+                <GenderIcon className="w-5 h-5 text-gray-600" />
+                <span>{user.gender || "N/A"}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <DobIcon className="w-5 h-5 text-gray-600" />
+                <span>
+                  {user.dob
+                    ? new Date(user.dob).toLocaleDateString("en-GB")
+                    : "Not provided"}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <PhoneIcon className="w-5 h-5 text-gray-600" />
+                <span>{user.phone || "N/A"}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <MailIcon className="w-5 h-5 text-gray-600" />
+                <span>{user.email || "N/A"}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <LocationProfileIcon className="w-5 h-5 text-gray-600" />
+                <span>{user.location || "N/A"}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <JobIcon className="w-5 h-5 text-gray-600" />
+                <span>{user.occupation || user.job || "N/A"}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <HeartIcon className="w-5 h-5 text-gray-600" />
+                <span>{user.relationshipStatus || "Single"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs Section */}
+        <div className="col-span-2 flex flex-col gap-4">
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden pt-3 md:pt-4 pb-4">
+            {/* Tabs Header */}
+            <div className="flex border-b overflow-x-auto no-scrollbar">
+              {["followers", "following", "contribution"].map((tab) => (
+                <button
+                  key={tab}
+                  className={`flex-1 text-center py-2 md:py-3 font-semibold transition-transform duration-150 whitespace-nowrap ${
+                    activeTab === tab
+                      ? "border-b-2 border-blue-600 text-blue-600 -translate-y-[1px]"
+                      : "text-gray-500"
+                  }`}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab Content */}
+            <div className="mt-4 md:mt-6 px-3 md:px-6">
+              {activeTab === "followers" && (
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+                  {user.followers?.length ? (
+                    user.followers.map((f) => (
+                      <div
+                        key={f._id}
+                        className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={() => navigate(`/profile/${f.username}`)}
+                      >
+                        <div className="flex items-center gap-4">
+                          <img
+                            src={f.profilePic || "https://i.pravatar.cc/50"}
+                            alt={f.username}
+                            className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
+                          />
+                          <div>
+                            <p className="font-semibold text-gray-800">
+                              {f.username}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center col-span-full mt-4">
+                      No followers yet
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {activeTab === "following" && (
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+                  {user.following?.length ? (
+                    user.following.map((f) => (
+                      <div
+                        key={f._id}
+                        className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={() => navigate(`/profile/${f.username}`)}
+                      >
+                        <div className="flex items-center gap-4">
+                          <img
+                            src={f.profilePic || "https://i.pravatar.cc/50"}
+                            alt={f.username}
+                            className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
+                          />
+                          <div>
+                            <p className="font-semibold text-gray-800">
+                              {f.username}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center col-span-full mt-4">
+                      Not following anyone yet
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {activeTab === "contribution" && (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {user.contributions?.length ? (
+                    user.contributions.map((c) => (
+                      <div
+                        key={c._id}
+                        className={`bg-white rounded-lg shadow p-4 border-t-4 ${
+                          c.verified
+                            ? "border-green-500"
+                            : "border-yellow-500"
+                        }`}
+                      >
+                        <img
+                          src={c.coverImage || "https://picsum.photos/200/120"}
+                          alt={c.description || "Contribution"}
+                          className="w-full h-40 object-cover rounded mb-2"
+                        />
+                        <h4 className="font-bold">
+                          {c.location?.name || "Unknown"}
+                        </h4>
+                        <p className="text-sm text-gray-600 line-clamp-2">
+                          {c.description}
+                        </p>
+                        <p
+                          className={`mt-1 text-xs font-semibold ${
+                            c.verified ? "text-green-600" : "text-yellow-600"
+                          }`}
+                        >
+                          {c.verified ? "✅ Approved" : "🕒 Pending"}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center col-span-full py-10">
+                      No contributions yet.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
