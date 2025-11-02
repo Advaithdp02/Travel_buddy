@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { Box, Typography, CircularProgress, Alert, Chip } from "@mui/material";
-import { YellowCalendar, YellowPerson } from "../components/icons";
+import { YellowCalendar, YellowPerson } from "../components/Icons";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 

@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-
 import { LocationIcon } from "./Icons";
 import { useNavigate } from "react-router-dom";
 
@@ -12,7 +11,6 @@ export const Registration = ({ currentPage }) => {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
-  const [generatedOtp, setGeneratedOtp] = useState("");
 
   // Step 2: Registration fields
   const [formData, setFormData] = useState({
@@ -23,34 +21,61 @@ export const Registration = ({ currentPage }) => {
     location: "",
   });
 
-  // Generate OTP
-  const handleStep1Submit = (e) => {
+  // Step 1: Request backend to send OTP
+  const handleStep1Submit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // Generate 6-digit OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log("Generated OTP:", otpCode); // Send this via backend in real app
-    setGeneratedOtp(otpCode);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/contact/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
 
-    setTimeout(() => {
-      setLoading(false);
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Failed to send OTP");
+      }
+
+      alert("OTP sent to your email ✅");
       setStep(1.5);
-    }, 1000);
-  };
-
-  // Verify OTP
-  const handleOtpSubmit = (e) => {
-    e.preventDefault();
-    if (otp === generatedOtp) {
-      alert("OTP Verified ✅");
-      setStep(2);
-    } else {
-      alert("Invalid OTP ❌");
+    } catch (err) {
+      console.error("Send OTP error:", err);
+      alert(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Final Registration API call
+  // Step 1.5: Verify OTP via backend
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/contact/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "OTP verification failed");
+      }
+
+      alert("OTP Verified ✅");
+      setStep(2);
+    } catch (err) {
+      console.error("Verify OTP error:", err);
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 2: Final registration
   const handleFinalSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -78,9 +103,6 @@ export const Registration = ({ currentPage }) => {
       }
 
       const data = await res.json();
-      console.log("Registration successful:", data);
-
-      // Store token & userId in localStorage
       localStorage.setItem("token", data.token);
       localStorage.setItem("userId", data.user.id);
       localStorage.setItem("isLoggedIn", "true");
@@ -97,8 +119,6 @@ export const Registration = ({ currentPage }) => {
 
   return (
     <section className="relative bg-white min-h-screen flex flex-col">
-      
-
       <div className="flex flex-1 items-center justify-center px-8 py-16">
         <div className="bg-white shadow-2xl rounded-2xl p-10 w-full max-w-md">
           <div className="text-center mb-8">
@@ -125,7 +145,6 @@ export const Registration = ({ currentPage }) => {
                   required
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-brand-dark mb-2">Phone Number</label>
                 <input
@@ -137,7 +156,6 @@ export const Registration = ({ currentPage }) => {
                   required
                 />
               </div>
-
               <button
                 type="submit"
                 disabled={loading}
@@ -162,12 +180,12 @@ export const Registration = ({ currentPage }) => {
                   required
                 />
               </div>
-
               <button
                 type="submit"
+                disabled={loading}
                 className="w-full bg-brand-dark text-white font-semibold py-3 rounded-lg shadow-lg hover:bg-brand-dark/90"
               >
-                Verify OTP
+                {loading ? "Verifying..." : "Verify OTP"}
               </button>
             </form>
           )}
@@ -175,65 +193,22 @@ export const Registration = ({ currentPage }) => {
           {/* Step 2: Full Registration Form */}
           {step === 2 && (
             <form onSubmit={handleFinalSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-brand-dark mb-2">Name</label>
-                <input
-                  type="text"
-                  placeholder="Enter your name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-yellow"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-brand-dark mb-2">Username</label>
-                <input
-                  type="text"
-                  placeholder="Choose a username"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-yellow"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-brand-dark mb-2">Password</label>
-                <input
-                  type="password"
-                  placeholder="Enter password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-yellow"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-brand-dark mb-2">Place / Location</label>
-                <input
-                  type="text"
-                  placeholder="Enter your location"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-yellow"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-brand-dark mb-2">Date of Birth</label>
-                <input
-                  type="date"
-                  value={formData.dob}
-                  onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-yellow"
-                  required
-                />
-              </div>
-
+              {/* Name, Username, Password, Location, DOB inputs */}
+              {["name", "username", "password", "location", "dob"].map((field) => (
+                <div key={field}>
+                  <label className="block text-sm font-semibold text-brand-dark mb-2">
+                    {field.charAt(0).toUpperCase() + field.slice(1)}
+                  </label>
+                  <input
+                    type={field === "password" ? "password" : field === "dob" ? "date" : "text"}
+                    placeholder={`Enter your ${field}`}
+                    value={formData[field]}
+                    onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-yellow"
+                    required
+                  />
+                </div>
+              ))}
               <button
                 type="submit"
                 disabled={loading}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { YellowCalendar, YellowPerson } from "./icons";
+import { YellowCalendar, YellowPerson } from "./Icons";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 

@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import DestinationCard from "./DestinationCard";
-import { IconArrowRight, IconArrowLeft } from "./icons";
+import { IconArrowRight, IconArrowLeft } from "./Icons";
 
 const ArrowButton = ({ direction = "right", onClick }) => {
   const Icon = direction === "right" ? IconArrowLeft : IconArrowRight;

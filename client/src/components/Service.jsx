@@ -1,5 +1,5 @@
 import React from "react";
-import {ClimateIcon,LocationIcon,PlacesIcon,HotelsIcon,TrafficIcon} from "./icons";
+import {ClimateIcon,LocationIcon,PlacesIcon,HotelsIcon,TrafficIcon} from "./Icons";
 
 
 export const Service = () => {
