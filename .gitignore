@@ -139,3 +139,5 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 backend/.env
 client/.env
+node_modules
+Travel Buddy Key.pem
