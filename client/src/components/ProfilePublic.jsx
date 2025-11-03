@@ -83,7 +83,7 @@ export const ProfilePublic = () => {
       <div className="bg-white shadow-lg rounded-bl-lg rounded-br-lg overflow-hidden">
         <div className="relative h-48 md:h-64 bg-gray-300">
           <img
-            src={user.coverPhoto || "https://picsum.photos/1200/400"}
+            src={user.coverPhoto || "/defaultCoverPic.png" }
             alt="cover"
             className="w-full h-full object-cover"
           />
@@ -93,7 +93,7 @@ export const ProfilePublic = () => {
         <div className="relative -mt-12 md:-mt-16 flex flex-col items-start space-x-0 md:space-x-6">
           <div className="ml-6 md:ml-10">
             <img
-              src={user.profilePic || "https://i.pravatar.cc/150"}
+              src={user.profilePic || "/defaultProfilePic.webp" }
               alt="profile"
               className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg"
             />
@@ -108,7 +108,7 @@ export const ProfilePublic = () => {
               </p>
             </div>
 
-            <div className="flex md:flex-col gap-2 md:gap-4">
+            <div className="flex md:flex-col gap-2 md:gap-4 mr-[20px]">
               <button
                 onClick={handleToggleFollow}
                 className={`${
@@ -198,7 +198,7 @@ export const ProfilePublic = () => {
                       >
                         <div className="flex items-center gap-4">
                           <img
-                            src={f.profilePic || "https://i.pravatar.cc/50"}
+                            src={f.profilePic || "/defaultProfilePic.webp"}
                             alt={f.username}
                             className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
                           />
@@ -229,7 +229,7 @@ export const ProfilePublic = () => {
                       >
                         <div className="flex items-center gap-4">
                           <img
-                            src={f.profilePic || "https://i.pravatar.cc/50"}
+                            src={f.profilePic || "/defaultProfilePic.webp" }
                             alt={f.username}
                             className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
                           />
@@ -262,7 +262,7 @@ export const ProfilePublic = () => {
                         }`}
                       >
                         <img
-                          src={c.coverImage || "https://picsum.photos/200/120"}
+                          src={c.coverImage }
                           alt={c.description || "Contribution"}
                           className="w-full h-40 object-cover rounded mb-2"
                         />

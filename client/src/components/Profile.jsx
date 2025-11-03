@@ -181,7 +181,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
       <div className="bg-white shadow-lg rounded-bl-lg rounded-br-lg overflow-hidden">
         <div className="relative h-48 md:h-64 bg-gray-300 rounded-bl-lg rounded-br-lg overflow-hidden">
           <img
-            src={userData?.coverImage || "https://picsum.photos/1200/400"}
+            src={userData?.coverImage || "/defaultCoverPic.png"}
             alt="cover"
             className="w-full h-full object-cover"
           />
@@ -191,7 +191,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
         <div className="relative -mt-12 md:-mt-16 flex flex-col md:flex-col items-start space-x-0 md:space-x-6">
           <div className="flex-shrink-0 ml-4 md:ml-10 -mt-6 md:mt-0">
             <img
-              src={userData?.profileImage || "https://i.pravatar.cc/150"}
+              src={userData?.profileImage || "/defaultProfilePic.webp"}
               alt="profile"
               className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg"
             />
@@ -206,7 +206,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
               </p>
             </div>
 
-            <div className="flex md:flex-col gap-2 md:gap-4">
+            <div className="flex md:flex-col gap-2 md:gap-4 mr-[20px]">
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="bg-blue-600 text-white font-semibold py-2 px-3 md:px-4 rounded-lg text-sm md:text-base"
@@ -335,7 +335,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
         >
           <div className="flex items-center gap-4">
             <img
-              src={f.profilePic || "https://i.pravatar.cc/50"}
+              src={f.profilePic || "/defaultProfilePic.webp"}
               alt={f.username}
               className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
             />
@@ -369,7 +369,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
         >
           <div className="flex items-center gap-4">
             <img
-              src={f.profilePic || "https://i.pravatar.cc/50"}
+              src={f.profilePic || "`https://i.pravatar.cc/50`"}
               alt={f.username}
               className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
             />
@@ -454,7 +454,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
             }`}
           >
             <img
-              src={c.coverImage || "https://picsum.photos/200/120"}
+              src={c.coverImage || "/defaultCoverPic.png"}
               alt={c.description || "Contribution"}
               className="w-full h-40 object-cover rounded mb-2"
             />
