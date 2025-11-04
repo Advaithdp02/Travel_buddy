@@ -198,18 +198,18 @@ useEffect(() => {
   return (
     <>
       {/* 🌅 Hero Section */}
-      <section className="relative h-[60vh] w-full flex items-center">
+      <section className="relative h-[60vh] w-full flex items-center px-8 ">
         <div
           className="absolute inset-0 rounded-[20px] bg-cover bg-center"
           style={{ backgroundImage: `url(${hero.bgImg})` }}
         ></div>
-        <div className="absolute inset-0 rounded-[20px] bg-gradient-to-r from-transparent to-[#1D1D51]"></div>
+        <div className="absolute inset-0 rounded-[20px] bg-gradient-to-r from-transparent to-[#8B63DA]"></div>
 
         <div className="relative z-10 text-left max-w-[724px] left-[25px] px-4">
           <h3 className="text-[#F2B024] font-schoolbell text-[30px] leading-[42px]">
             {hero.title}
           </h3>
-          <h1 className="text-white font-baloo text-[65px] leading-[70px] mt-2">
+          <h1 className="text-white font-poppins text-[65px] leading-[70px] mt-2">
             {hero.subtitle}
           </h1>
         </div>
@@ -242,18 +242,18 @@ useEffect(() => {
             <h2 className="text-[#3F3F3F] font-schoolbell text-[30px] leading-[42px]">
               {about.heading}
             </h2>
-            <p className="text-[#F2B024] font-baloo text-[40px] leading-[50px] my-3">
+            <p className="text-[#9156F1] font-poppins text-[40px] leading-[50px] my-3">
               {about.subtitle}
             </p>
 
-            <p className="text-[#726E6E] font-roboto text-[12px] leading-[23px] mb-6">
+            <p className="text-[#310a49] font-roboto text-[12px] leading-[23px] mb-6">
               {about.description}
             </p>
 
-            <ul className="space-y-3 text-brand-gray mb-8">
+            <ul className="space-y-3 text-[#310a49] mb-8">
               {about.points.map((p, idx) => (
-                <li key={idx} className="flex items-start">
-                  <CheckIcon className="text-brand-yellow mr-2 mt-1 flex-shrink-0" />
+                <li key={idx} className="flex items-start ">
+                  <CheckIcon className="text-[#9156F1] mr-2 mt-1 flex-shrink-0" />
                   {p}
                 </li>
               ))}
@@ -265,7 +265,7 @@ useEffect(() => {
       </section>
 
       {/* 💬 Comments & Contributions */}
-      <section className="py-16 px-8 bg-gray-50">
+      <section className="py-16 px-8 bg-[#fbebff] ">
   <div className="container mx-auto">
     <h2 className="text-3xl font-bold text-brand-dark mb-6">Community Insights</h2>
 
@@ -275,7 +275,7 @@ useEffect(() => {
         onClick={() => setActiveTab("comments")}
         className={`pb-2 font-semibold transition-colors ${
           activeTab === "comments"
-            ? "border-b-2 border-brand-yellow text-brand-dark"
+            ? "border-b-2 border-[#9156F1] text-brand-dark"
             : "text-brand-gray"
         }`}
       >
@@ -285,7 +285,7 @@ useEffect(() => {
         onClick={() => setActiveTab("contributions")}
         className={`pb-2 font-semibold transition-colors ${
           activeTab === "contributions"
-            ? "border-b-2 border-brand-yellow text-brand-dark"
+            ? "border-b-2 border-[#9156F1] text-brand-dark"
             : "text-brand-gray"
         }`}
       >
@@ -416,9 +416,9 @@ useEffect(() => {
       />
       {/* Filter & Places Section */}
             {/* 🌍 Filter Section */}
-<section className="bg-brand-light-purple py-12 px-8">
+<section className="bg-[#fbebff] py-12 px-8">
   <div className="container mx-auto">
-    <div className="bg-brand-dark rounded-xl p-6 flex flex-wrap items-center justify-between gap-4 mb-10">
+    <div className="bg-[#310a49] rounded-xl p-6 flex flex-wrap items-center justify-between gap-4 mb-10">
       <span className="text-white text-2xl font-bold">Filter</span>
       <div className="flex-grow flex flex-wrap items-center gap-4">
         {/* 🏠 State Selector */}
@@ -504,7 +504,7 @@ useEffect(() => {
         </select>
       </div>
 
-      <button className="bg-brand-yellow text-brand-dark font-bold py-3 px-8 rounded-lg w-full sm:w-auto">
+      <button className="bg-[#9156F1] text-white font-bold py-3 px-8 rounded-lg w-full sm:w-auto">
         SEARCH
       </button>
     </div>
@@ -570,7 +570,7 @@ useEffect(() => {
                 </div>
               </div>
       
-              <button className="mt-3 w-fit bg-brand-dark text-white font-semibold py-2.5 px-5 rounded-[2.5rem] hover:bg-brand-dark/90" onClick={()=>{navigate(`/destination/${place._id}`);window.scrollTo(0, 0);}}>
+              <button className="mt-3 w-fit bg-[#9156F1] text-white font-semibold py-2.5 px-5 rounded-[2.5rem] hover:bg-brand-dark/90" onClick={()=>{navigate(`/destination/${place._id}`);window.scrollTo(0, 0);}}>
                 Lets Go
               </button>
             </div>

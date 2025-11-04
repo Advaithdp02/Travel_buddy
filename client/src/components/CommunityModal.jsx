@@ -243,10 +243,10 @@ const handleReplySubmit = async (commentId) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white w-11/12 md:w-4/5 lg:w-3/4 rounded-xl shadow-2xl overflow-hidden">
+      <div className="bg-[#fbebff] w-11/12 md:w-4/5 lg:w-3/4  p-8 rounded-xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b">
-          <h3 className="text-xl font-bold">
+          <h3 className="text-3xl font-bold text-[#310a49]">
             {activeTab === "comments" ? "Comments" : "Contributions"}
           </h3>
           <button onClick={onClose}>
@@ -282,7 +282,7 @@ const handleReplySubmit = async (commentId) => {
   {/* Like Button */}
   <button
     className={`flex items-center gap-1 px-2 py-1 rounded-full ${
-      hasLiked ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-500"
+      hasLiked ? "bg-[#9156F1]/90 text-white" : "bg-gray-100 text-gray-500"
     }`}
     onClick={() => handleLikeComment(c._id)}
   >
@@ -292,7 +292,7 @@ const handleReplySubmit = async (commentId) => {
 
   {/* Reply Button */}
   <button
-    className="text-gray-500 hover:text-blue-600 font-medium"
+    className="text-gray-500 hover:text-blue-600 pl-[20px] font-medium"
     onClick={() => toggleReplyInput(c._id)}
   >
     Reply
@@ -301,7 +301,7 @@ const handleReplySubmit = async (commentId) => {
 {c.replies && c.replies.length > 0 && (
   <div className="ml-6 mt-2 space-y-1">
     {c.replies.map((r) => (
-      <div key={r._id} className="bg-gray-50 p-2 rounded-lg text-sm">
+      <div key={r._id} className="bg-[#fbebff]/60 p-2 rounded-lg ml-[40px] text-sm shadow-md">
         <p className="font-semibold">{r.user?.name || "Unknown"}</p>
         <p>{r.text}</p>
       </div>
@@ -341,12 +341,12 @@ const handleReplySubmit = async (commentId) => {
                   placeholder="Add a comment..."
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  className="flex-grow border rounded-lg p-2"
+                  className="flex-grow border border-[#9156F1] rounded-lg p-2"
                 /><button
                   onClick={handleAddComment}
-                  className="bg-brand-yellow text-brand-dark font-semibold px-4 rounded-lg"
+                  className="bg-[#9156F1]  w-[5%] text-white font-semibold px-4 rounded-lg"
                 >
-                  Add
+                  >
                 </button></div>}
                 
               

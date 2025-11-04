@@ -5,7 +5,7 @@ export const Header = ({ variant = "light" }) => {
   const navigate = useNavigate();
   const isLight = variant === "light";
   const textColor = isLight ? "text-brand-dark" : "text-white";
-  const buttonBg = isLight ? "bg-brand-dark text-white" : "bg-white text-brand-dark";
+
   const buttonHover = isLight ? "hover:bg-brand-dark/90" : "hover:bg-gray-200";
   const isLoggedIn = localStorage.getItem("isLoggedIn");
 
@@ -37,16 +37,19 @@ export const Header = ({ variant = "light" }) => {
   };
 
   return (
-    <header className="w-full top-0 left-0 z-50 bg-transparent py-4 px-6  md:px-16">
-      <div className="flex justify-between items-center w-full max-w-[1250px] mx-auto h-[40px]">
-        {/* Logo */}
-        <div className="flex-shrink-0 cursor-pointer" onClick={() => navigate("/")}>
-          <img
-            src="/LOGO.png"
-            alt="logo"
-            className="w-[160px] h-[145.5px]  pt-[15px] relative top-[2px]"
-          />
-        </div>
+    <header className="w-full top-0 left-0 z-50 bg-[#fbebff] py-4 px-6 md:px-16 ">
+  <div className="flex justify-end items-center w-full max-w-[1250px] mx-auto h-[40px] relative">
+    {/* Logo */}
+    <div
+      className="absolute -bottom-4 left-0 flex-shrink-0 cursor-pointer bg-white rounded-bl-[20px] rounded-br-[20px] overflow-visible inline-block shadow-md"
+      onClick={() => navigate("/")}
+    >
+      <img
+        src="/LOGO.png"
+        alt="logo"
+        className="w-[160px] h-auto block"
+      />
+    </div>
 
         <div className="flex flex-rows gap-10 items-center">
           {/* Navigation Links */}
@@ -57,8 +60,8 @@ export const Header = ({ variant = "light" }) => {
                 onClick={() => handleLinkClick(link.page)}
                 className={`${textColor} ${
                   window.location.pathname === link.page
-                    ? "text-[#F2B024] font-bold"
-                    : "hover:text-[#F2B024]"
+                    ? "text-[#9156F1] font-bold"
+                    : "hover:text-[#9156F1]"
                 } transition-colors`}
               >
                 {link.name}
@@ -70,14 +73,14 @@ export const Header = ({ variant = "light" }) => {
           {isLoggedIn ? (
             <button
               onClick={() => navigate("/profile")}
-              className={`${buttonBg} ${buttonHover} w-[100px] h-[40px] rounded-full font-semibold shadow-md flex items-center justify-center text-[13px] transition-transform hover:scale-105`}
+              className={`${buttonHover} w-[100px] text-white h-[40px] bg-[#9156F1] rounded-full font-semibold shadow-md flex items-center justify-center text-[13px] transition-transform hover:scale-105`}
             >
               Profile
             </button>
           ) : (
             <button
               onClick={() => navigate("/login")}
-              className="w-[100px] h-[40px] bg-[#1D1D51] rounded-full text-white font-roboto font-normal text-[13px] leading-[15px] flex items-center justify-center shadow-md transition-transform hover:scale-105"
+              className="w-[100px] h-[40px] bg-[#9156F1] rounded-full text-white font-roboto font-normal text-[13px] leading-[15px] flex items-center justify-center shadow-md transition-transform hover:scale-105"
             >
               LOGIN
             </button>

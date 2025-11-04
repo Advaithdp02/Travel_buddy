@@ -29,7 +29,7 @@ export default function DestinationCard({ destination }) {
       </div>
 
       <div className="p-4">
-        <p className="text-gray-900 text-sm truncate">
+        <p className="text-[#310a49] text-sm truncate">
           Explore the beautiful district of {destination.name}
         </p>
 
@@ -57,7 +57,7 @@ export default function DestinationCard({ destination }) {
           ))}
         </div>
 
-        <button className="mt-4 bg-[#37377B] text-white text-sm py-2 px-6 rounded-full hover:bg-[#5050A0]" onClick={()=>navigate(`district/${id}`)}>
+        <button className="mt-4 bg-[#9156F1] text-white text-sm py-2 px-6 rounded-full hover:bg-[#5050A0]" onClick={()=>navigate(`district/${id}`)}>
           LETS GO
         </button>
       </div>

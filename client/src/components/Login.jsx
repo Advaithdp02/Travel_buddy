@@ -53,7 +53,7 @@ export const Login = ({ currentPage }) => {
   };
 
   return (
-    <section className="relative bg-white min-h-screen flex flex-col">
+    <section className="relative bg-[#fbebff] min-h-screen flex flex-col">
      
 
       <div className="flex flex-1 items-center justify-center px-8 py-16">
@@ -61,16 +61,16 @@ export const Login = ({ currentPage }) => {
           <div className="text-center mb-8">
             <div className="flex justify-center items-center mb-4">
               <div className="w-14 h-14 bg-brand-light-purple rounded-full flex items-center justify-center">
-                <LocationIcon className="w-8 h-8 text-brand-dark" />
+                <LocationIcon className="w-8 h-8 text-[#310a49]" />
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-brand-dark">Welcome Back</h2>
+            <h2 className="text-3xl font-bold text-[#310a49]">Welcome Back</h2>
             <p className="text-brand-gray mt-2">Login to continue exploring</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="block text-sm font-semibold text-brand-dark mb-2">
+              <label className="block text-sm font-semibold text-[#310a49] mb-2">
                 Email or Username
               </label>
               <input
@@ -78,13 +78,13 @@ export const Login = ({ currentPage }) => {
                 placeholder="Enter your email or username"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-yellow"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-[#310a49] focus:outline-none focus:ring-2 focus:ring-brand-yellow"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-brand-dark mb-2">
+              <label className="block text-sm font-semibold text-[#310a49] mb-2">
                 Password
               </label>
               <input
@@ -92,7 +92,7 @@ export const Login = ({ currentPage }) => {
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-yellow"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-[#310a49] focus:outline-none focus:ring-2 focus:ring-brand-yellow"
                 required
               />
             </div>
@@ -100,7 +100,7 @@ export const Login = ({ currentPage }) => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-brand-dark text-white font-semibold py-3 rounded-lg shadow-lg hover:bg-brand-dark/90 transition-transform transform hover:scale-105 disabled:opacity-50"
+              className="w-full bg-[#9156F1] text-white font-semibold py-3 rounded-lg shadow-lg hover:bg-[#310a49]/90 transition-transform transform hover:scale-105 disabled:opacity-50"
             >
               {isSubmitting ? "Logging in..." : "LOGIN"}
             </button>
@@ -110,7 +110,7 @@ export const Login = ({ currentPage }) => {
             Don’t have an account?{" "}
             <button
               onClick={() => navigate("/register")}
-              className="text-brand-yellow font-semibold hover:underline"
+              className="text-[#9156F1] font-semibold hover:underline"
             >
               Register
             </button>

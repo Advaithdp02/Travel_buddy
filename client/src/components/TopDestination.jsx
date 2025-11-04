@@ -11,7 +11,7 @@ const ArrowButton = ({ direction = "right", onClick }) => {
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      className="w-[35px] h-[35px] rounded-full bg-[#37377B] flex items-center justify-center transition-colors"
+      className="w-[35px] h-[35px] rounded-full bg-blackflex items-center justify-center transition-colors"
     >
       <Icon hover={hover} />
     </button>
@@ -88,7 +88,7 @@ export const TopDestinations = ({ userCoords }) => {
             <h2 className="font-schoolbell text-[#F2B024] text-3xl md:text-4xl">
               Top Destination
             </h2>
-            <p className="font-baloo text-white text-4xl md:text-5xl mt-2">
+            <p className="font-poppins text-white text-4xl md:text-5xl mt-2">
               Explore Top Destinations
             </p>
           </div>

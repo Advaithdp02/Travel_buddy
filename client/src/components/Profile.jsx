@@ -176,7 +176,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
 
  return (
   <>
-    <div className="min-h-screen bg-gray-100 py-6 px-2 sm:px-8 md:px-16 lg:px-24">
+    <div className="min-h-screen bg-[#fbebff] py-6 px-2 sm:px-8 md:px-16 lg:px-24">
       {/* Cover Image */}
       <div className="bg-white shadow-lg rounded-bl-lg rounded-br-lg overflow-hidden">
         <div className="relative h-48 md:h-64 bg-gray-300 rounded-bl-lg rounded-br-lg overflow-hidden">
@@ -199,8 +199,8 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
 
           <div className="flex flex-col md:flex-row ml-4 md:ml-10 mt-4 justify-between md:px-4 w-full">
             <div className="flex flex-col justify-center mb-3 md:mb-5">
-              <h1 className="text-2xl md:text-3xl font-bold">{userData.name}</h1>
-              <p className="text-gray-500">@{userData.username}</p>
+              <h1 className="text-2xl md:text-3xl  text-[#310a49] font-bold">{userData.name}</h1>
+              <p className="text-[#9156F1]">@{userData.username}</p>
               <p className="mt-1 text-gray-600 text-sm md:text-base">
                 {userData.bio || "Traveler, Photographer, Coffee Lover"}
               </p>
@@ -227,36 +227,37 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
       {/* Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 w-full pt-4 md:pt-5 -mt-4 md:mt-0">
         {/* About Section */}
-        <div className="col-span-1 flex flex-col gap-4 order-2 md:order-1">
-          <div className="bg-white shadow-lg rounded-lg overflow-hidden p-4 md:p-6">
+        <div className="col-span-1 text-[#310a49] flex flex-col gap-4 order-2 md:order-1">
+          <div className="bg-white text-[#310a49] shadow-lg rounded-lg overflow-hidden p-4 md:p-6">
             <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">About</h3>
+            <hr className="pb-2" />
             <div className="space-y-2 md:space-y-3 text-sm md:text-base">
               <div className="flex items-center space-x-2">
-                <GenderIcon className="w-5 h-5 text-gray-600" />
+                <GenderIcon className="w-5 h-5 text-[#310a49]" />
                 <span>{userData.gender || "N/A"}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <DobIcon className="w-5 h-5 text-gray-600" />
+                <DobIcon className="w-5 h-5 text-[#310a49]" />
                 <span>{userData.dob ? new Date(userData.dob).toLocaleDateString("en-GB") : "Not provided"}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <PhoneIcon className="w-5 h-5 text-gray-600" />
+                <PhoneIcon className="w-5 h-5 text-[#310a49]" />
                 <span>{userData.phone || "Not provided"}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <MailIcon className="w-5 h-5 text-gray-600" />
+                <MailIcon className="w-5 h-5 text-[#310a49]" />
                 <span>{userData.email}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <LocationProfileIcon className="w-5 h-5 text-gray-600" />
+                <LocationProfileIcon className="w-5 h-5 text-[#310a49]" />
                 <span>{userData.location || "Not specified"}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <JobIcon className="w-5 h-5 text-gray-600" />
+                <JobIcon className="w-5 h-5 text-[#310a49]" />
                 <span>{userData.job || "Not provided"}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <HeartIcon className="w-5 h-5 text-gray-600" />
+                <HeartIcon className="w-5 h-5 text-[#310a49]" />
                 <span>{userData.relationship || "Single"}</span>
               </div>
             </div>
@@ -265,14 +266,14 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
 
         {/* Tabs Section */}
         <div className="col-span-2 order-1 md:order-2 flex flex-col gap-4">
-          <div className="bg-white shadow-lg rounded-lg overflow-hidden pt-3 md:pt-4 pb-4">
+          <div className="bg-[#fbebff] shadow-lg rounded-lg overflow-hidden pt-3 md:pt-4 pb-4">
             <div className="flex border-b overflow-x-auto no-scrollbar">
               {["followers", "following", "contribution", "wishlist"].map((tab) => (
                 <button
                   key={tab}
                   className={`flex-1 text-center py-2 md:py-3 font-semibold transition-transform duration-150 whitespace-nowrap ${
                     activeTab === tab
-                      ? "border-b-2 border-blue-600 text-blue-600 -translate-y-[1px]"
+                      ? "border-b-2 text-[#310a49] border-[#9156F1] -translate-y-[1px]"
                       : "text-gray-500"
                   }`}
                   onClick={() => setActiveTab(tab)}
@@ -416,7 +417,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
                 {activeTab === "contribution" && (
   <div>
     <button
-      className="w-full bg-yellow-400 text-white py-2 rounded-lg flex items-center justify-center mb-4 hover:bg-yellow-500"
+      className="w-full bg-[#9156F1] text-white py-2 rounded-lg flex items-center justify-center mb-4 hover:bg-yellow-500"
       onClick={() => setIsAddContributionOpen(true)}
     >
       <span className="mr-2">+</span> Add New Place
@@ -428,7 +429,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
           key={sub}
           className={`flex-1 py-2 font-semibold rounded-lg transition-colors ${
             contribSubTab === sub
-              ? "bg-blue-600 text-white"
+              ? "bg-[#310a49] text-white"
               : "bg-gray-200 text-gray-600 hover:bg-gray-300"
           }`}
           onClick={() => setContribSubTab(sub)}

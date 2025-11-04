@@ -35,13 +35,13 @@ export const BlogSection = () => {
   const [mainBlog, ...smallBlogs] = blogs;
 
   return (
-    <section id="blog" className="w-full py-16 flex flex-col items-center bg-white">
-      <h3 className="font-schoolbell text-[#F2B024] text-[30px] mb-2">News and Events</h3>
-      <h2 className="font-baloo text-[40px] text-[#3F3F3F] leading-[50px] mb-10">Latest Around The Globe</h2>
+    <section id="blog" className="w-full py-16 flex flex-col items-center ">
+      <h3 className="font-schoolbell text-[#9156F1] text-[30px] mb-2">News and Events</h3>
+      <h2 className="font-poppins text-[40px] text-[#310a49] leading-[50px] mb-10">Latest Around The Globe</h2>
 
       <div className="w-[90%] max-w-[1200px] flex lg:flex-row flex-col gap-8 h-[600px]">
         {mainBlog && (
-          <div className="w-full lg:w-1/2 border border-[#E2DFDF] rounded-[14px] overflow-hidden">
+          <div className="w-full lg:w-1/2 border border-[#E2DFDF] bg-white rounded-[14px] overflow-hidden">
             <img
               src={mainBlog.image}
               alt={mainBlog.title}
@@ -49,19 +49,19 @@ export const BlogSection = () => {
             />
             <div className="p-5">
               <div className="flex items-center gap-4 text-[#6D6969] text-[12px] mb-3">
-                <span className="flex items-center gap-1 text-[#F2B024]">
+                <span className="flex items-center gap-1 text-[#9156F1]">
                   <YellowPerson /> {mainBlog.author?.name || "Unknown"}
                 </span>
-                <span className="flex items-center gap-1 text-[#F2B024]">
+                <span className="flex items-center gap-1 text-[#9156F1]">
                   <YellowCalendar /> {new Date(mainBlog.createdAt).toLocaleDateString()}
                 </span>
               </div>
 
-              <h3 className="font-baloo text-[23px] text-[#141313] mb-2">{mainBlog.title}</h3>
-              <p className="text-[#726E6E] text-[12px] leading-[18px] mb-4">{mainBlog.content.slice(0, 150)}...</p>
+              <h3 className="font-poppins text-[23px] text-[#310a49] mb-2">{mainBlog.title}</h3>
+              <p className="text-[#310a49] text-[12px] leading-[18px] mb-4">{mainBlog.content.slice(0, 150)}...</p>
               <hr className="border-[#E2DFDF] my-3" />
               <button
-                className="bg-[#37377B] text-white text-[13px] px-5 py-2 rounded-full"
+                className="bg-[#fbebff] text-[#310a49] shadow-md text-[13px] px-5 py-2 rounded-full"
                 onClick={() => navigate(`/blogs/${mainBlog.slug}`)}
               >
                 READ MORE
@@ -78,18 +78,18 @@ export const BlogSection = () => {
                 <div className="flex flex-col justify-between p-5 flex-1">
                   <div>
                     <div className="flex items-center gap-4 text-[#6D6969] text-[12px] mb-2">
-                      <span className="flex items-center gap-1 text-[#F2B024]">
+                      <span className="flex items-center gap-1 text-[#9156F1]">
                         <YellowPerson /> {blog.author?.name || "Unknown"}
                       </span>
-                      <span className="flex items-center gap-1 text-[#F2B024]">
+                      <span className="flex items-center gap-1 text-[#9156F1]">
                         <YellowCalendar /> {new Date(blog.createdAt).toLocaleDateString()}
                       </span>
                     </div>
-                    <h4 className="font-baloo text-[18px] text-[#141313] leading-[24px] mb-3">{blog.title}</h4>
+                    <h4 className="font-poppins text-[18px] text-[#141313] leading-[24px] mb-3">{blog.title}</h4>
                     <hr className="border-[#E2DFDF] mb-3" />
                   </div>
                   <button
-                    className="bg-[#37377B] text-white text-[13px] px-5 py-2 rounded-full self-end"
+                    className="bg-[#fbebff] text-[#310a49] shadow-md text-[13px] px-5 py-2 rounded-full self-end"
                     onClick={() => navigate(`/blogs/${blog.slug}`)}
                   >
                     READ MORE

@@ -11,7 +11,8 @@ import {
   DistanceArrow,
   TimeClock,
   LocationWithTime,
-  Cloud
+  Cloud,
+  HeartIconOutline
 } from './Icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { CommunityModal } from './CommunityModal';
@@ -445,7 +446,7 @@ const getBackgroundImage = (terrain) => {
       backgroundImage: `url(${getBackgroundImage(about.terrain)})`,
     }}
   ></div>
-  <div className="absolute inset-0 rounded-[20px] bg-gradient-to-r from-transparent to-[#1D1D51]"></div>
+  <div className="absolute inset-0 rounded-[20px] bg-gradient-to-r from-transparent to-[#8B63DA]"></div>
 
   {/* Text Content */}
   <div className="relative z-10 text-left max-w-[724px] left-[25px] px-4 sm:left-3 sm:px-3">
@@ -459,7 +460,7 @@ const getBackgroundImage = (terrain) => {
 
     {/* Main Heading */}
     <h1
-      className="text-white font-baloo text-[65px] leading-[70px] mt-2 sm:text-[32px] sm:leading-[38px] sm:mt-1"
+      className="text-white font-poppins text-[65px] leading-[70px] mt-2 sm:text-[32px] sm:leading-[38px] sm:mt-1"
       style={{ fontFamily: "Baloo, cursive" }}
     >
       {hero.subtitle}
@@ -500,7 +501,7 @@ const getBackgroundImage = (terrain) => {
                 </h2>
                 {/* Small Subtitle */}
                 <p
-                  className="text-[#F2B024]   font-baloo  text-[40px] leading-[50px] my-3"
+                  className="text-[#9156F1]   font-poppins  text-[40px] leading-[50px] my-3"
                   
                 >
                   {about.subtitle||"A Window to Wayanad's Scenic Splendor"}
@@ -510,8 +511,8 @@ const getBackgroundImage = (terrain) => {
 
                 {/* Description */}
                 <p
-                  className="text-[#726E6E] font-roboto text-[12px] leading-[23px] mb-6"
-                  style={{ fontFamily: 'Roboto, sans-serif' }}
+                  className="text-[#726E6E] font-poppins text-[12px] leading-[23px] mb-6"
+                  style={{ fontFamily: 'poppins, sans-serif' }}
                 >
                   {about.description}
                 </p>
@@ -526,8 +527,8 @@ const getBackgroundImage = (terrain) => {
                 </ul>
 
                 {/* Wishlist Button */}
-                <button onClick={handleWishlist}className="bg-brand-yellow text-brand-dark font-semibold py-3 px-8 rounded-lg shadow-lg hover:bg-yellow-400 transition-transform transform hover:scale-105">
-                  WishList
+                <button onClick={handleWishlist}className="bg-[#fbebff] text-[#310a49] font-semibold py-3 px-4 rounded-lg shadow-lg hover:bg-[#9156F1] hover:text-white transition-transform transform hover:scale-105">
+                 <div className='flex gap-4 items-center'> <HeartIconOutline className='h-5  flex items-center' /> WishList</div>
                 </button>
               </div>
 
@@ -535,9 +536,9 @@ const getBackgroundImage = (terrain) => {
       </section>
 
       {/* Comments & Contributions */}
-      <section className="py-16 px-8 bg-gray-50">
+      <section className="py-16 px-8 bg-[#310a49]/90 rounded-tl-[20px] rounded-tr-[20px]">
   <div className="container mx-auto">
-    <h2 className="text-3xl font-bold text-brand-dark mb-6">Community Insights</h2>
+    <h2 className="text-3xl font-bold text-white mb-6">Community Insights</h2>
 
     {/* Tabs */}
     <div className="flex gap-6 mb-8 border-b border-gray-200">
@@ -545,8 +546,8 @@ const getBackgroundImage = (terrain) => {
         onClick={() => setActiveTab("comments")}
         className={`pb-2 font-semibold transition-colors ${
           activeTab === "comments"
-            ? "border-b-2 border-brand-yellow text-brand-dark"
-            : "text-brand-gray"
+            ? "border-b-4 border-[#9156F1] text-white"
+            : "text-[#fbebff]"
         }`}
       >
         Comments
@@ -555,8 +556,8 @@ const getBackgroundImage = (terrain) => {
         onClick={() => setActiveTab("contributions")}
         className={`pb-2 font-semibold transition-colors ${
           activeTab === "contributions"
-            ? "border-b-2 border-brand-yellow text-brand-dark"
-            : "text-brand-gray"
+            ? "border-b-4 border-[#9156F1] text-white"
+            : "text-[#fbebff]"
         }`}
       >
         Contributions
@@ -580,7 +581,7 @@ const getBackgroundImage = (terrain) => {
               <div className="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center">
                 <span className="text-gray-500">No comments yet</span>
                 <button
-                  className="bg-brand-yellow text-brand-dark font-semibold py-1 px-3 rounded"
+                  className="bg-[#9156F1] text-white font-semibold py-1 px-3 rounded"
                   onClick={() => setIsModalOpen(true)}
                 >
                   Add Comment
@@ -592,7 +593,7 @@ const getBackgroundImage = (terrain) => {
               comments.map((c, index) => (
                 <div
                   key={c._id || index}
-                  className="bg-white p-4 rounded-xl shadow border border-gray-100 cursor-pointer flex gap-3 hover:shadow-md transition"
+                  className="bg-[#fbebff] p-4 rounded-xl shadow border border-gray-100 cursor-pointer flex gap-3 hover:shadow-md transition"
                   onClick={() => setIsModalOpen(true)}
                 >
                   {/* Profile Picture */}
@@ -604,7 +605,7 @@ const getBackgroundImage = (terrain) => {
                     />
                   )}
 
-                  <div className="flex-1">
+                  <div className="flex-1 ">
                     <p className="text-sm text-brand-dark font-semibold">
                       {c.user?.name || c.user?.username || "Unknown User"}
                     </p>
@@ -615,7 +616,7 @@ const getBackgroundImage = (terrain) => {
 
             {comments.length > 0 && comments.length <= 3 && (
               <button
-                className="bg-brand-yellow text-brand-dark font-semibold py-2 px-4 rounded mt-2"
+                className="bg-[#9156F1] text-white font-semibold py-2 px-4 rounded mt-2"
                 onClick={() => setIsModalOpen(true)}
               >
                 Add Comment
@@ -695,14 +696,14 @@ const getBackgroundImage = (terrain) => {
 
       {/* Filter & Places Section */}
       {/* 🌍 Filter Section */}
-<section className="bg-brand-light-purple py-12 px-8">
+<section className="bg-[#310a49]/90 py-12 px-8 rounded-bl-[20px] rounded-br-[20px]">
   <div className="container mx-auto">
-    <div className="bg-brand-dark rounded-xl p-6 flex flex-wrap items-center justify-between gap-4 mb-10">
-      <span className="text-white text-2xl font-bold">Filter</span>
+    <div className="bg-[#fbebff] rounded-xl p-6 flex flex-wrap items-center justify-between gap-4 mb-10">
+      <span className="text-[#310a49]/70 text-2xl font-bold">Filter</span>
       <div className="flex-grow flex flex-wrap items-center gap-4">
         {/* 🏠 State Selector */}
         <select
-          className="flex-grow bg-white p-3 rounded-lg w-full sm:w-auto"
+          className="flex-grow bg-white p-3  rounded-lg w-full sm:w-auto "
           value={filters.state}
           onChange={(e) => {
             const selectedState = e.target.value;
@@ -783,7 +784,7 @@ const getBackgroundImage = (terrain) => {
         </select>
       </div>
 
-      <button className="bg-brand-yellow text-brand-dark font-bold py-3 px-8 rounded-lg w-full sm:w-auto">
+      <button className="bg-[#9156F1] text-white font-bold py-3 px-8 rounded-lg w-full sm:w-auto">
         SEARCH
       </button>
     </div>
@@ -815,7 +816,7 @@ const getBackgroundImage = (terrain) => {
               <DistanceArrow className="w-4 h-4" />
             </div>
             <div className="flex flex-col leading-none text-center gap-2">
-              <span className="text-[12px] text-[#9C9C9C] font-['Roboto']">Distance</span>
+              <span className="text-[12px] text-[#9C9C9C] font-['poppins']">Distance</span>
               <span className="text-[13px] text-[#37377B] font-['Baloo'] font-bold">
                 {place.distance}
               </span>
@@ -828,7 +829,7 @@ const getBackgroundImage = (terrain) => {
               <LocationWithTime className="w-4 h-4" />
             </div>
             <div className="flex flex-col leading-none text-center gap-2">
-              <span className="text-[12px] text-[#9C9C9C] font-['Roboto']">Arrival:</span>
+              <span className="text-[12px] text-[#9C9C9C] font-['poppins']">Arrival:</span>
               <span className="text-[13px] text-[#37377B] font-['Baloo'] font-bold">
                 {place.travelTime}
               </span>
@@ -841,7 +842,7 @@ const getBackgroundImage = (terrain) => {
               <TimeClock className="w-4 h-4" />
             </div>
             <div className="flex flex-col leading-none text-center gap-2">
-              <span className="text-[12px] text-[#9C9C9C] font-['Roboto']">Time:</span>
+              <span className="text-[12px] text-[#9C9C9C] font-['poppins']">Time:</span>
               <span className="text-[13px] text-[#37377B] font-['Baloo'] font-bold">
                 {place.arrivalTime}
               </span>
@@ -849,7 +850,7 @@ const getBackgroundImage = (terrain) => {
           </div>
         </div>
 
-        <button className="mt-3 w-fit bg-brand-dark text-white font-semibold py-2.5 px-5 rounded-[2.5rem] hover:bg-brand-dark/90" onClick={()=>{navigate(`/destination/${place._id}`);window.scrollTo(0, 0);}}>
+        <button className="mt-3 w-fit bg-[#9156F1] text-white font-semibold py-2.5 px-5 rounded-[2.5rem] hover:bg-[#9156F1]/90" onClick={()=>{navigate(`/destination/${place._id}`);window.scrollTo(0, 0);}}>
           Lets Go
         </button>
       </div>
@@ -861,15 +862,15 @@ const getBackgroundImage = (terrain) => {
       </section>
 
       {/* Main Content Area */}
-      <section className="py-20 px-8 pb-0">
+      <section className="py-20 px-8 pb-0 ">
         <div className="container mx-auto grid lg:grid-cols-4 gap-8 mb-10" >
           {/* Left Column */}
-          <div className="lg:col-span-2 w-full max-w-[504px] space-y-10">
+          <div className="lg:col-span-2 w-full max-w-[504px] space-y-10 ">
             {/* Weather */}
-            <div className='flex flex-col gap-5'>
-            <div className="bg-[#37377B] text-white rounded-[10px] p-6 w-full max-w-[504px]  shadow-xl">
+            <div className='flex flex-col gap-5 '>
+            <div className="bg-gradient-to-r from-[#CB98ED] via-[#8B63DA] to-[#3C21B7] text-white rounded-[10px] p-6 w-full max-w-[504px]  shadow-xl">
   {/* Header */}
-  <div className="flex justify-between items-start mb-4">
+  <div className="flex justify-between items-start mb-4 ">
     <div>
       <p className="font-[Baloo] text-[21px] text-white">Current Weather</p>
       <div className="flex items-center mt-2">
@@ -877,7 +878,7 @@ const getBackgroundImage = (terrain) => {
           <Cloud className="" />
         </div>
         <div className="flex items-start">
-          <span className="text-[70px] font-[Baloo]  font-bold text-[#F8B528] leading-none">
+          <span className="text-[70px] font-[Baloo]  font-bold text-white leading-none">
             {weather.temp}
           </span>
         </div>
@@ -887,64 +888,64 @@ const getBackgroundImage = (terrain) => {
   </div>
 
   {/* Divider line */}
-  <div className="border-t border-[#6F6FC1] my-4"></div>
+  <div className="border-t border-white my-4"></div>
 
   {/* Weather details */}
-  <div className="grid grid-cols-2  gap-[20px] gap-y-2 text-[13px] font-[Roboto]">
+  <div className="grid grid-cols-2  gap-[20px] gap-y-2 text-[13px] font-[poppins]">
     {/* Left side */}
     <div className="flex flex-col space-y-1">
       <div className="flex justify-between">
-        <span>Wind speed</span> <span className="text-[#F8B528]">{weather.wind}</span>
+        <span>Wind speed</span> <span className="text-white">{weather.wind}</span>
       </div>
       <div className="flex justify-between">
-        <span>Pressure</span> <span className="text-[#F8B528]">{weather.pressure}</span>
+        <span>Pressure</span> <span className="text-white">{weather.pressure}</span>
       </div>
       <div className="flex justify-between">
-        <span>Humidity</span> <span className="text-[#F8B528]">{weather.humidity}</span>
+        <span>Humidity</span> <span className="text-white">{weather.humidity}</span>
       </div>
       <div className="flex justify-between">
-        <span>UV Index</span> <span className="text-[#F8B528]">{weather.uvIndex}</span>
+        <span>UV Index</span> <span className="text-white">{weather.uvIndex}</span>
       </div>
       <div className="flex justify-between">
-        <span>Precipitation</span> <span className="text-[#F8B528]">{weather.precipitation}</span>
+        <span>Precipitation</span> <span className="text-white">{weather.precipitation}</span>
       </div>
       <div className="flex justify-between">
-        <span>Air Quality</span> <span className="text-[#F8B528]">{weather.airQuality}</span>
+        <span>Air Quality</span> <span className="text-white">{weather.airQuality}</span>
       </div>
     </div>
 
     {/* Right side */}
     <div className="flex flex-col space-y-1">
       <div className="flex justify-between">
-        <span>Probability</span> <span className="text-[#F8B528]">{weather.probability}</span>
+        <span>Probability</span> <span className="text-white">{weather.probability}</span>
       </div>
       <div className="flex justify-between">
-        <span>Dew Point</span> <span className="text-[#F8B528]">{weather.dewPoint}</span>
+        <span>Dew Point</span> <span className="text-white">{weather.dewPoint}</span>
       </div>
       <div className="flex justify-between">
-        <span>Cloud Cover</span> <span className="text-[#F8B528]">{weather.cloudCover}</span>
+        <span>Cloud Cover</span> <span className="text-white">{weather.cloudCover}</span>
       </div>
       <div className="flex justify-between">
-        <span>Visibility</span> <span className="text-[#F8B528]">{weather.visibility}</span>
+        <span>Visibility</span> <span className="text-white">{weather.visibility}</span>
       </div>
       <div className="flex justify-between">
-        <span>Sunrise</span> <span className="text-[#F8B528]">{weather.sunrise}</span>
+        <span>Sunrise</span> <span className="text-white">{weather.sunrise}</span>
       </div>
       <div className="flex justify-between">
-        <span>Sunset</span> <span className="text-[#F8B528]">{weather.sunset}</span>
+        <span>Sunset</span> <span className="text-white">{weather.sunset}</span>
       </div>
     </div>
   </div>
               </div>
             {/* Emergency Contacts */}
             <div>
-              <h3 className="text-2xl font-bold text-center text-brand-dark mb-4">Emergency Contact Details</h3>
+              <h3 className="text-2xl font-bold text-center  text-[#310a49] mb-4">Emergency Contact Details</h3>
               <div className="space-y-3">
                 {emergencyContacts.map((contact, index) => (
                   <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 flex justify-between items-center shadow-sm">
                     <div className="flex items-center">
-                      <PhoneIcon className="mr-4 text-brand-dark" />
-                      <span className="font-semibold text-brand-dark">{contact}</span>
+                      <PhoneIcon className="mr-4 text-[#310a49]" />
+                      <span className="font-semibold text-[#310a49]">{contact}</span>
                     </div>
                     <div className="flex items-center space-x-4">
                       <ExternalLinkIcon className="text-brand-gray cursor-pointer" />
@@ -992,7 +993,7 @@ const getBackgroundImage = (terrain) => {
       )}
 
   {mapInfo?.distance && (
-    <div className="bg-brand-dark text-white p-4 flex justify-around items-center text-center">
+    <div className="bg-[#310a49] text-white p-4 flex justify-around items-center text-center">
       <div>
         <p className="text-xs text-gray-400">Distance</p>
         <p className="font-bold text-lg">{mapInfo.distance}</p>
@@ -1008,8 +1009,6 @@ const getBackgroundImage = (terrain) => {
     </div>
   )}
 </div>
-
-
 
             
           </div>
@@ -1128,7 +1127,7 @@ const getBackgroundImage = (terrain) => {
               <DistanceArrow className="w-4 h-4" />
             </div>
             <div className="flex flex-col leading-none text-center gap-2">
-              <span className="text-[12px] text-[#9C9C9C] font-['Roboto']">Distance</span>
+              <span className="text-[12px] text-[#9C9C9C] font-['poppins']">Distance</span>
               <span className="text-[13px] text-[#37377B] font-['Baloo'] font-bold">
                 {place.distance}
               </span>
@@ -1141,7 +1140,7 @@ const getBackgroundImage = (terrain) => {
               <LocationWithTime className="w-4 h-4" />
             </div>
             <div className="flex flex-col leading-none text-center gap-2">
-              <span className="text-[12px] text-[#9C9C9C] font-['Roboto']">Arrival:</span>
+              <span className="text-[12px] text-[#9C9C9C] font-['poppins']">Arrival:</span>
               <span className="text-[13px] text-[#37377B] font-['Baloo'] font-bold">
                 {place.travelTime}
               </span>
@@ -1154,7 +1153,7 @@ const getBackgroundImage = (terrain) => {
               <TimeClock className="w-4 h-4" />
             </div>
             <div className="flex flex-col leading-none text-center gap-2">
-              <span className="text-[12px] text-[#9C9C9C] font-['Roboto']">Time:</span>
+              <span className="text-[12px] text-[#9C9C9C] font-['poppins']">Time:</span>
               <span className="text-[13px] text-[#37377B] font-['Baloo'] font-bold">
                 {place.arrivalTime}
               </span>

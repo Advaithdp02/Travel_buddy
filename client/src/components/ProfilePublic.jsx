@@ -78,7 +78,7 @@ export const ProfilePublic = () => {
     );
 
   return (
-    <div className="min-h-screen bg-gray-100 py-6 px-4 sm:px-8 md:px-16 lg:px-24">
+    <div className="min-h-screen bg-[#fbebff] py-6 px-4 sm:px-8 md:px-16 lg:px-24">
       {/* Cover Image */}
       <div className="bg-white shadow-lg rounded-bl-lg rounded-br-lg overflow-hidden">
         <div className="relative h-48 md:h-64 bg-gray-300">
@@ -101,18 +101,18 @@ export const ProfilePublic = () => {
 
           <div className="flex flex-col md:flex-row ml-6 md:ml-10 mt-4 justify-between md:px-4 w-full">
             <div className="flex flex-col justify-center mb-3 md:mb-5">
-              <h1 className="text-2xl md:text-3xl font-bold">{user.name}</h1>
-              <p className="text-gray-500">@{user.username}</p>
+              <h1 className="text-2xl md:text-3xl text-[#310a49] font-bold">{user.name}</h1>
+              <p className="text-[#9156F1]">@{user.username}</p>
               <p className="mt-1 text-gray-600 text-sm md:text-base">
                 {user.bio || "No bio provided"}
               </p>
             </div>
 
-            <div className="flex md:flex-col gap-2 md:gap-4 mr-[20px]">
+            <div className="flex md:flex-col gap-2 md:gap-4 mr-[40px]">
               <button
                 onClick={handleToggleFollow}
                 className={`${
-                  isFollowing ? "bg-gray-500" : "bg-blue-600"
+                  isFollowing ? "bg-[#310a49]" : "bg-[#9156F1]"
                 } text-white font-semibold py-2 px-3 md:px-4 rounded-lg text-sm md:text-base`}
               >
                 {isFollowing ? "Unfollow" : "Follow"}
@@ -125,16 +125,16 @@ export const ProfilePublic = () => {
       {/* Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 w-full pt-4 md:pt-5">
         {/* About Section */}
-        <div className="col-span-1 flex flex-col gap-4">
+        <div className="col-span-1 text-[#310a49]  flex flex-col gap-4">
           <div className="bg-white shadow-lg rounded-lg overflow-hidden p-4 md:p-6">
             <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">About</h3>
             <div className="space-y-2 md:space-y-3 text-sm md:text-base">
               <div className="flex items-center space-x-2">
-                <GenderIcon className="w-5 h-5 text-gray-600" />
+                <GenderIcon className="w-5 h-5 text-[#310a49]" />
                 <span>{user.gender || "N/A"}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <DobIcon className="w-5 h-5 text-gray-600" />
+                <DobIcon className="w-5 h-5 text-[#310a49]" />
                 <span>
                   {user.dob
                     ? new Date(user.dob).toLocaleDateString("en-GB")
@@ -142,23 +142,23 @@ export const ProfilePublic = () => {
                 </span>
               </div>
               <div className="flex items-center space-x-2">
-                <PhoneIcon className="w-5 h-5 text-gray-600" />
+                <PhoneIcon className="w-5 h-5 text-[#310a49]" />
                 <span>{user.phone || "N/A"}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <MailIcon className="w-5 h-5 text-gray-600" />
+                <MailIcon className="w-5 h-5 text-[#310a49]" />
                 <span>{user.email || "N/A"}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <LocationProfileIcon className="w-5 h-5 text-gray-600" />
+                <LocationProfileIcon className="w-5 h-5 text-[#310a49]" />
                 <span>{user.location || "N/A"}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <JobIcon className="w-5 h-5 text-gray-600" />
+                <JobIcon className="w-5 h-5 text-[#310a49]" />
                 <span>{user.occupation || user.job || "N/A"}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <HeartIcon className="w-5 h-5 text-gray-600" />
+                <HeartIcon className="w-5 h-5 text-[#310a49]" />
                 <span>{user.relationshipStatus || "Single"}</span>
               </div>
             </div>
@@ -167,7 +167,7 @@ export const ProfilePublic = () => {
 
         {/* Tabs Section */}
         <div className="col-span-2 flex flex-col gap-4">
-          <div className="bg-white shadow-lg rounded-lg overflow-hidden pt-3 md:pt-4 pb-4">
+          <div className="bg-[#310a49] shadow-lg rounded-lg overflow-hidden pt-3 md:pt-4 pb-4">
             {/* Tabs Header */}
             <div className="flex border-b overflow-x-auto no-scrollbar">
               {["followers", "following", "contribution"].map((tab) => (
@@ -175,8 +175,8 @@ export const ProfilePublic = () => {
                   key={tab}
                   className={`flex-1 text-center py-2 md:py-3 font-semibold transition-transform duration-150 whitespace-nowrap ${
                     activeTab === tab
-                      ? "border-b-2 border-blue-600 text-blue-600 -translate-y-[1px]"
-                      : "text-gray-500"
+                      ? "border-b-2 border-[#9156F1] text-white -translate-y-[1px]"
+                      : "text-[#fbebff]/70"
                   }`}
                   onClick={() => setActiveTab(tab)}
                 >
