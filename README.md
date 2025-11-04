@@ -6,7 +6,7 @@ Welcome to the **TravelBuddy** backend documentation. TravelBuddy is a web appli
 
 ## Base URL
 
-http://http://3.108.235.83:3000//api
+http://http://3.108.235.83:3000/api
 
 
 ---
