@@ -181,7 +181,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
       <div className="bg-white shadow-lg rounded-bl-lg rounded-br-lg overflow-hidden">
         <div className="relative h-48 md:h-64 bg-gray-300 rounded-bl-lg rounded-br-lg overflow-hidden">
           <img
-            src={userData?.coverImage || "/defaultCoverPic.png"}
+            src={userData?.coverPhoto|| "/defaultCoverPic.png"}
             alt="cover"
             className="w-full h-full object-cover"
           />
@@ -191,7 +191,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
         <div className="relative -mt-12 md:-mt-16 flex flex-col md:flex-col items-start space-x-0 md:space-x-6">
           <div className="flex-shrink-0 ml-4 md:ml-10 -mt-6 md:mt-0">
             <img
-              src={userData?.profileImage || "/defaultProfilePic.webp"}
+              src={userData?.profilePic|| "/defaultProfilePic.webp"}
               alt="profile"
               className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg"
             />
@@ -369,7 +369,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
         >
           <div className="flex items-center gap-4">
             <img
-              src={f.profilePic || "`https://i.pravatar.cc/50`"}
+              src={f.profilePic || "/defaultProfilePic.webp"}
               alt={f.username}
               className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
             />
