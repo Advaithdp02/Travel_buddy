@@ -10,6 +10,27 @@ http://http://3.108.235.83:3000//api
 
 
 ---
+# TravelBuddy Backend - Environment Variables Example
+
+This file provides an example of environment variables used in the TravelBuddy backend.  
+Rename this file to `.env` in your local setup and replace the values with your actual credentials.
+
+---
+
+## MongoDB
+```env
+JWT_SECRET=
+EMAIL_PASS=
+EMAIL_USER=
+BUCKET_SECRET_KEY=
+BUCKET_ACCESS_KEY=
+BUCKET_REGION=
+BUCKET_NAME=
+GOOGLE_API_KEY=
+PORT=
+MONGO_URI=
+```
+
 
 ## Table of Contents
 
