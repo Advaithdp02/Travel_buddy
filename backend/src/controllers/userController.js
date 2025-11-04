@@ -172,7 +172,7 @@ export const updateUserProfile = async (req, res) => {
         `${folderName}/profilePics`,
         file.mimetype
       );
-    } else if (req.body.profilePic === "" || req.body.profilePic === null) {
+    } else if (req.body.profilePic === "" || req.body.profilePic === null || req.body.removeProfile === "true") {
       // User removed profile pic → delete old and set null
       if (user.profilePic) await deleteFromS3(user.profilePic);
       user.profilePic = null;
@@ -190,7 +190,7 @@ export const updateUserProfile = async (req, res) => {
         `${folderName}/coverPhotos`,
         file.mimetype
       );
-    } else if (req.body.coverPhoto === "" || req.body.coverPhoto === null) {
+    } else if (req.body.coverPhoto === "" || req.body.coverPhoto === null || req.body.removeCover === "true") {
       if (user.coverPhoto) await deleteFromS3(user.coverPhoto);
       user.coverPhoto = null;
     }
