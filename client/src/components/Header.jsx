@@ -44,7 +44,7 @@ export const Header = ({ variant = "light" }) => {
           <img
             src="/LOGO.png"
             alt="logo"
-            className="w-[106px] h-[66.5px] relative top-[2px]"
+            className="w-[160px] h-[145.5px]  pt-[15px] relative top-[2px]"
           />
         </div>
 
