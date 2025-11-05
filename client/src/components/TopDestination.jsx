@@ -5,7 +5,7 @@ import { IconArrowRight, IconArrowLeft } from "./Icons";
 const ArrowButton = ({ direction = "right", onClick }) => {
   const Icon = direction === "right" ? IconArrowLeft : IconArrowRight;
   const [hover, setHover] = useState(false);
-
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   return (
     <button
       onClick={onClick}
@@ -38,7 +38,7 @@ export const TopDestinations = ({ userCoords }) => {
   useEffect(() => {
     const fetchDestinations = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/districts`);
+        const res = await fetch(`BACKEND_URL}/districts`);
         const data = await res.json();
 
         if (userCoords && Array.isArray(data)) {

@@ -6,7 +6,7 @@ export const Registration = ({ currentPage }) => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1); // Step 1: Email/Phone, Step 1.5: OTP, Step 2: Full form
   const [loading, setLoading] = useState(false);
-
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   // Step 1
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -27,7 +27,7 @@ export const Registration = ({ currentPage }) => {
     setLoading(true);
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/contact/send-otp`, {
+      const res = await fetch(`BACKEND_URL}/contact/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -54,7 +54,7 @@ export const Registration = ({ currentPage }) => {
     setLoading(true);
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/contact/verify-otp`, {
+      const res = await fetch(`BACKEND_URL}/contact/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp }),
@@ -91,7 +91,7 @@ export const Registration = ({ currentPage }) => {
     };
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/register`, {
+      const res = await fetch(`BACKEND_URL}/users/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
