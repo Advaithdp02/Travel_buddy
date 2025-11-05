@@ -213,6 +213,7 @@ useEffect(() => {
     fetchhLocationDistrict(filters.district);
 
   }, [filters.district]);
+
 useEffect(() => {
   let sessionId = localStorage.getItem("sessionId");
   if (!sessionId) {
@@ -465,7 +466,7 @@ const getBackgroundImage = (terrain) => {
       backgroundImage: `url(${getBackgroundImage(about.terrain)})`,
     }}
   ></div>
-  <div className="absolute inset-0 rounded-[20px] mx-2 mt-[50px] bg-gradient-to-r from-transparent to-[#8B63DA]"></div>
+  <div className="absolute inset-0 rounded-[20px] mt-[50px] bg-gradient-to-r from-transparent to-[#8B63DA]"></div>
 
   {/* Text Content */}
   <div className="relative z-10 text-left max-w-[724px] left-[25px] px-4 sm:left-3 sm:px-3">
@@ -799,11 +800,12 @@ const getBackgroundImage = (terrain) => {
           value={filters.terrain}
           onChange={(e) => setFilters({ ...filters, terrain: e.target.value })}
         >
-          <option>Mountains</option>
-          <option>Beaches</option>
-          <option>Forests</option>
-          <option>Deserts</option>
-          <option>Plains</option>
+          <option value="">Select Terrain</option>
+          <option value="Mountain">Mountains</option>
+          <option value="Beach">Beaches</option>
+          <option value="Forest">Forests</option>
+          <option value="Desert">Deserts</option>
+          <option value="Plain">Plains</option>
         </select>
       </div>
 

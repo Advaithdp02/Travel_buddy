@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ClimateIcon,SendIconAdd } from "./Icons";
+import { SendIconAdd } from "./Icons";
 import { ThumbsUp } from "lucide-react";
 import { X } from "lucide-react";
 
@@ -322,7 +322,7 @@ const handleReplySubmit = async (commentId) => {
     />
     <button
       onClick={() => handleReplySubmit(c._id)}
-      className="bg-brand-yellow text-brand-dark font-semibold px-3 rounded-lg"
+      className="bg-[#fbebff] text-brand-dark font-semibold px-3 rounded-lg"
     >
       Send
     </button>
