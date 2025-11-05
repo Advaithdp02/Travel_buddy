@@ -203,10 +203,10 @@ useEffect(() => {
           className="absolute inset-0 rounded-[20px] bg-cover bg-center"
           style={{ backgroundImage: `url(${hero.bgImg})` }}
         ></div>
-        <div className="absolute inset-0 rounded-[20px] bg-gradient-to-r from-transparent to-[#8B63DA]"></div>
+        <div className="absolute inset-0 rounded-[20px] mx-2 mt-[50px] bg-gradient-to-r from-transparent to-[#8B63DA]"></div>
 
         <div className="relative z-10 text-left max-w-[724px] left-[25px] px-4">
-          <h3 className="text-[#F2B024] font-schoolbell text-[30px] leading-[42px]">
+          <h3 className="text-[#F2B024] font-schoolbell text-[30px] md:leading-[42px]">
             {hero.title}
           </h3>
           <h1 className="text-white font-poppins text-[65px] leading-[70px] mt-2">

@@ -42,7 +42,7 @@ export const Home = ({nearestLocation}) => {
       </div>
 
       {/* ===== Right Image Section ===== */}
-      <div className="flex justify-center items-center w-[700px] mt-5 mb-5  md:mt-0  md:border-l-0 ml-0">
+      <div className="flex justify-center items-center md:w-[700px] mt-5 mb-5  md:mt-0  md:border-l-0 ml-0">
         <img  src="./home_design_1.png"     alt="Travel"  className="max-h-[600px] w-auto object-contain transform transition-transform duration-300 ease-in-out hover:scale-105"
         />
        </div>
