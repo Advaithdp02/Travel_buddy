@@ -460,12 +460,12 @@ const getBackgroundImage = (terrain) => {
         <section className="relative h-[60vh] w-full flex items-center sm:h-[70vh] md:h-[60vh]">
   {/* Background Image with gradient overlay */}
   <div
-    className="absolute inset-0 rounded-[20px] bg-cover bg-center"
+    className="absolute inset-0  rounded-[20px] mt-[50px] bg-cover bg-center"
     style={{
       backgroundImage: `url(${getBackgroundImage(about.terrain)})`,
     }}
   ></div>
-  <div className="absolute inset-0 rounded-[20px] bg-gradient-to-r from-transparent to-[#8B63DA]"></div>
+  <div className="absolute inset-0 rounded-[20px] mx-2 mt-[50px] bg-gradient-to-r from-transparent to-[#8B63DA]"></div>
 
   {/* Text Content */}
   <div className="relative z-10 text-left max-w-[724px] left-[25px] px-4 sm:left-3 sm:px-3">
@@ -479,7 +479,7 @@ const getBackgroundImage = (terrain) => {
 
     {/* Main Heading */}
     <h1
-      className="text-white font-poppins text-[65px] leading-[70px] mt-2 sm:text-[32px] sm:leading-[38px] sm:mt-1"
+      className="text-white font-poppins text-[28px] md:text-[65px] md:leading-[70px] mt-2 sm:text-[32px] sm:leading-[38px] sm:mt-1"
       style={{ fontFamily: "Baloo, cursive" }}
     >
       {hero.subtitle}
@@ -1037,7 +1037,7 @@ const getBackgroundImage = (terrain) => {
           </div>
         </div>
           
-            <div className="flex flex-col md:flex-row w-[115%] md:w-full min-h-screen px-4 pb-0 md:px-12 py-8">
+            <div className="flex flex-col md:flex-row w-[100%] md:w-full min-h-screen px-4 pb-0 md:px-12 py-8">
   {/* Hotels & Resorts */}
   <div
     className="flex-1 p-6 ml-[-50px] md:ml-[-170px] bg-cover bg-center shadow-md rounded-tl-none rounded-tr-[100px] md:pl-[120px] z-10 relative"

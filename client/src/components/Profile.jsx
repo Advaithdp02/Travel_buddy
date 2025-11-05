@@ -189,7 +189,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
         </div>
 
         {/* Profile Info */}
-        <div className="relative -mt-12 md:-mt-16 flex flex-col md:flex-col items-start space-x-0 md:space-x-6">
+        <div className="relative -mt-12 md:-mt-16 flex md:px-0 px-5 md:py-0 py-2 flex-col md:flex-col items-start space-x-0 md:space-x-6">
           <div className="flex-shrink-0 ml-4 md:ml-10 -mt-6 md:mt-0">
             <img
               src={userData?.profilePic|| "/defaultProfilePic.webp"}

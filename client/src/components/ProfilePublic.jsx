@@ -98,7 +98,7 @@ export const ProfilePublic = () => {
         </div>
 
         {/* Profile Info */}
-        <div className="relative -mt-12 md:-mt-16 flex flex-col items-start space-x-0 md:space-x-6">
+        <div className="relative -mt-12 md:-mt-16 md:px-0 px-5 md:py-0 py-2 flex flex-col items-start space-x-0 md:space-x-6">
           <div className="ml-6 md:ml-10">
             <img
               src={user.profilePic || "/defaultProfilePic.webp" }
