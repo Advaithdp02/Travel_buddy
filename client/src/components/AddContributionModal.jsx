@@ -147,7 +147,6 @@ export const AddContributionModal = ({ isOpen, onClose, locationId }) => {
     }
 
     const responseData = await res.json();
-    console.log("Contribution saved successfully:", responseData);
     alert("Contribution added successfully!");
     
     onClose();

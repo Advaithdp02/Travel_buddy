@@ -31,7 +31,6 @@ async function connectDB() {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   });
-  console.log("✅ Connected to MongoDB");
 }
 
 async function fetchHotels(CITY, districtID, nextPageToken = null) {
@@ -43,7 +42,6 @@ async function fetchHotels(CITY, districtID, nextPageToken = null) {
     const data = response.data;
 
     if (!data.results || data.results.length === 0) {
-      console.log(`⚠️ No hotels found for ${CITY}`);
       return;
     }
 
@@ -79,7 +77,6 @@ async function fetchHotels(CITY, districtID, nextPageToken = null) {
 
     // Pagination: up to 3 pages
     if (data.next_page_token) {
-      console.log(`➡️ Fetching next page for ${CITY}...`);
       await new Promise((resolve) => setTimeout(resolve, 3000)); // wait 3s
       await fetchHotels(CITY, districtID, data.next_page_token);
     }
@@ -92,7 +89,6 @@ async function main() {
   await connectDB();
 
   for (const district of districts) {
-    console.log(`🏙️ Fetching hotels in ${district.name}...`);
     await fetchHotels(district.name, district._id);
   }
 

@@ -170,7 +170,6 @@ const fetchHotels = async (reset = false) => {
     setSkip((prev) => (reset ? enrichedHotels.length : prev + enrichedHotels.length));
 
     if (enrichedHotels.length < limit) setHasMore(false);
-    console.log("Fetched Hotels:", enrichedHotels);
   } catch (err) {
     console.error("Error fetching hotels:", err);
   }
@@ -394,11 +393,9 @@ useEffect(() => {
     console.warn("No URL provided for hotel:", hotel.name);
     return;
   }
-  console.log(hotel._id)
 
   const sessionId = localStorage.getItem("sessionId");
   let userId = localStorage.getItem("userId");
-  console.log(userId)
   if (!userId) {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -437,7 +434,6 @@ useEffect(() => {
 };
 
 const getBackgroundImage = (terrain) => {
-  console.log(terrain)
   switch (terrain) {
     case "Beach":
       return "/beach.jpg";
