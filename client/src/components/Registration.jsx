@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { LocationIcon } from "./Icons";
+import { UserAddIcon } from "./Icons";
 import { useNavigate } from "react-router-dom";
 
 export const Registration = ({ currentPage }) => {
@@ -118,16 +118,16 @@ export const Registration = ({ currentPage }) => {
   };
 
   return (
-    <section className="relative bg-white min-h-screen flex flex-col">
+    <section className=" bg-[#fbebff] min-h-screen flex flex-col">
       <div className="flex flex-1 items-center justify-center px-8 py-16">
         <div className="bg-white shadow-2xl rounded-2xl p-10 w-full max-w-md">
           <div className="text-center mb-8">
             <div className="flex justify-center items-center mb-4">
               <div className="w-14 h-14 bg-brand-light-purple rounded-full flex items-center justify-center">
-                <LocationIcon className="w-8 h-8 text-brand-dark" />
+                <UserAddIcon className="w-8 h-8 text-[#310a49]" />
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-brand-dark">Create Account</h2>
+            <h2 className="text-3xl font-bold text-[#310a49]">Create Account</h2>
             <p className="text-brand-gray mt-2">Register to start your journey</p>
           </div>
 
@@ -135,7 +135,7 @@ export const Registration = ({ currentPage }) => {
           {step === 1 && (
             <form onSubmit={handleStep1Submit} className="space-y-6">
               <div>
-                <label className="block text-sm font-semibold text-brand-dark mb-2">Email</label>
+                <label className="block text-sm font-semibold text-[#310a49] mb-2">Email</label>
                 <input
                   type="email"
                   placeholder="Enter your email"
@@ -146,7 +146,7 @@ export const Registration = ({ currentPage }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-brand-dark mb-2">Phone Number</label>
+                <label className="block text-sm font-semibold text-[#310a49] mb-2">Phone Number</label>
                 <input
                   type="text"
                   placeholder="Enter phone number"
@@ -159,7 +159,7 @@ export const Registration = ({ currentPage }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-brand-dark text-white font-semibold py-3 rounded-lg shadow-lg hover:bg-brand-dark/90"
+                className="w-full bg-[#9156F1] text-white font-semibold py-3 rounded-lg shadow-lg hover:bg-[#310a49]/90"
               >
                 {loading ? "Sending OTP..." : "Next"}
               </button>
@@ -170,7 +170,7 @@ export const Registration = ({ currentPage }) => {
           {step === 1.5 && (
             <form onSubmit={handleOtpSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-semibold text-brand-dark mb-2">Enter OTP</label>
+                <label className="block text-sm font-semibold text-[#310a49] mb-2">Enter OTP</label>
                 <input
                   type="text"
                   placeholder="Enter OTP"
@@ -183,7 +183,7 @@ export const Registration = ({ currentPage }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-brand-dark text-white font-semibold py-3 rounded-lg shadow-lg hover:bg-brand-dark/90"
+                className="w-full bg-[#9156F1] text-white font-semibold py-3 rounded-lg shadow-lg hover:bg-[#310a49]/90"
               >
                 {loading ? "Verifying..." : "Verify OTP"}
               </button>
@@ -196,7 +196,7 @@ export const Registration = ({ currentPage }) => {
               {/* Name, Username, Password, Location, DOB inputs */}
               {["name", "username", "password", "location", "dob"].map((field) => (
                 <div key={field}>
-                  <label className="block text-sm font-semibold text-brand-dark mb-2">
+                  <label className="block text-sm font-semibold text-[#310a49] mb-2">
                     {field.charAt(0).toUpperCase() + field.slice(1)}
                   </label>
                   <input
@@ -212,7 +212,7 @@ export const Registration = ({ currentPage }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-brand-dark text-white font-semibold py-3 rounded-lg shadow-lg hover:bg-brand-dark/90"
+                className="w-full bg-[#9156F1] text-white font-semibold py-3 rounded-lg shadow-lg hover:bg-[#fbebff]/90"
               >
                 {loading ? "Registering..." : "Register"}
               </button>
@@ -223,7 +223,7 @@ export const Registration = ({ currentPage }) => {
             Already have an account?{" "}
             <button
               onClick={() => navigate("/login")}
-              className="text-brand-yellow font-semibold hover:underline"
+              className="text-[#9156F1] font-semibold hover:underline"
             >
               Login
             </button>

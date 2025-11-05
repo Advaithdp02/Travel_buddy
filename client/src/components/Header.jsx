@@ -39,7 +39,7 @@ export const Header = ({ variant = "light" }) => {
   const pathname = location.pathname;
   let logoClasses = "absolute left-0 flex-shrink-0 cursor-pointer bg-white rounded-bl-[20px] rounded-br-[20px] overflow-visible inline-block shadow-md";
 
-  if (pathname === "/") {
+  if (pathname === "/"|| pathname.includes("/contact")|| pathname.includes("/login")|| pathname.includes("/register")) {
     logoClasses += " h-[165px] top-[-48px]";
   } else if (pathname.includes("/profile")) {
     logoClasses += " h-[115px] top-[-40px]";

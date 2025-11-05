@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-import { LocationIcon } from "./Icons";
+import { LockIcon } from "./Icons";
 import { useNavigate } from "react-router-dom";
 
 export const Login = ({ currentPage }) => {
@@ -53,7 +53,7 @@ export const Login = ({ currentPage }) => {
   };
 
   return (
-    <section className="relative bg-[#fbebff] min-h-screen flex flex-col">
+    <section className=" bg-[#fbebff] min-h-screen flex flex-col">
      
 
       <div className="flex flex-1 items-center justify-center px-8 py-16">
@@ -61,7 +61,7 @@ export const Login = ({ currentPage }) => {
           <div className="text-center mb-8">
             <div className="flex justify-center items-center mb-4">
               <div className="w-14 h-14 bg-brand-light-purple rounded-full flex items-center justify-center">
-                <LocationIcon className="w-8 h-8 text-[#310a49]" />
+                <LockIcon className="w-8 h-8 text-[#310a49]" />
               </div>
             </div>
             <h2 className="text-3xl font-bold text-[#310a49]">Welcome Back</h2>
