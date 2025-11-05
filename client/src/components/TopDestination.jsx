@@ -5,7 +5,7 @@ import { IconArrowRight, IconArrowLeft } from "./Icons";
 const ArrowButton = ({ direction = "right", onClick }) => {
   const Icon = direction === "right" ? IconArrowLeft : IconArrowRight;
   const [hover, setHover] = useState(false);
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  
   return (
     <button
       onClick={onClick}
@@ -17,6 +17,7 @@ const ArrowButton = ({ direction = "right", onClick }) => {
     </button>
   );
 };
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 // 🔹 Utility: Calculate distance between two coordinates (Haversine formula)
 const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -38,7 +39,7 @@ export const TopDestinations = ({ userCoords }) => {
   useEffect(() => {
     const fetchDestinations = async () => {
       try {
-        const res = await fetch(`BACKEND_URL}/districts`);
+        const res = await fetch(`${BACKEND_URL}/districts`);
         const data = await res.json();
 
         if (userCoords && Array.isArray(data)) {
