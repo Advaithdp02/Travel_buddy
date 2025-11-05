@@ -119,58 +119,49 @@ useEffect(() => {
 
 const handleSave = async () => {
   const token = localStorage.getItem("token");
-  if (!token) {
-    alert("Not authenticated");
-    return;
-  }
-
-  const payload = {
-    name: formData.name,
-    username: formData.username,
-    bio: formData.bio,
-    gender: formData.gender,
-    dob: formData.dob ? new Date(formData.dob).toISOString() : undefined,
-    phone: formData.phone,
-    email: formData.email,
-    occupation: formData.job,
-    relationshipStatus: formData.relationship,
-    location: formData.location, // use as-is
-    profilePic: formData.profileImage,
-    coverPhoto: formData.coverImage,
-  };
-
-  // Remove undefined fields
-  Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
+  if (!token) return alert("Not authenticated");
 
   try {
+    const form = new FormData();
+
+    // Text fields
+    form.append("name", formData.name || "");
+    form.append("username", formData.username || "");
+    form.append("bio", formData.bio || "");
+    form.append("gender", formData.gender || "");
+    form.append("dob", formData.dob || "");
+    form.append("phone", formData.phone || "");
+    form.append("email", formData.email || "");
+    form.append("occupation", formData.job || "");
+    form.append("relationshipStatus", formData.relationship || "");
+    form.append("location", formData.location || "");
+
+    // Files
+    if (formData.profileFile) form.append("profilePic", formData.profileFile);
+    if (formData.coverFile) form.append("coverPhoto", formData.coverFile);
+
+    // Flags to remove photos
+    if (formData.removeProfile) form.append("removeProfile", "true");
+    if (formData.removeCover) form.append("removeCover", "true");
+
     const res = await fetch(`${BACKEND_URL}/users/profile`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || "Failed to update profile");
-    }
-
     const data = await res.json();
-    const updatedUser = data.user ?? data;
+    if (!res.ok) throw new Error(data.message || "Failed to update profile");
 
-    setUserData(updatedUser);
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    localStorage.setItem("userId", updatedUser._id ?? updatedUser.id ?? localStorage.getItem("userId"));
-
+    setUserData(data.user ?? data);
     setIsModalOpen(false);
     alert("Profile updated successfully");
   } catch (err) {
     console.error("Error updating profile:", err);
-    alert(err.message || "Error updating profile");
+    alert(err.message || "Upload failed");
   }
 };
+
 
 if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
 
@@ -482,19 +473,125 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
 
       {/* Modals unchanged */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white w-[90%] md:w-full max-w-lg rounded-lg shadow-lg p-4 md:p-6 relative">
-            <h2 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">Edit Profile</h2>
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-3 right-4 text-gray-500 hover:text-gray-800 font-bold text-xl"
-            >
-              ×
-            </button>
+       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white w-[90%] md:w-full max-w-lg px-8 py-4 rounded-lg shadow-lg overflow-y-auto max-h-[800px]">
+    <h2 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-center">Edit Profile</h2>
+    <button
+      onClick={() => setIsModalOpen(false)}
+      className="absolute top-3 right-4 text-gray-500 hover:text-gray-800 font-bold text-xl"
+    >
+      ×
+    </button>
 
-            {/* form fields same as before */}
-          </div>
+    <div className="space-y-3 md:space-y-4">
+      {/* Profile Picture */}
+      <div className="flex flex-col items-center space-y-3">
+        <label className="font-semibold text-gray-700">Profile Picture</label>
+        <img
+          src={formData.profileImage || "/defaultProfile.png"}
+          alt="Profile"
+          className="w-24 h-24 rounded-full object-cover border"
+        />
+        <div className="flex space-x-3">
+          <label className="bg-blue-500 text-white px-3 py-1 rounded cursor-pointer hover:bg-blue-600">
+            Change
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    setFormData({ ...formData, profileImage: reader.result, profileFile: file, removeProfile: false });
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+              className="hidden"
+            />
+          </label>
+          {formData.profileImage && (
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, profileImage: "", profileFile: null, removeProfile: true })}
+              className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+            >
+              Remove
+            </button>
+          )}
         </div>
+      </div>
+
+      {/* Cover Photo */}
+      <div className="flex flex-col items-center space-y-3 mt-4">
+        <label className="font-semibold text-gray-700">Cover Photo</label>
+        <img
+          src={formData.coverImage || "/defaultCover.png"}
+          alt="Cover"
+          className="w-full h-40 object-cover rounded-lg border shadow-sm"
+        />
+        <div className="flex space-x-3">
+          <label className="bg-blue-500 text-white px-3 py-1 rounded cursor-pointer hover:bg-blue-600">
+            Change
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    setFormData({ ...formData, coverImage: reader.result, coverFile: file, removeCover: false });
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+              className="hidden"
+            />
+          </label>
+          {formData.coverImage && (
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, coverImage: "", coverFile: null, removeCover: true })}
+              className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+            >
+              Remove
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Other Form Fields */}
+      <input type="text" name="name" value={formData.name || ""} onChange={handleInputChange} placeholder="Full Name" className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300" />
+      <input type="text" name="username" value={formData.username || ""} onChange={handleInputChange} placeholder="Username" className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300" />
+      <textarea name="bio" value={formData.bio || ""} onChange={handleInputChange} placeholder="Bio" rows={3} className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300" />
+      <input type="date" name="dob" value={formData.dob || ""} onChange={handleInputChange} className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300" />
+      <select name="gender" value={formData.gender || ""} onChange={handleInputChange} className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300">
+        <option value="">Select Gender</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
+      </select>
+      <input type="text" name="location" value={formData.location || ""} onChange={handleInputChange} placeholder="Location" className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300" />
+      <input type="text" name="phone" value={formData.phone || ""} onChange={handleInputChange} placeholder="Phone Number" className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300" />
+      <input type="text" name="job" value={formData.job || ""} onChange={handleInputChange} placeholder="Occupation" className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300" />
+      <select name="relationship" value={formData.relationship || ""} onChange={handleInputChange} className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300">
+        <option value="">Select Relationship Status</option>
+        <option value="Single">Single</option>
+        <option value="In a relationship">In a Relationship</option>
+        <option value="Married">Married</option>
+      </select>
+
+      {/* Action Buttons */}
+      <div className="flex justify-end space-x-4 pt-4">
+        <button onClick={() => setIsModalOpen(false)} className="bg-gray-300 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-400">Cancel</button>
+        <button onClick={handleSave} className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
       )}
 
       <AddContributionModal
