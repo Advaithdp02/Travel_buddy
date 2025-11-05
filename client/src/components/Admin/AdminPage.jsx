@@ -28,7 +28,6 @@ let userRole= null;
 if (token) {
   const decoded = jwtDecode(token);
   userRole = decoded.role; 
-  console.log("Decoded role:", userRole);
 }
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;

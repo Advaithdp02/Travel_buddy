@@ -13,6 +13,7 @@ import {
   getAllUsers,
   updateUserRole,
   deleteUser,
+  getWishlist,
 } from "../controllers/userController.js";
 import { protect,staffProtect } from "../middlewares/authMiddleware.js";
 
@@ -45,6 +46,7 @@ router.put("/follow/:username", protect, toggleFollow);
 // ---------------- WISHLIST ----------------
 router.put("/wishlist/add/:locationId", protect, addToWishlist);
 router.put("/wishlist/remove/:locationId", protect, removeFromWishlist);
+router.get("/wishlist", protect, getWishlist);
 
 // ---------------- TRACK LOCATION VISITS ----------------
 // Handles both logged-in and anonymous users

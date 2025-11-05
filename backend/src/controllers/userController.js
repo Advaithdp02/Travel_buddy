@@ -390,3 +390,24 @@ export const deleteUser = async (req, res) => {
   }
 };
 
+//-------------------- Get Wishlist --------------------
+export const getWishlist = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).populate({
+      path: "wishlist",
+      select: "_id name district images",
+      populate: {
+        path: "district",
+        select: "name",
+      },
+    });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({ wishlist: user.wishlist });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+   

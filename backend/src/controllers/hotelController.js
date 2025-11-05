@@ -43,7 +43,7 @@ export const getHotelById = async (req, res) => {
   }
 };
 
-// ------------------ Create new hotel ------------------
+
 // ------------------ Create Hotel ------------------
 export const createHotel = async (req, res) => {
   try {
@@ -169,17 +169,15 @@ export const getNearestHotels = async (req, res) => {
     const { locationId } = req.params;
     const { maxDistance = 5000, skip = 0, limit = 10 } = req.query;
 
+    // 1️⃣ Find the location
     const loc = await Location.findById(locationId).populate("district");
     if (!loc) return res.status(404).json({ message: "Location not found" });
 
-    const hotels = await Hotel.find({
-      district: loc.district._id,
+    // 2️⃣ Try finding hotels near coordinates
+    let hotels = await Hotel.find({
       coordinates: {
         $near: {
-          $geometry: {
-            type: "Point",
-            coordinates: loc.coordinates.coordinates,
-          },
+          $geometry: { type: "Point", coordinates: loc.coordinates.coordinates },
           $maxDistance: parseInt(maxDistance),
         },
       },
@@ -189,9 +187,19 @@ export const getNearestHotels = async (req, res) => {
       .populate("district")
       .populate("locationId");
 
+    // 3️⃣ If no hotels found, fallback to district
+    if (!hotels.length) {
+      hotels = await Hotel.find({ district: loc.district._id })
+        .skip(parseInt(skip))
+        .limit(parseInt(limit))
+        .populate("district")
+        .populate("locationId");
+    }
+
     res.json(hotels);
   } catch (err) {
     console.error("Fetch nearest hotels error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+

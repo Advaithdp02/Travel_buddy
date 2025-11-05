@@ -35,19 +35,31 @@ export const Header = ({ variant = "light" }) => {
       navigate(page);
     }
   };
+  const isProfilePage = window.location.pathname.includes("/profile");
+  const pathname = location.pathname;
+  let logoClasses = "absolute left-0 flex-shrink-0 cursor-pointer bg-white rounded-bl-[20px] rounded-br-[20px] overflow-visible inline-block shadow-md";
+
+  if (pathname === "/") {
+    logoClasses += " h-[165px] top-[-48px]";
+  } else if (pathname.includes("/profile")) {
+    logoClasses += " h-[115px] top-[-40px]";
+  } else {
+    logoClasses += " h-[149px] top-[-60px]";
+  }
+
 
   return (
     <header className="w-full top-0 left-0 z-50 bg-[#fbebff] py-4 px-6 md:px-16 ">
   <div className="flex justify-end items-center w-full max-w-[1250px] mx-auto h-[40px] relative">
     {/* Logo */}
     <div
-      className="absolute -bottom-4 left-0 flex-shrink-0 cursor-pointer bg-white rounded-bl-[20px] rounded-br-[20px] overflow-visible inline-block shadow-md"
+      className={logoClasses}
       onClick={() => navigate("/")}
     >
       <img
         src="/LOGO.png"
         alt="logo"
-        className="w-[160px] h-auto block"
+        className={`${isProfilePage? "w-[145px] h-auto block":"w-[195px] h-auto block"}   cursor-pointer`}
       />
     </div>
 

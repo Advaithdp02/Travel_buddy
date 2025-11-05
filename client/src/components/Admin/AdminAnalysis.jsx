@@ -113,7 +113,6 @@ const handleViewDetails = async (user) => {
         }
       }
       setUserDetails(unique);
-      console.log("Fetched user details:", unique);
     }
   } catch (err) {
     console.error("Error fetching user details:", err);

@@ -50,6 +50,7 @@ export const DestinationPage = ({  }) => {
     images: [],
     terrain:""
   });
+
   const navigate=useNavigate();
   const [lat, setLat] = useState(11.6856);
   const [lon, setLon] = useState(76.1310);
@@ -115,6 +116,9 @@ export const DestinationPage = ({  }) => {
 
   const [allDistricts, setAllDistricts] = useState([]);
 
+  //Wishlist
+  const [isWishlisted, setIsWishlisted] = useState(false);
+
 // Utility to calculate distance (Haversine formula)
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // Earth radius in km
@@ -142,70 +146,72 @@ const fetchHotels = async (reset = false) => {
   if (!hasMore && !reset) return;
 
   try {
-    const userCoords = JSON.parse(localStorage.getItem("userCoords") || '{"latitude":0,"longitude":0}');
-    const userLat = userCoords.latitude;
-    const userLon = userCoords.longitude;
+    // Use location coordinates instead of user coords
+    const locationCoords = locationId.coordinates || { latitude: 0, longitude: 0 };
+    const locationLat = locationCoords.latitude;
+    const locationLon = locationCoords.longitude;
 
     const hotelRes = await fetch(
       `${Backend_URL}/hotels/nearest/${locationId.id}?skip=${reset ? 0 : skip}&limit=${limit}`
     );
     const hotelData = await hotelRes.json();
 
-    // Add distance from user
     const enrichedHotels = hotelData.map((h) => ({
       ...h,
-      distance: calculateDistance(userLat, userLon, h.coordinates.coordinates[1], h.coordinates.coordinates[0]),
+      distance: calculateDistance(
+        locationLat,
+        locationLon,
+        h.coordinates.coordinates[1],
+        h.coordinates.coordinates[0]
+      ),
     }));
 
-    // Append or reset hotels
     setHotels((prev) => (reset ? enrichedHotels : [...prev, ...enrichedHotels]));
-    console.log("Fetched Hotels:", enrichedHotels);
     setSkip((prev) => (reset ? enrichedHotels.length : prev + enrichedHotels.length));
-    
-    if (enrichedHotels.length < limit) setHasMore(false); // no more hotels
+
+    if (enrichedHotels.length < limit) setHasMore(false);
+    console.log("Fetched Hotels:", enrichedHotels);
   } catch (err) {
     console.error("Error fetching hotels:", err);
   }
 };
 
 
+const fetchhLocationDistrict = async (district) => {
+  if (!district) return; 
+  try {
+    const districtRes = await fetch(`${Backend_URL}/locations/district/${district}`);
+    const districtData = await districtRes.json();
+
+    const userCoords = JSON.parse(localStorage.getItem("userCoords") || '{"latitude":0,"longitude":0}');
+    const origin = { lat: userCoords.latitude, lon: userCoords.longitude };
+
+    const enrichedPlaces = (districtData || []).map((place) => {
+      const [lon, lat] = place.coordinates.coordinates;
+      const distance = calculateDistance(origin.lat, origin.lon, lat, lon);
+      const travelTime = calculateTime(distance);
+      const now = new Date();
+      const timeHours = distance / 60;
+      const arrival = new Date(now.getTime() + timeHours * 3600 * 1000);
+      const arrivalTime = arrival.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+      return {
+        ...place,
+        distance: `${distance.toFixed(2)} km`,
+        travelTime,
+        arrivalTime
+      };
+    });
+
+    setPlaces(enrichedPlaces);
+  } catch (err) {
+    console.error("Error fetching districts:", err);
+  }
+};
+
 
 useEffect(() => {
 
-    const fetchhLocationDistrict = async () => {
-      if (!filters.district) return; 
-      try {
-        const districtRes = await fetch(`${Backend_URL}/locations/district/${filters.district}`);
-        const districtData = await districtRes.json();
-
-       const userCoords = JSON.parse(localStorage.getItem("userCoords") || '{"latitude":0,"longitude":0}');
-
-const origin = { lat: userCoords.latitude, lon: userCoords.longitude };
-      const enrichedPlaces = (districtData || []).map((place) => {
-        const [lon, lat] = place.coordinates.coordinates; // GeoJSON order: [lon, lat]
-
-        const distance = calculateDistance(origin.lat, origin.lon, lat, lon);
-        const travelTime = calculateTime(distance);
-        const now = new Date();
-         const timeHours = distance / 60; // Assuming 80 km/h average speed
-        const arrival = new Date(now.getTime() + timeHours * 3600 * 1000);
-        const arrivalTime = arrival.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-        return {
-          ...place,
-          distance: `${distance.toFixed(2)} km`,
-          travelTime,
-          arrivalTime
-        };
-      });
-      
-      console.log(enrichedPlaces);
-
-      setPlaces(enrichedPlaces);
-      } catch (err) {
-        console.error("Error fetching districts:", err);
-      }
-    };
-    fetchhLocationDistrict();
+    fetchhLocationDistrict(filters.district);
 
   }, [filters.district]);
 useEffect(() => {
@@ -226,7 +232,7 @@ useEffect(() => {
       const res = await fetch(`${Backend_URL}/locations/${locationId.id}`);
       const data = await res.json();
       localStorage.setItem("location_id", data._id);
-
+      
       // Hero Section
       setHero({
         title: data.name,
@@ -243,15 +249,16 @@ useEffect(() => {
         reviews: data.reviewLength || 0,
         images: data.images.slice(0, 2),
         terrain:data.terrain || "",
-        subtitle: data.subtitle || "A Window to Wayanad's Scenic Splendor"
+        subtitle: data.subtitle || "A Window to Wayanad's Scenic Splendor",
+        coordinates: data.coordinates || ""
       });
 
       // Community & Contributions
       
       setContributions(data.contributions || []);
-
+      setFilters((prev) => ({...prev,district: data.district.name,state:prev.state,}));
       // Places & Nearby
-      setPlaces(data.places || []);
+      fetchhLocationDistrict(data.district.name);
       setNearbyPlaces(data.nearbyPlaces || []);
 
       // User coordinates for map
@@ -314,6 +321,24 @@ useEffect(() => {
       console.error("Error fetching location or weather data:", err);
     }
   };
+  const checkWishlist = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const res = await axios.get(`${Backend_URL}/users/wishlist`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // Assuming your API returns something like { wishlist: [ { id: "123", ...}, ...] }
+        const wishlisted = res.data.wishlist.some(
+          (item) => item._id === locationId.id
+        );
+        setIsWishlisted(wishlisted);
+      } catch (err) {
+        console.error("Failed to fetch wishlist:", err);
+      }
+    };
+
+  checkWishlist();
 
   fetchLocationData();
 }, [locationId]);
@@ -331,7 +356,6 @@ useEffect(() => {
     if (loaderRef.current) observer.observe(loaderRef.current);
     return () => loaderRef.current && observer.unobserve(loaderRef.current);
   }, [loaderRef.current, hasMore]);
-
 
 
   const handleWishlist = async () => {
@@ -354,8 +378,7 @@ useEffect(() => {
       }
     );
 
-    console.log("Wishlist updated:", response.data);
-    alert(response.data.message);
+    setIsWishlisted((prev) => !prev);
   } catch (error) {
     console.error("Error adding to wishlist:", error);
     if (error.response) {
@@ -527,8 +550,8 @@ const getBackgroundImage = (terrain) => {
                 </ul>
 
                 {/* Wishlist Button */}
-                <button onClick={handleWishlist}className="bg-[#fbebff] text-[#310a49] font-semibold py-3 px-4 rounded-lg shadow-lg hover:bg-[#9156F1] hover:text-white transition-transform transform hover:scale-105">
-                 <div className='flex gap-4 items-center'> <HeartIconOutline className='h-5  flex items-center' /> WishList</div>
+                <button onClick={handleWishlist} className="bg-[#fbebff] text-[#310a49] font-semibold py-3 px-4 rounded-lg shadow-lg hover:bg-[#9156F1] hover:text-white transition-transform transform hover:scale-105">
+                  <div className='flex gap-4 items-center'> <HeartIconOutline className='h-5  flex items-center' fill={isWishlisted ? "red" : "none"} /> WishList</div>
                 </button>
               </div>
 
@@ -536,7 +559,7 @@ const getBackgroundImage = (terrain) => {
       </section>
 
       {/* Comments & Contributions */}
-      <section className="py-16 px-8 bg-[#310a49]/90 rounded-tl-[20px] rounded-tr-[20px]">
+      <section className="py-16  pb-0 px-8 bg-[#310a49]/90 rounded-tl-[20px] rounded-tr-[20px]">
   <div className="container mx-auto">
     <h2 className="text-3xl font-bold text-white mb-6">Community Insights</h2>
 
@@ -576,7 +599,11 @@ const getBackgroundImage = (terrain) => {
       >
         {/* -------------------- COMMENTS TAB -------------------- */}
         <div className="w-full pr-6">
-          <div className="space-y-4 h-[300px] overflow-y-auto">
+         <div
+  className={`space-y-4 overflow-y-auto ${
+    comments.length === 0 ? "h-[120px]" : "h-[300px]"
+  }`}
+>
             {comments.length === 0 && (
               <div className="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center">
                 <span className="text-gray-500">No comments yet</span>

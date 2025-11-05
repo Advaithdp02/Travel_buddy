@@ -95,7 +95,6 @@ export const HomePage = () => {
         const data = await res.json();
         setNearestLocation(data._id);
         localStorage.setItem("nearestLocation", data._id);
-        console.log("Nearest Location:", data);
       } catch (err) {
         console.error("Error fetching nearest location:", err);
       }

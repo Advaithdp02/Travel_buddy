@@ -23,7 +23,6 @@ export const Profile = () => {
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 useEffect(() => {
   const token = localStorage.getItem("token");
-  console.log("Token:", token);
   if (!token) {
     console.warn("User not logged in");
     return;
@@ -35,10 +34,8 @@ useEffect(() => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("Fetch response status:", res.status); // see status
 
       const data = await res.json();
-      console.log("Fetched user JSON:", data); // see JSON
 
       const user = data.user ?? data; // normalize
       
@@ -77,19 +74,23 @@ const removeFromWishlist = async (locationId) => {
     const token = localStorage.getItem("token");
     if (!token) return alert("Please log in first");
 
-    const res = await axios.put(
+    // Optimistically remove locally
+    setWishlist((prev) => prev.filter((item) => item._id !== locationId));
+
+    // Update backend
+    await axios.put(
       `${BACKEND_URL}/users/wishlist/remove/${locationId}`,
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
-
-    alert(res.data.message);
-    setWishlist(res.data.wishlist);
-    console.log("Updated wishlist:", res.data.wishlist);
   } catch (err) {
     console.error("Error removing:", err.response?.data || err.message);
+    alert("Failed to remove from wishlist");
+    // Optionally: refetch wishlist from backend to restore state
   }
 };
+
+
 
 const handleInputChange = (e) => {
   const { name, value } = e.target;
@@ -296,7 +297,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
                         >
                           <div className="flex items-center gap-3">
                             <img
-                              src={item.images[0]}
+                              src={item.images?.[0] || "/defaultCoverPic.png"}
                               alt={item.name}
                               className="w-14 h-14 rounded-lg object-cover border border-gray-200"
                             />

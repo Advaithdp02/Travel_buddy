@@ -20,6 +20,14 @@ export const ProfilePublic = () => {
   const navigate = useNavigate();
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  const [currentUser, setCurrentUser] = useState(null);
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    setCurrentUser(payload); 
+     
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -109,14 +117,16 @@ export const ProfilePublic = () => {
             </div>
 
             <div className="flex md:flex-col gap-2 md:gap-4 mr-[40px]">
-              <button
-                onClick={handleToggleFollow}
-                className={`${
-                  isFollowing ? "bg-[#310a49]" : "bg-[#9156F1]"
-                } text-white font-semibold py-2 px-3 md:px-4 rounded-lg text-sm md:text-base`}
-              >
-                {isFollowing ? "Unfollow" : "Follow"}
-              </button>
+             { user._id !== currentUser.id&& (
+  <button
+    onClick={handleToggleFollow}
+    className={`${
+      isFollowing ? "bg-[#310a49]" : "bg-[#9156F1]"
+    } text-white font-semibold py-2 px-3 md:px-4 rounded-lg text-sm md:text-base`}
+  >
+    {isFollowing ? "Unfollow" : "Follow"}
+  </button>
+)}
             </div>
           </div>
         </div>

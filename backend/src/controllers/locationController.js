@@ -97,7 +97,7 @@ export const getLocationById = async (req, res) => {
 }).populate({
   path: "comments",
   populate: { path: "user", select: "username name profilePic" }
-})
+}).populate("district");
 
     // Check if it exists
     if (!location) {

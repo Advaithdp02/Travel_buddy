@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ClimateIcon } from "./Icons";
+import { ClimateIcon,SendIconAdd } from "./Icons";
 import { ThumbsUp } from "lucide-react";
 import { X } from "lucide-react";
 
@@ -250,7 +250,7 @@ const handleReplySubmit = async (commentId) => {
             {activeTab === "comments" ? "Comments" : "Contributions"}
           </h3>
           <button onClick={onClose}>
-            <X className="w-10 h-10 text-yellow-400 bg-[#37377B] rounded-full p-1 cursor-pointer hover:bg-blue-700 transition" /> 
+            <X className="w-10 h-10 text-[#fbebff] bg-[#37377B] rounded-full p-1 cursor-pointer hover:bg-blue-700 transition" /> 
           </button>
         </div>
 
@@ -344,9 +344,9 @@ const handleReplySubmit = async (commentId) => {
                   className="flex-grow border border-[#9156F1] rounded-lg p-2"
                 /><button
                   onClick={handleAddComment}
-                  className="bg-[#9156F1]  w-[5%] text-white font-semibold px-4 rounded-lg"
+                  className="bg-[#9156F1] flex items-center justify-center w-[5%] text-white items-center text-center font-semibold px-4 rounded-lg"
                 >
-                  >
+                  <SendIconAdd className="w-5 h-5"/>
                 </button></div>}
                 
               
