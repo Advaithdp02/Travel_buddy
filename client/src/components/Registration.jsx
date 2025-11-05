@@ -27,7 +27,7 @@ export const Registration = ({ currentPage }) => {
     setLoading(true);
 
     try {
-      const res = await fetch(`BACKEND_URL}/contact/send-otp`, {
+      const res = await fetch(`${BACKEND_URL}/contact/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
