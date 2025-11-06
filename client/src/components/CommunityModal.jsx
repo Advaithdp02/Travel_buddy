@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { SendIconAdd } from "./Icons";
 import { ThumbsUp } from "lucide-react";
 import { X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
 
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -23,6 +25,8 @@ export const CommunityModal = ({
   const [loading, setLoading] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
 const [replyText, setReplyText] = useState("");
+const navigate = useNavigate();
+
 
 
 
@@ -56,6 +60,24 @@ const handleReplySubmit = async (commentId) => {
     setReplyText("");
     setReplyingTo(null);
     refreshComments?.(); // refresh comment list
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+};
+const handleDeleteComment = async (commentId) => {
+  if (!token) return alert("You must be logged in");
+  const confirmDelete = confirm("Are you sure you want to delete this comment?");
+  if (!confirmDelete) return;
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/comments/${commentId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to delete comment");
+    refreshComments?.();
   } catch (err) {
     console.error(err);
     alert(err.message);
@@ -261,77 +283,99 @@ const handleReplySubmit = async (commentId) => {
               {/* Comments */}
               <div className="space-y-4 mb-4">
                 {localComments.map((c) => {
-                  const hasLiked = c.likes.includes(userId);
-                  return (
-                    <div
-                      key={c._id}
-                      className="bg-white border rounded-2xl p-4 shadow-md"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        {c.user?.profilePic && (
-                          <img
-                            src={c.user.profilePic}
-                            alt={c.user.username || c.user.name}
-                            className="w-8 h-8 rounded-full shadow-sm"
-                          />
-                        )}
-                        <p className="font-semibold">{c.user?.name || "Unknown"}</p>
-                      </div>
-                      <p className="text-gray-700 mb-2">{c.text}</p>
-                      <div className="flex items-center gap-3 text-sm">
-  {/* Like Button */}
-  <button
-    className={`flex items-center gap-1 px-2 py-1 rounded-full ${
-      hasLiked ? "bg-[#9156F1]/90 text-white" : "bg-gray-100 text-gray-500"
-    }`}
-    onClick={() => handleLikeComment(c._id)}
-  >
-    <ThumbsUp className="w-4 h-4" />
-    {c.likes.length}
-  </button>
+  const hasLiked = c.likes.includes(userId);
+  const isOwnComment = c.user?._id === userId;
 
-  {/* Reply Button */}
-  <button
-    className="text-gray-500 hover:text-blue-600 pl-[20px] font-medium"
-    onClick={() => toggleReplyInput(c._id)}
-  >
-    Reply
-  </button>
-</div>
-{c.replies && c.replies.length > 0 && (
-  <div className="ml-6 mt-2 space-y-1">
-    {c.replies.map((r) => (
-      <div key={r._id} className="bg-[#fbebff]/60 p-2 rounded-lg ml-[40px] text-sm shadow-md">
-        <p className="font-semibold">{r.user?.name || "Unknown"}</p>
-        <p>{r.text}</p>
+  return (
+    <div key={c._id} className="bg-white border rounded-2xl p-4 shadow-md">
+      <div className="flex items-center justify-between mb-2">
+        <div
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={() => navigate(`/profile/${c.user?.username || c.user?.name}`)}
+        >
+          {c.user?.profilePic && (
+            <img
+              src={c.user.profilePic}
+              alt={c.user.username || c.user.name}
+              className="w-8 h-8 rounded-full shadow-sm"
+            />
+          )}
+          <p className="font-semibold hover:text-[#9156F1] transition">
+            {c.user?.name || "Unknown"}
+          </p>
+        </div>
+
+        {/* Show delete icon only if it's the user's comment */}
+        {isOwnComment && (
+          <button
+            onClick={() => handleDeleteComment(c._id)}
+            className="text-red-500 hover:text-red-700 transition"
+            title="Delete comment"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
-    ))}
-  </div>
-)}
 
+      <p className="text-gray-700 mb-2">{c.text}</p>
 
-{/* Reply Input (shown conditionally) */}
-{replyingTo === c._id && (
-  <div className="ml-6 mt-2 flex gap-2">
-    <input
-      type="text"
-      placeholder="Write a reply..."
-      value={replyText}
-      onChange={(e) => setReplyText(e.target.value)}
-      className="flex-grow border rounded-lg p-2 text-sm"
-    />
-    <button
-      onClick={() => handleReplySubmit(c._id)}
-      className="bg-[#fbebff] text-brand-dark font-semibold px-3 rounded-lg"
-    >
-      Send
-    </button>
-  </div>
-)}
+      <div className="flex items-center gap-3 text-sm">
+        {/* Like Button */}
+        <button
+          className={`flex items-center gap-1 px-2 py-1 rounded-full ${
+            hasLiked ? "bg-[#9156F1]/90 text-white" : "bg-gray-100 text-gray-500"
+          }`}
+          onClick={() => handleLikeComment(c._id)}
+        >
+          <ThumbsUp className="w-4 h-4" />
+          {c.likes.length}
+        </button>
 
-                    </div>
-                  );
-                })}
+        {/* Reply Button */}
+        <button
+          className="text-gray-500 hover:text-blue-600 pl-[20px] font-medium"
+          onClick={() => toggleReplyInput(c._id)}
+        >
+          Reply
+        </button>
+      </div>
+
+      {c.replies && c.replies.length > 0 && (
+        <div className="ml-6 mt-2 space-y-1">
+          {c.replies.map((r) => (
+            <div
+              key={r._id}
+              className="bg-[#fbebff]/60 p-2 rounded-lg ml-[40px] text-sm shadow-md"
+            >
+              <p className="font-semibold hover:text-[#9156F1] cursor-pointer" onClick={() => navigate(`/profile/${c.user?.username || c.user?.name}`)}>{r.user?.name || "Unknown"}</p>
+              <p>{r.text}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Reply Input */}
+      {replyingTo === c._id && (
+        <div className="ml-6 mt-2 flex gap-2">
+          <input
+            type="text"
+            placeholder="Write a reply..."
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            className="flex-grow border rounded-lg p-2 text-sm"
+          />
+          <button
+            onClick={() => handleReplySubmit(c._id)}
+            className="bg-[#fbebff] text-brand-dark font-semibold px-3 rounded-lg"
+          >
+            Send
+          </button>
+        </div>
+      )}
+    </div>
+  );
+})}
+
               </div>
 
               
@@ -356,6 +400,7 @@ const handleReplySubmit = async (commentId) => {
               {/* Contributions */}
               <div className="space-y-4">
                 {localContributions.map((c) => {
+                  const isOwnComment = c.user?._id === userId;
                   const hasLiked = c.likes.includes(userId);
                   const images = [c.coverImage, ...c.images];
                   const commentsList = contribComments[c._id] || [];
@@ -372,7 +417,7 @@ const handleReplySubmit = async (commentId) => {
                             className="w-8 h-8 rounded-full shadow-sm"
                           />
                         )}
-                        <p className="font-semibold">{c.user.name}</p>
+                        <p className="font-semibold cursor-pointer hover:text-[#9156F1]" onClick={() => navigate(`/profile/${c.user?.username || c.user?.name}`)}>{c.user.name}</p>
                       </div>
 
                       {/* Description */}
@@ -466,7 +511,7 @@ const handleReplySubmit = async (commentId) => {
                           return (
                             <div key={com._id} className="bg-white p-2 rounded-xl shadow-sm flex justify-between items-start">
                               <div>
-                                <p className="font-semibold text-sm">{com.user?.name || "Unknown"}</p>
+                                <p className="font-semibold text-sm cursor-pointer hover:text-[#9156F1]" onClick={() => navigate(`/profile/${c.user?.username || c.user?.name}`)}>{com.user?.name || "Unknown"}</p>
                                 <p className="text-gray-600 text-sm">{com.text}</p>
                               </div>
                               <button
