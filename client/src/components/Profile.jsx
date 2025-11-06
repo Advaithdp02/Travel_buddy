@@ -133,7 +133,7 @@ const handleSave = async () => {
     form.append("phone", formData.phone || "");
     form.append("email", formData.email || "");
     form.append("occupation", formData.job || "");
-    form.append("relationshipStatus", formData.relationship || "");
+    form.append("relationshipStatus", formData.relationshipStatus || "");
     form.append("location", formData.location || "");
 
     // Files
@@ -250,7 +250,7 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
               </div>
               <div className="flex items-center space-x-2">
                 <HeartIcon className="w-5 h-5 text-[#310a49]" />
-                <span>{userData.relationship || "Single"}</span>
+                <span>{userData.relationshipStatus || "Single"}</span>
               </div>
             </div>
           </div>
@@ -576,11 +576,11 @@ if (!userData) return <p className="text-center mt-20">Loading profile...</p>;
       <input type="text" name="location" value={formData.location || ""} onChange={handleInputChange} placeholder="Location" className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300" />
       <input type="text" name="phone" value={formData.phone || ""} onChange={handleInputChange} placeholder="Phone Number" className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300" />
       <input type="text" name="job" value={formData.job || ""} onChange={handleInputChange} placeholder="Occupation" className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300" />
-      <select name="relationship" value={formData.relationship || ""} onChange={handleInputChange} className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300">
+      <select name="Relationship" value={formData.relationshipStatus || ""} onChange={handleInputChange} className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300">
         <option value="">Select Relationship Status</option>
         <option value="Single">Single</option>
-        <option value="In a relationship">In a Relationship</option>
         <option value="Married">Married</option>
+        <option value="Other">Other</option>
       </select>
 
       {/* Action Buttons */}
