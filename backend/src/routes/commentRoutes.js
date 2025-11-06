@@ -38,7 +38,7 @@ router.get("/district/:id", getCommentsForDistrict);
 router.get("/", protect, staffProtect, getAllComments);
 
 // Delete a comment
-router.delete("/:id", protect, staffProtect, deleteComment);
+router.delete("/:id", protect, protect, deleteComment);
 
 
 export default router;

@@ -59,7 +59,8 @@ const handleReplySubmit = async (commentId) => {
 
     setReplyText("");
     setReplyingTo(null);
-    refreshComments?.(); // refresh comment list
+    refreshComments?.();
+    setComments((prev) => prev.filter((c) => c._id !== commentId));
   } catch (err) {
     console.error(err);
     alert(err.message);
@@ -76,6 +77,7 @@ const handleDeleteComment = async (commentId) => {
       headers: { Authorization: `Bearer ${token}` },
     });
     const data = await res.json();
+
     if (!res.ok) throw new Error(data.message || "Failed to delete comment");
     refreshComments?.();
   } catch (err) {

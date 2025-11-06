@@ -162,10 +162,11 @@ export const toggleLike = async (req, res) => {
 // Delete comment (admin only)
 export const deleteComment = async (req, res) => {
   try {
-    const comment = await Comment.findById(req.params.id);
-    if (!comment) return res.status(404).json({ message: "Comment not found" });
+    const comment = await Comment.findByIdAndDelete(req.params.id);
 
-    await comment.remove();
+    if (!comment)
+      return res.status(404).json({ message: "Comment not found" });
+
     res.status(200).json({ message: "Comment deleted successfully" });
   } catch (err) {
     console.error(err);
