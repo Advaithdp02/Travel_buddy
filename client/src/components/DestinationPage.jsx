@@ -487,7 +487,7 @@ export const DestinationPage = ({}) => {
         <div className="absolute inset-0 rounded-[20px] mt-[50px] bg-gradient-to-r from-transparent to-[#8B63DA]"></div>
 
         {/* Text Content */}
-        <div className="relative z-10 text-left max-w-[724px] left-[25px] px-4 sm:left-3 sm:px-3">
+        <div className="relative z-10 text-left max-w-[724px]  px-4 sm:left-3 sm:px-3">
           {/* Small Subtitle */}
           <h3
             className="text-[#F2B024] font-schoolbell text-[30px] leading-[42px] sm:text-[20px] sm:leading-[28px]"
@@ -929,8 +929,8 @@ export const DestinationPage = ({}) => {
       </section>
 
       {/* Main Content Area */}
-      <section className="py-20 px-8 pb-0 ">
-        <div className="container mx-auto grid lg:grid-cols-4 gap-8 mb-10">
+      <section className="py-20 pl-8 pr-0 pb-0 ">
+        <div className="container mx-auto grid lg:grid-cols-4 gap-8 pr-8 mb-10">
           {/* Left Column */}
           <div className="lg:col-span-2 w-full max-w-[504px] space-y-10 ">
             {/* Weather */}
@@ -1103,10 +1103,10 @@ export const DestinationPage = ({}) => {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row w-[100%] md:w-full min-h-screen px-4 pb-0 md:px-12 py-8">
+        <div className="flex flex-col md:flex-row w-[100%] md:w-full min-h-screen px-4 pb-0 md:px-12 pr-0 py-8">
           {/* Hotels & Resorts */}
           <div
-            className="flex-1 p-6 ml-[-50px] md:ml-[-170px] bg-cover bg-center shadow-md rounded-tl-none rounded-tr-[100px] md:pl-[120px] z-10 relative"
+            className="flex-1 p-[4.5rem] md:p-6 ml-[-50px] md:ml-[-170px] bg-cover bg-center shadow-md rounded-tl-none rounded-tr-[100px] md:pl-[120px] z-10 relative"
             style={{ backgroundImage: "url('/Destination_hotel.png')" }}
           >
             <h3 className="text-2xl font-bold text-brand-dark text-white mb-4">
@@ -1129,7 +1129,7 @@ export const DestinationPage = ({}) => {
 
                   {/* Right Content */}
                   <div className="flex flex-col justify-between flex-grow p-4">
-                    <div>
+                    <div className="p-3">
                       <h4 className="text-lg font-medium text-brand-dark">
                         {hotel.name}
                       </h4>
@@ -1212,7 +1212,7 @@ export const DestinationPage = ({}) => {
                         className="md:w-48 w-[100%] h-[210px] object-cover rounded-xl "
                         style={{ borderRadius: "20px 0px 0px 20px" }}
                       />
-                      <div>
+                      <div className="p-3">
                         <h3 className="text-lg pt-2  font-bold text-brand-dark">
                           {place.name}
                         </h3>

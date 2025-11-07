@@ -67,7 +67,7 @@ export const MobileMenu = ({ links, isLoggedIn }) => {
                   navigate("/login");
                   setMobileMenuOpen(false);
                 }}
-                className="w-full bg-[#9156F1] text-white mr-[20px] rounded-full py-3 font-semibold"
+                className="w-full bg-[#9156F1] text-white  rounded-full py-3 font-semibold"
               >
                 LOGIN
               </button>
@@ -79,7 +79,7 @@ export const MobileMenu = ({ links, isLoggedIn }) => {
                   navigate("/profile");
                   setMobileMenuOpen(false);
                 }}
-                className="w-full bg-[#9156F1] text-white mr-[20px] rounded-full py-3 font-semibold"
+                className="w-full bg-[#9156F1] text-white  rounded-full py-3 font-semibold"
               >
                 Profile
               </button>
