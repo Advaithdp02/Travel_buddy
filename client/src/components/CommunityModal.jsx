@@ -21,11 +21,13 @@ export const CommunityModal = ({
   const [newComment, setNewComment] = useState("");
   const [localComments, setLocalComments] = useState([]);
   const [localContributions, setLocalContributions] = useState([]);
-  const [contribComments, setContribComments] = useState({}); // { contribId: [comments] }
+  const [contribComments, setContribComments] = useState({}); 
   const [loading, setLoading] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
 const [replyText, setReplyText] = useState("");
 const navigate = useNavigate();
+const [dataChanged, setDataChanged] = useState(false);
+
 
 
 
@@ -44,6 +46,27 @@ const handleReplySubmit = async (commentId) => {
   if (!replyText.trim()) return;
   if (!token) return alert("You must be logged in");
 
+  // Create temporary reply for instant UI update
+  const tempReply = {
+    _id: `temp-${Date.now()}`,
+    text: replyText.trim(),
+    user: { _id: userId, name: "You" },
+    likes: [],
+    createdAt: new Date().toISOString(),
+  };
+
+  // Optimistically update UI
+  setLocalComments((prev) =>
+    prev.map((c) =>
+      c._id === commentId
+        ? { ...c, replies: [...(c.replies || []), tempReply] }
+        : c
+    )
+  );
+
+  setReplyText("");
+  setReplyingTo(null);
+
   try {
     const res = await fetch(`${BACKEND_URL}/comments/reply/${commentId}`, {
       method: "POST",
@@ -57,15 +80,28 @@ const handleReplySubmit = async (commentId) => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to post reply");
 
-    setReplyText("");
-    setReplyingTo(null);
-    refreshComments?.();
-    setComments((prev) => prev.filter((c) => c._id !== commentId));
+    // trigger refresh like handleAddComment
+    setDataChanged(true);
   } catch (err) {
     console.error(err);
     alert(err.message);
+
+    // rollback optimistic reply
+    setLocalComments((prev) =>
+      prev.map((c) =>
+        c._id === commentId
+          ? {
+              ...c,
+              replies: (c.replies || []).filter(
+                (r) => r._id !== tempReply._id
+              ),
+            }
+          : c
+      )
+    );
   }
 };
+
 const handleDeleteComment = async (commentId) => {
   if (!token) return alert("You must be logged in");
   const confirmDelete = confirm("Are you sure you want to delete this comment?");
@@ -83,6 +119,28 @@ const handleDeleteComment = async (commentId) => {
   } catch (err) {
     console.error(err);
     alert(err.message);
+  }
+};
+const handleDeleteContributionComment = async (contribId, commentId) => {
+  try {
+    const res = await fetch(`${BACKEND_URL}/contributions/${contribId}/comments/${commentId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+
+    if (res.ok) {
+      setContribComments((prev) => ({
+        ...prev,
+        [contribId]: prev[contribId].filter((com) => com._id !== commentId),
+      }));
+    } else {
+      const data = await res.json();
+      console.error("Failed to delete comment:", data.message);
+    }
+  } catch (error) {
+    console.error("Error deleting comment:", error);
   }
 };
 
@@ -115,32 +173,40 @@ const handleDeleteComment = async (commentId) => {
   if (!isOpen) return null;
 
   // --- General comments ---
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return;
-    const locationId = localStorage.getItem("location_id");
-    if (!token) return alert("You must be logged in");
+const handleAddComment = async () => {
+  if (!newComment.trim()) return;
+  const locationId = localStorage.getItem("location_id");
+  if (!token) return alert("You must be logged in");
 
-    try {
-      setLoading(true);
-      const res = await fetch(`${BACKEND_URL}/comments`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ location: locationId, text: newComment.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to post comment");
-      setNewComment("");
-      refreshComments?.();
-    } catch (err) {
-      console.error(err);
-      alert(err.message);
-    } finally {
-      setLoading(false);
-    }
+  const tempComment = {
+    _id: `temp-${Date.now()}`,
+    text: newComment.trim(),
+    user: { _id: userId, name: "You" },
+    likes: [],
+    createdAt: new Date().toISOString(),
   };
+
+  setLocalComments((prev) => [tempComment, ...prev]);
+  setNewComment("");
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/comments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ location: locationId, text: newComment.trim() }),
+    });
+    if (!res.ok) throw new Error("Failed to post comment");
+    setDataChanged(true); // <-- trigger refresh
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+    setLocalComments((prev) => prev.filter((c) => c._id !== tempComment._id));
+  }
+};
+
 
   const handleLikeComment = async (commentId) => {
     if (!userId) return alert("You must be logged in");
@@ -390,7 +456,7 @@ const handleDeleteComment = async (commentId) => {
                   className="flex-grow border border-[#9156F1] rounded-lg p-2"
                 /><button
                   onClick={handleAddComment}
-                  className="bg-[#9156F1] flex items-center justify-center w-[5%] text-white items-center text-center font-semibold px-4 rounded-lg"
+                  className="bg-[#9156F1] flex items-center justify-center w-[25%] md:w-[5%] text-white items-center text-center font-semibold px-4 rounded-lg"
                 >
                   <SendIconAdd className="w-5 h-5"/>
                 </button></div>}
@@ -511,21 +577,45 @@ const handleDeleteComment = async (commentId) => {
                         {commentsList.map((com) => {
                           const liked = com.likes.includes(userId);
                           return (
-                            <div key={com._id} className="bg-white p-2 rounded-xl shadow-sm flex justify-between items-start">
-                              <div>
-                                <p className="font-semibold text-sm cursor-pointer hover:text-[#9156F1]" onClick={() => navigate(`/profile/${c.user?.username || c.user?.name}`)}>{com.user?.name || "Unknown"}</p>
-                                <p className="text-gray-600 text-sm">{com.text}</p>
-                              </div>
-                              <button
-                                className={`flex items-center gap-1 text-sm ${
-                                  liked ? "text-blue-600 font-semibold" : "text-gray-500"
-                                }`}
-                                onClick={() => handleLikeContributionComment(c._id, com._id)}
-                              >
-                                <ThumbsUp className="w-4 h-4" />
-                                {com.likes.length}
-                              </button>
-                            </div>
+                            <div
+  key={com._id}
+  className="bg-white p-2 rounded-xl shadow-sm flex justify-between items-start"
+>
+  <div>
+    <p
+      className="font-semibold text-sm cursor-pointer hover:text-[#9156F1]"
+      onClick={() => navigate(`/profile/${c.user?.username || c.user?.name}`)}
+    >
+      {com.user?.name || "Unknown"}
+    </p>
+    <p className="text-gray-600 text-sm">{com.text}</p>
+  </div>
+
+  <div className="flex items-center gap-2">
+    <button
+      className={`flex items-center gap-1 text-sm ${
+        com.likes.includes(userId)
+          ? "text-blue-600 font-semibold"
+          : "text-gray-500"
+      }`}
+      onClick={() => handleLikeContributionComment(c._id, com._id)}
+    >
+      <ThumbsUp className="w-4 h-4" />
+      {com.likes.length}
+    </button>
+
+    {/* 🗑️ Show delete icon if comment belongs to logged in user */}
+    {com.user?._id === userId && (
+      <button
+        className="text-red-500 hover:text-red-700 text-sm"
+        onClick={() => handleDeleteContributionComment(c._id, com._id)}
+      >
+        <X className="w-4 h-4" />
+      </button>
+    )}
+  </div>
+</div>
+
                           );
                         })}
                         {/* Add comment input for contribution */}
