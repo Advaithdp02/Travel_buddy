@@ -1,12 +1,10 @@
 import Contribution from "../models/Contribution.js";
 import Location from "../models/Location.js";
-import User from "../models/User.js"; 
+import User from "../models/User.js";
 import District from "../models/District.js";
 import mongoose from "mongoose";
 import { uploadToS3, deleteFromS3 } from "./uploadController.js";
 import ContributionComment from "../models/ContributionComment.js";
-
-
 
 export const createContribution = async (req, res) => {
   try {
@@ -31,7 +29,7 @@ export const createContribution = async (req, res) => {
     }
 
     const userId = req.user._id; // from auth middleware
-    const locationId =new  mongoose.Types.ObjectId(location);
+    const locationId = new mongoose.Types.ObjectId(location);
 
     const folderName = `contributions/${locationId}/${userId}`;
 
@@ -42,21 +40,30 @@ export const createContribution = async (req, res) => {
 
     // Upload images to S3 if any
     if (req.files) {
-  // Cover Image
-  if (req.files.coverImage && req.files.coverImage.length > 0) {
-    const file = req.files.coverImage[0];
-    coverImage = await uploadToS3(file.buffer, file.originalname, folderName, file.mimetype);
-  }
+      // Cover Image
+      if (req.files.coverImage && req.files.coverImage.length > 0) {
+        const file = req.files.coverImage[0];
+        coverImage = await uploadToS3(
+          file.buffer,
+          file.originalname,
+          folderName,
+          file.mimetype
+        );
+      }
 
-  // Other Images
-  if (req.files.images && req.files.images.length > 0) {
-    for (const file of req.files.images) {
-      const url = await uploadToS3(file.buffer, file.originalname, folderName, file.mimetype);
-      images.push(url);
+      // Other Images
+      if (req.files.images && req.files.images.length > 0) {
+        for (const file of req.files.images) {
+          const url = await uploadToS3(
+            file.buffer,
+            file.originalname,
+            folderName,
+            file.mimetype
+          );
+          images.push(url);
+        }
+      }
     }
-  }
-}
-
 
     // Create contribution
     const contribution = new Contribution({
@@ -104,7 +111,7 @@ export const getContributionsByLocation = async (req, res) => {
   try {
     const contributions = await Contribution.find({
       location: req.params.locationId,
-      verified: true
+      verified: true,
     })
       .populate("user", "name username profilePic")
       .populate("comments")
@@ -136,15 +143,18 @@ export const getContributionsForDistrict = async (req, res) => {
   try {
     const { id } = req.params;
     const district = await District.findById(id).populate("locations");
-    if (!district) return res.status(404).json({ message: "District not found" });
+    if (!district)
+      return res.status(404).json({ message: "District not found" });
 
     const locationIds = district.locations.map((loc) => loc._id);
-    const contributions = await Contribution.find({ location: { $in: locationIds } })
+    const contributions = await Contribution.find({
+      location: { $in: locationIds },
+    })
       .populate("user", "name profileImage")
       .populate("location", "name")
       .sort({ createdAt: -1 });
     console.log("District ID:", id);
-console.log("District locations:", district.locations);
+    console.log("District locations:", district.locations);
 
     res.json(contributions);
   } catch (err) {
@@ -152,7 +162,6 @@ console.log("District locations:", district.locations);
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // Admin: Verify a contribution
 export const verifyContribution = async (req, res) => {
@@ -169,7 +178,6 @@ export const verifyContribution = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 // ✅ Get all contributions (Admin)
 export const getAllContributions = async (req, res) => {
@@ -236,7 +244,12 @@ export const getContributionsByUser = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: "Server error fetching user contributions" });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Server error fetching user contributions",
+      });
   }
 };
 // Add comment to a contribution
@@ -246,7 +259,8 @@ export const addContributionComment = async (req, res) => {
     const { id: contributionId } = req.params;
     const userId = req.user._id;
 
-    if (!text?.trim()) return res.status(400).json({ message: "Comment cannot be empty" });
+    if (!text?.trim())
+      return res.status(400).json({ message: "Comment cannot be empty" });
 
     const comment = new ContributionComment({
       user: userId,
@@ -261,7 +275,10 @@ export const addContributionComment = async (req, res) => {
     contribution.comments.push(comment._id);
     await contribution.save();
 
-    const populatedComment = await comment.populate("user", "name username profilePic");
+    const populatedComment = await comment.populate(
+      "user",
+      "name username profilePic"
+    );
 
     res.status(201).json(populatedComment);
   } catch (err) {
@@ -283,8 +300,7 @@ export const toggleContributionCommentLike = async (req, res) => {
 
     // Find comment
     const comment = await ContributionComment.findById(commentId);
-    if (!comment)
-      return res.status(404).json({ message: "Comment not found" });
+    if (!comment) return res.status(404).json({ message: "Comment not found" });
 
     // Toggle like/unlike
     const hasLiked = comment.likes.some((id) => id.toString() === userId);
@@ -311,7 +327,9 @@ export const toggleContributionCommentLike = async (req, res) => {
 export const getContributionComments = async (req, res) => {
   try {
     const { id: contributionId } = req.params;
-    const comments = await ContributionComment.find({ contribution: contributionId })
+    const comments = await ContributionComment.find({
+      contribution: contributionId,
+    })
       .populate("user", "name username profilePic")
       .sort({ createdAt: -1 });
 
@@ -327,16 +345,22 @@ export const toggleContributionLike = async (req, res) => {
     const { id } = req.params; // contribution ID
     const userId = req.user.id; // from protect middleware
 
-    if (!id) return res.status(400).json({ message: "Contribution ID is required" });
+    if (!id)
+      return res.status(400).json({ message: "Contribution ID is required" });
 
     const contribution = await Contribution.findById(id);
-    if (!contribution) return res.status(404).json({ message: "Contribution not found" });
+    if (!contribution)
+      return res.status(404).json({ message: "Contribution not found" });
 
-    const hasLiked = contribution.likes.some((uid) => uid.toString() === userId);
+    const hasLiked = contribution.likes.some(
+      (uid) => uid.toString() === userId
+    );
 
     if (hasLiked) {
       // Unlike
-      contribution.likes = contribution.likes.filter((uid) => uid.toString() !== userId);
+      contribution.likes = contribution.likes.filter(
+        (uid) => uid.toString() !== userId
+      );
     } else {
       // Like
       contribution.likes.push(userId);
@@ -355,14 +379,15 @@ export const toggleContributionLike = async (req, res) => {
 };
 
 export const contributionCommentDelete = async (req, res) => {
-
   try {
     const comment = await ContributionComment.findById(req.params.commentId);
     if (!comment) return res.status(404).json({ message: "Comment not found" });
 
     // Only comment owner can delete
     if (comment.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized to delete this comment" });
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this comment" });
     }
 
     await comment.deleteOne();

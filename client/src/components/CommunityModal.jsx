@@ -4,8 +4,6 @@ import { ThumbsUp } from "lucide-react";
 import { X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-
-
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export const CommunityModal = ({
@@ -16,21 +14,17 @@ export const CommunityModal = ({
   contributions,
   refreshComments,
   refreshContributions,
-  districtPage
+  districtPage,
 }) => {
   const [newComment, setNewComment] = useState("");
   const [localComments, setLocalComments] = useState([]);
   const [localContributions, setLocalContributions] = useState([]);
-  const [contribComments, setContribComments] = useState({}); 
+  const [contribComments, setContribComments] = useState({});
   const [loading, setLoading] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
-const [replyText, setReplyText] = useState("");
-const navigate = useNavigate();
-const [dataChanged, setDataChanged] = useState(false);
-
-
-
-
+  const [replyText, setReplyText] = useState("");
+  const navigate = useNavigate();
+  const [dataChanged, setDataChanged] = useState(false);
 
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
@@ -39,116 +33,123 @@ const [dataChanged, setDataChanged] = useState(false);
   useEffect(() => setLocalComments(comments), [comments]);
   useEffect(() => setLocalContributions(contributions), [contributions]);
   const toggleReplyInput = (commentId) => {
-  setReplyingTo(replyingTo === commentId ? null : commentId);
-};
-
-const handleReplySubmit = async (commentId) => {
-  if (!replyText.trim()) return;
-  if (!token) return alert("You must be logged in");
-
-  // Create temporary reply for instant UI update
-  const tempReply = {
-    _id: `temp-${Date.now()}`,
-    text: replyText.trim(),
-    user: { _id: userId, name: "You" },
-    likes: [],
-    createdAt: new Date().toISOString(),
+    setReplyingTo(replyingTo === commentId ? null : commentId);
   };
 
-  // Optimistically update UI
-  setLocalComments((prev) =>
-    prev.map((c) =>
-      c._id === commentId
-        ? { ...c, replies: [...(c.replies || []), tempReply] }
-        : c
-    )
-  );
+  const handleReplySubmit = async (commentId) => {
+    if (!replyText.trim()) return;
+    if (!token) return alert("You must be logged in");
 
-  setReplyText("");
-  setReplyingTo(null);
+    // Create temporary reply for instant UI update
+    const tempReply = {
+      _id: `temp-${Date.now()}`,
+      text: replyText.trim(),
+      user: { _id: userId, name: "You" },
+      likes: [],
+      createdAt: new Date().toISOString(),
+    };
 
-  try {
-    const res = await fetch(`${BACKEND_URL}/comments/reply/${commentId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ text: replyText.trim() }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Failed to post reply");
-
-    // trigger refresh like handleAddComment
-    setDataChanged(true);
-  } catch (err) {
-    console.error(err);
-    alert(err.message);
-
-    // rollback optimistic reply
+    // Optimistically update UI
     setLocalComments((prev) =>
       prev.map((c) =>
         c._id === commentId
-          ? {
-              ...c,
-              replies: (c.replies || []).filter(
-                (r) => r._id !== tempReply._id
-              ),
-            }
+          ? { ...c, replies: [...(c.replies || []), tempReply] }
           : c
       )
     );
-  }
-};
 
-const handleDeleteComment = async (commentId) => {
-  if (!token) return alert("You must be logged in");
-  const confirmDelete = confirm("Are you sure you want to delete this comment?");
-  if (!confirmDelete) return;
+    setReplyText("");
+    setReplyingTo(null);
 
-  try {
-    const res = await fetch(`${BACKEND_URL}/comments/${commentId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
+    try {
+      const res = await fetch(`${BACKEND_URL}/comments/reply/${commentId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ text: replyText.trim() }),
+      });
 
-    if (!res.ok) throw new Error(data.message || "Failed to delete comment");
-    refreshComments?.();
-  } catch (err) {
-    console.error(err);
-    alert(err.message);
-  }
-};
-const handleDeleteContributionComment = async (contribId, commentId) => {
-  try {
-    const res = await fetch(`${BACKEND_URL}/contributions/${contribId}/comments/${commentId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-
-    if (res.ok) {
-      setContribComments((prev) => ({
-        ...prev,
-        [contribId]: prev[contribId].filter((com) => com._id !== commentId),
-      }));
-    } else {
       const data = await res.json();
-      console.error("Failed to delete comment:", data.message);
+      if (!res.ok) throw new Error(data.message || "Failed to post reply");
+
+      // trigger refresh like handleAddComment
+      setDataChanged(true);
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+
+      // rollback optimistic reply
+      setLocalComments((prev) =>
+        prev.map((c) =>
+          c._id === commentId
+            ? {
+                ...c,
+                replies: (c.replies || []).filter(
+                  (r) => r._id !== tempReply._id
+                ),
+              }
+            : c
+        )
+      );
     }
-  } catch (error) {
-    console.error("Error deleting comment:", error);
-  }
-};
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!token) return alert("You must be logged in");
+    const confirmDelete = confirm(
+      "Are you sure you want to delete this comment?"
+    );
+    if (!confirmDelete) return;
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/comments/${commentId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Failed to delete comment");
+      refreshComments?.();
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+  const handleDeleteContributionComment = async (contribId, commentId) => {
+    try {
+      const res = await fetch(
+        `${BACKEND_URL}/contributions/${contribId}/comments/${commentId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (res.ok) {
+        setContribComments((prev) => ({
+          ...prev,
+          [contribId]: prev[contribId].filter((com) => com._id !== commentId),
+        }));
+      } else {
+        const data = await res.json();
+        console.error("Failed to delete comment:", data.message);
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+    }
+  };
 
   // Fetch all comments for a contribution
   const fetchContributionComments = async (contribId) => {
     if (!contribId) return;
     try {
-      const res = await fetch(`${BACKEND_URL}/contributions/${contribId}/comments`);
+      const res = await fetch(
+        `${BACKEND_URL}/contributions/${contribId}/comments`
+      );
       const data = await res.json();
       if (res.ok) {
         setContribComments((prev) => ({
@@ -173,40 +174,39 @@ const handleDeleteContributionComment = async (contribId, commentId) => {
   if (!isOpen) return null;
 
   // --- General comments ---
-const handleAddComment = async () => {
-  if (!newComment.trim()) return;
-  const locationId = localStorage.getItem("location_id");
-  if (!token) return alert("You must be logged in");
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
+    const locationId = localStorage.getItem("location_id");
+    if (!token) return alert("You must be logged in");
 
-  const tempComment = {
-    _id: `temp-${Date.now()}`,
-    text: newComment.trim(),
-    user: { _id: userId, name: "You" },
-    likes: [],
-    createdAt: new Date().toISOString(),
+    const tempComment = {
+      _id: `temp-${Date.now()}`,
+      text: newComment.trim(),
+      user: { _id: userId, name: "You" },
+      likes: [],
+      createdAt: new Date().toISOString(),
+    };
+
+    setLocalComments((prev) => [tempComment, ...prev]);
+    setNewComment("");
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/comments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ location: locationId, text: newComment.trim() }),
+      });
+      if (!res.ok) throw new Error("Failed to post comment");
+      setDataChanged(true); // <-- trigger refresh
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+      setLocalComments((prev) => prev.filter((c) => c._id !== tempComment._id));
+    }
   };
-
-  setLocalComments((prev) => [tempComment, ...prev]);
-  setNewComment("");
-
-  try {
-    const res = await fetch(`${BACKEND_URL}/comments`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ location: locationId, text: newComment.trim() }),
-    });
-    if (!res.ok) throw new Error("Failed to post comment");
-    setDataChanged(true); // <-- trigger refresh
-  } catch (err) {
-    console.error(err);
-    alert(err.message);
-    setLocalComments((prev) => prev.filter((c) => c._id !== tempComment._id));
-  }
-};
-
 
   const handleLikeComment = async (commentId) => {
     if (!userId) return alert("You must be logged in");
@@ -260,10 +260,13 @@ const handleAddComment = async () => {
     setLocalContributions(updated);
 
     try {
-      const res = await fetch(`${BACKEND_URL}/contributions/${contribId}/like`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `${BACKEND_URL}/contributions/${contribId}/like`,
+        {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.message || "Failed to like/unlike");
@@ -279,14 +282,17 @@ const handleAddComment = async () => {
     if (!token) return alert("You must be logged in");
 
     try {
-      const res = await fetch(`${BACKEND_URL}/contributions/${contribId}/comments`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ text }),
-      });
+      const res = await fetch(
+        `${BACKEND_URL}/contributions/${contribId}/comments`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ text }),
+        }
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to add comment");
 
@@ -316,10 +322,13 @@ const handleAddComment = async () => {
     setContribComments((prev) => ({ ...prev, [contribId]: updatedComments }));
 
     try {
-     const res=await fetch(`${BACKEND_URL}/contributions/${contribId}/comments/like/${commentId}`, {
-  method: "PUT",
-  headers: { Authorization: `Bearer ${token}` },
-});
+      const res = await fetch(
+        `${BACKEND_URL}/contributions/${contribId}/comments/like/${commentId}`,
+        {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.message || "Failed to like/unlike");
@@ -330,7 +339,6 @@ const handleAddComment = async () => {
     }
   };
 
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-[#fbebff] w-11/12 md:w-4/5 lg:w-3/4  p-8 rounded-xl shadow-2xl overflow-hidden">
@@ -340,7 +348,7 @@ const handleAddComment = async () => {
             {activeTab === "comments" ? "Comments" : "Contributions"}
           </h3>
           <button onClick={onClose}>
-            <X className="w-10 h-10 text-[#fbebff] bg-[#37377B] rounded-full p-1 cursor-pointer hover:bg-blue-700 transition" /> 
+            <X className="w-10 h-10 text-[#fbebff] bg-[#37377B] rounded-full p-1 cursor-pointer hover:bg-blue-700 transition" />
           </button>
         </div>
 
@@ -351,117 +359,139 @@ const handleAddComment = async () => {
               {/* Comments */}
               <div className="space-y-4 mb-4">
                 {localComments.map((c) => {
-  const hasLiked = c.likes.includes(userId);
-  const isOwnComment = c.user?._id === userId;
+                  const hasLiked = c.likes.includes(userId);
+                  const isOwnComment = c.user?._id === userId;
 
-  return (
-    <div key={c._id} className="bg-white border rounded-2xl p-4 shadow-md">
-      <div className="flex items-center justify-between mb-2">
-        <div
-          className="flex items-center gap-2 cursor-pointer"
-          onClick={() => navigate(`/profile/${c.user?.username || c.user?.name}`)}
-        >
-          {c.user?.profilePic && (
-            <img
-              src={c.user.profilePic}
-              alt={c.user.username || c.user.name}
-              className="w-8 h-8 rounded-full shadow-sm"
-            />
-          )}
-          <p className="font-semibold hover:text-[#9156F1] transition">
-            {c.user?.name || "Unknown"}
-          </p>
-        </div>
+                  return (
+                    <div
+                      key={c._id}
+                      className="bg-white border rounded-2xl p-4 shadow-md"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div
+                          className="flex items-center gap-2 cursor-pointer"
+                          onClick={() =>
+                            navigate(
+                              `/profile/${c.user?.username || c.user?.name}`
+                            )
+                          }
+                        >
+                          {c.user?.profilePic && (
+                            <img
+                              src={c.user.profilePic}
+                              alt={c.user.username || c.user.name}
+                              className="w-8 h-8 rounded-full shadow-sm"
+                            />
+                          )}
+                          <p className="font-semibold hover:text-[#9156F1] transition">
+                            {c.user?.name || "Unknown"}
+                          </p>
+                        </div>
 
-        {/* Show delete icon only if it's the user's comment */}
-        {isOwnComment && (
-          <button
-            onClick={() => handleDeleteComment(c._id)}
-            className="text-red-500 hover:text-red-700 transition"
-            title="Delete comment"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        )}
-      </div>
+                        {/* Show delete icon only if it's the user's comment */}
+                        {isOwnComment && (
+                          <button
+                            onClick={() => handleDeleteComment(c._id)}
+                            className="text-red-500 hover:text-red-700 transition"
+                            title="Delete comment"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
 
-      <p className="text-gray-700 mb-2">{c.text}</p>
+                      <p className="text-gray-700 mb-2">{c.text}</p>
 
-      <div className="flex items-center gap-3 text-sm">
-        {/* Like Button */}
-        <button
-          className={`flex items-center gap-1 px-2 py-1 rounded-full ${
-            hasLiked ? "bg-[#9156F1]/90 text-white" : "bg-gray-100 text-gray-500"
-          }`}
-          onClick={() => handleLikeComment(c._id)}
-        >
-          <ThumbsUp className="w-4 h-4" />
-          {c.likes.length}
-        </button>
+                      <div className="flex items-center gap-3 text-sm">
+                        {/* Like Button */}
+                        <button
+                          className={`flex items-center gap-1 px-2 py-1 rounded-full ${
+                            hasLiked
+                              ? "bg-[#9156F1]/90 text-white"
+                              : "bg-gray-100 text-gray-500"
+                          }`}
+                          onClick={() => handleLikeComment(c._id)}
+                        >
+                          <ThumbsUp className="w-4 h-4" />
+                          {c.likes.length}
+                        </button>
 
-        {/* Reply Button */}
-        <button
-          className="text-gray-500 hover:text-blue-600 pl-[20px] font-medium"
-          onClick={() => toggleReplyInput(c._id)}
-        >
-          Reply
-        </button>
-      </div>
+                        {/* Reply Button */}
+                        <button
+                          className="text-gray-500 hover:text-blue-600 pl-[20px] font-medium"
+                          onClick={() => toggleReplyInput(c._id)}
+                        >
+                          Reply
+                        </button>
+                      </div>
 
-      {c.replies && c.replies.length > 0 && (
-        <div className="ml-6 mt-2 space-y-1">
-          {c.replies.map((r) => (
-            <div
-              key={r._id}
-              className="bg-[#fbebff]/60 p-2 rounded-lg ml-[40px] text-sm shadow-md"
-            >
-              <p className="font-semibold hover:text-[#9156F1] cursor-pointer" onClick={() => navigate(`/profile/${c.user?.username || c.user?.name}`)}>{r.user?.name || "Unknown"}</p>
-              <p>{r.text}</p>
-            </div>
-          ))}
-        </div>
-      )}
+                      {c.replies && c.replies.length > 0 && (
+                        <div className="ml-6 mt-2 space-y-1">
+                          {c.replies.map((r) => (
+                            <div
+                              key={r._id}
+                              className="bg-[#fbebff]/60 p-2 rounded-lg ml-[40px] text-sm shadow-md"
+                            >
+                              <p
+                                className="font-semibold hover:text-[#9156F1] cursor-pointer"
+                                onClick={() =>
+                                  navigate(
+                                    `/profile/${
+                                      c.user?.username || c.user?.name
+                                    }`
+                                  )
+                                }
+                              >
+                                {r.user?.name || "Unknown"}
+                              </p>
+                              <p>{r.text}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
-      {/* Reply Input */}
-      {replyingTo === c._id && (
-        <div className="ml-6 mt-2 flex gap-2">
-          <input
-            type="text"
-            placeholder="Write a reply..."
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            className="flex-grow border rounded-lg p-2 text-sm"
-          />
-          <button
-            onClick={() => handleReplySubmit(c._id)}
-            className="bg-[#fbebff] text-brand-dark font-semibold px-3 rounded-lg"
-          >
-            Send
-          </button>
-        </div>
-      )}
-    </div>
-  );
-})}
-
+                      {/* Reply Input */}
+                      {replyingTo === c._id && (
+                        <div className="ml-6 mt-2 flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="Write a reply..."
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            className="flex-grow border rounded-lg p-2 text-sm"
+                          />
+                          <button
+                            onClick={() => handleReplySubmit(c._id)}
+                            className="bg-[#fbebff] text-brand-dark font-semibold px-3 rounded-lg"
+                          >
+                            Send
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
-              
-                {districtPage?<></>:<div className="flex gap-2 mt-2">
-                <input
-                  type="text"
-                  placeholder="Add a comment..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="flex-grow border border-[#9156F1] rounded-lg p-2"
-                /><button
-                  onClick={handleAddComment}
-                  className="bg-[#9156F1] flex items-center justify-center w-[25%] md:w-[5%] text-white items-center text-center font-semibold px-4 rounded-lg"
-                >
-                  <SendIconAdd className="w-5 h-5"/>
-                </button></div>}
-                
-              
+              {districtPage ? (
+                <></>
+              ) : (
+                <div className="flex gap-2 mt-2">
+                  <input
+                    type="text"
+                    placeholder="Add a comment..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    className="flex-grow border border-[#9156F1] rounded-lg p-2"
+                  />
+                  <button
+                    onClick={handleAddComment}
+                    className="bg-[#9156F1] flex items-center justify-center w-[25%] md:w-[5%] text-white items-center text-center font-semibold px-4 rounded-lg"
+                  >
+                    <SendIconAdd className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             <>
@@ -485,7 +515,16 @@ const handleAddComment = async () => {
                             className="w-8 h-8 rounded-full shadow-sm"
                           />
                         )}
-                        <p className="font-semibold cursor-pointer hover:text-[#9156F1]" onClick={() => navigate(`/profile/${c.user?.username || c.user?.name}`)}>{c.user.name}</p>
+                        <p
+                          className="font-semibold cursor-pointer hover:text-[#9156F1]"
+                          onClick={() =>
+                            navigate(
+                              `/profile/${c.user?.username || c.user?.name}`
+                            )
+                          }
+                        >
+                          {c.user.name}
+                        </p>
                       </div>
 
                       {/* Description */}
@@ -560,7 +599,9 @@ const handleAddComment = async () => {
                       <div className="flex items-center gap-3 mb-2">
                         <button
                           className={`flex items-center gap-1 px-3 py-1 rounded-full ${
-                            hasLiked ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-500"
+                            hasLiked
+                              ? "bg-blue-100 text-blue-600"
+                              : "bg-gray-100 text-gray-500"
                           }`}
                           onClick={() => handleLikeContribution(c._id)}
                         >
@@ -578,44 +619,61 @@ const handleAddComment = async () => {
                           const liked = com.likes.includes(userId);
                           return (
                             <div
-  key={com._id}
-  className="bg-white p-2 rounded-xl shadow-sm flex justify-between items-start"
->
-  <div>
-    <p
-      className="font-semibold text-sm cursor-pointer hover:text-[#9156F1]"
-      onClick={() => navigate(`/profile/${c.user?.username || c.user?.name}`)}
-    >
-      {com.user?.name || "Unknown"}
-    </p>
-    <p className="text-gray-600 text-sm">{com.text}</p>
-  </div>
+                              key={com._id}
+                              className="bg-white p-2 rounded-xl shadow-sm flex justify-between items-start"
+                            >
+                              <div>
+                                <p
+                                  className="font-semibold text-sm cursor-pointer hover:text-[#9156F1]"
+                                  onClick={() =>
+                                    navigate(
+                                      `/profile/${
+                                        c.user?.username || c.user?.name
+                                      }`
+                                    )
+                                  }
+                                >
+                                  {com.user?.name || "Unknown"}
+                                </p>
+                                <p className="text-gray-600 text-sm">
+                                  {com.text}
+                                </p>
+                              </div>
 
-  <div className="flex items-center gap-2">
-    <button
-      className={`flex items-center gap-1 text-sm ${
-        com.likes.includes(userId)
-          ? "text-blue-600 font-semibold"
-          : "text-gray-500"
-      }`}
-      onClick={() => handleLikeContributionComment(c._id, com._id)}
-    >
-      <ThumbsUp className="w-4 h-4" />
-      {com.likes.length}
-    </button>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  className={`flex items-center gap-1 text-sm ${
+                                    com.likes.includes(userId)
+                                      ? "text-blue-600 font-semibold"
+                                      : "text-gray-500"
+                                  }`}
+                                  onClick={() =>
+                                    handleLikeContributionComment(
+                                      c._id,
+                                      com._id
+                                    )
+                                  }
+                                >
+                                  <ThumbsUp className="w-4 h-4" />
+                                  {com.likes.length}
+                                </button>
 
-    {/* 🗑️ Show delete icon if comment belongs to logged in user */}
-    {com.user?._id === userId && (
-      <button
-        className="text-red-500 hover:text-red-700 text-sm"
-        onClick={() => handleDeleteContributionComment(c._id, com._id)}
-      >
-        <X className="w-4 h-4" />
-      </button>
-    )}
-  </div>
-</div>
-
+                                {/* 🗑️ Show delete icon if comment belongs to logged in user */}
+                                {com.user?._id === userId && (
+                                  <button
+                                    className="text-red-500 hover:text-red-700 text-sm"
+                                    onClick={() =>
+                                      handleDeleteContributionComment(
+                                        c._id,
+                                        com._id
+                                      )
+                                    }
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
                           );
                         })}
                         {/* Add comment input for contribution */}
@@ -626,7 +684,10 @@ const handleAddComment = async () => {
                             className="flex-grow border rounded-lg p-2"
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
-                                handleAddContributionComment(c._id, e.target.value);
+                                handleAddContributionComment(
+                                  c._id,
+                                  e.target.value
+                                );
                                 e.target.value = "";
                               }
                             }}
