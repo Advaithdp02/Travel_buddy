@@ -39,7 +39,7 @@ export const getAllLocations = async (req, res) => {
     res.status(200).json(locations);
   } catch (err) {
     console.error("Error fetching locations:", err);
-    res.status(500).json({ message: "Server error" });
+    
   }
 };
 

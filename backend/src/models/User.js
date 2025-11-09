@@ -7,6 +7,15 @@ const userSchema = new mongoose.Schema(
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    resetPasswordOTP: {
+    type: String, // OTP will be a 6-digit string
+    default: null,
+  },
+  resetPasswordExpires: {
+    type: Date, // store as a Date, not Number or Object
+    default: null,
+  },
+
 
     gender: {
       type: String,
@@ -22,6 +31,7 @@ const userSchema = new mongoose.Schema(
       enum: ["Single", "Married", "Other", "Not Selected"],
       default: "Single",
     },
+    
 
     profilePic: { type: String }, // URL or filename
     coverPhoto: { type: String }, // URL or filename
@@ -33,22 +43,7 @@ const userSchema = new mongoose.Schema(
     ],
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    roadSideAssistant: {
-      type: String,
-      default: "",
-    },
-    policeStation: {
-      type: String,
-      default: "",
-    },
-    ambulance: {
-      type: String,
-      default: "",
-    },
-    localSupport: {
-      type: String,
-      default: "",
-    },
+    
 
     locationsVisited: [
       {
@@ -56,6 +51,7 @@ const userSchema = new mongoose.Schema(
         timeSpent: { type: Number, default: 0 }, // in seconds
       },
     ],
+    
 
     role: { type: String, enum: ["user", "admin", "staff"], default: "user" },
   },

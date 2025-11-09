@@ -98,14 +98,16 @@ export const ProfilePublic = () => {
         </div>
 
         {/* Profile Info */}
-        <div className="relative -mt-12 md:-mt-16 md:px-0 px-5 md:py-0 py-2 flex flex-col items-start space-x-0 md:space-x-6">
-          <div className="ml-6 md:ml-10">
-            <img
-              src={user.profilePic || "/defaultProfilePic.webp" }
-              alt="profile"
-              className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg"
-            />
-          </div>
+        <div className="relative -mt-12 md:-mt-16 flex md:px-0 px-5 md:py-0 py-2 flex-col md:flex-col items-start space-x-0 md:space-x-6">
+  <div className="flex-shrink-0 ml-4 md:ml-10 -mt-6 md:mt-0">
+    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg overflow-hidden">
+      <img
+        src={user?.profilePic || "/defaultProfilePic.webp"}
+        alt="profile"
+        className="w-full h-full object-cover"
+      />
+    </div>
+  </div>
 
           <div className="flex flex-col md:flex-row ml-6 md:ml-10 mt-4 justify-between md:px-4 w-full">
             <div className="flex flex-col justify-center mb-3 md:mb-5">

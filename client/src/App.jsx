@@ -19,13 +19,15 @@ import ContactUs from "./components/ContactUs";
 import { DistrictPage } from "./components/DistrictPage";
 
 import useUserTracking from "./hooks/usePageTimeTracker";
+import ScrollToTop from "./components/ScrollToTop";
+import ForgotPassword from "./components/ForgotPassword";
 
 const App = () => {
   return (
     <Router>
       {/* ✅ Move inside Router so it has access to `useLocation()` */}
       <TrackingWrapper />
-
+      <ScrollToTop />
       <Header />
 
       <Routes>
@@ -38,6 +40,7 @@ const App = () => {
         <Route path="/blogs/:slug" element={<BlogPage />} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/district/:id" element={<DistrictPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route
           path="/admin"
           element={

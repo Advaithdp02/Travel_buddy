@@ -50,7 +50,7 @@ const calculateTime = (distanceKm, speedKmph = 60) => {
 };
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-  useEffect(() => {
+useEffect(() => {
   const fetchAllData = async () => {
     try {
       // 🏙 Fetch the selected district
@@ -81,11 +81,15 @@ const calculateTime = (distanceKm, speedKmph = 60) => {
       const allDistrictsRes = await axios.get(`${BACKEND_URL}/districts`);
       setAllDistricts(allDistrictsRes.data);
 
-      // 📍 Fetch locations inside this district
+      // 📍 Fetch locations inside this district (now safe)
       const locRes = await axios.get(
-        `${BACKEND_URL}/locations/district/${districtData.name}`
+        `${BACKEND_URL}/locations/district/${districtData._id}`
       );
-      const locData = locRes.data;
+
+      // ✅ Handle both backend responses: raw array or { message, locations }
+      const locData = Array.isArray(locRes.data)
+        ? locRes.data
+        : locRes.data.locations || [];
 
       // 🧭 Enrich places with distance/time
       const userCoords = JSON.parse(
@@ -93,7 +97,8 @@ const calculateTime = (distanceKm, speedKmph = 60) => {
       );
       const origin = { lat: userCoords.latitude, lon: userCoords.longitude };
 
-      const enrichedPlaces = (locData || []).map((place) => {
+      const enrichedPlaces = locData.map((place) => {
+        if (!place?.coordinates?.coordinates) return place; // safety check
         const [lon, lat] = place.coordinates.coordinates;
         const distance = calculateDistance(origin.lat, origin.lon, lat, lon);
         const travelTime = calculateTime(distance);
@@ -116,21 +121,23 @@ const calculateTime = (distanceKm, speedKmph = 60) => {
 
       setPlaces(enrichedPlaces);
     } catch (err) {
-      console.error("Error fetching district data:", err);
+      console.error("❌ Error fetching district data:", err);
     }
   };
 
   fetchAllData();
 }, [id]);
+
 useEffect(() => {
   const fetchLocationsByDistrict = async () => {
     if (!filters.district) return;
 
     try {
-      const res = await fetch(
-        `${BACKEND_URL}/locations/district/${filters.district}`
-      );
-      const data = await res.json();
+      const res = await fetch(`${BACKEND_URL}/locations/district/${filters.district}`);
+      const json = await res.json();
+
+      // ✅ Handle { message, locations } shape
+      const data = Array.isArray(json) ? json : json.locations || [];
 
       const userCoords = JSON.parse(
         localStorage.getItem("userCoords") || '{"latitude":0,"longitude":0}'
@@ -138,13 +145,14 @@ useEffect(() => {
 
       const origin = { lat: userCoords.latitude, lon: userCoords.longitude };
 
-      const enrichedPlaces = (data || []).map((place) => {
-        const [lon, lat] = place.coordinates.coordinates; // GeoJSON: [lon, lat]
+      const enrichedPlaces = data.map((place) => {
+        if (!place?.coordinates?.coordinates) return place;
+        const [lon, lat] = place.coordinates.coordinates;
         const distance = calculateDistance(origin.lat, origin.lon, lat, lon);
         const travelTime = calculateTime(distance);
 
         const now = new Date();
-        const timeHours = distance / 60; // Approx 60 km/h avg
+        const timeHours = distance / 60;
         const arrival = new Date(now.getTime() + timeHours * 3600 * 1000);
         const arrivalTime = arrival.toLocaleTimeString([], {
           hour: "2-digit",
@@ -161,6 +169,8 @@ useEffect(() => {
       });
 
       setPlaces(enrichedPlaces);
+
+      if (json.message) console.info(json.message);
     } catch (err) {
       console.error("Error fetching locations by district:", err);
     }

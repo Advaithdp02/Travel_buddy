@@ -14,6 +14,9 @@ import {
   updateUserRole,
   deleteUser,
   getWishlist,
+  requestPasswordReset,
+  verifyResetOTP,
+  resetPassword,
 } from "../controllers/userController.js";
 import { protect,staffProtect } from "../middlewares/authMiddleware.js";
 
@@ -57,5 +60,15 @@ router.get("/admin/users", protect, staffProtect, getAllUsers);
 router.put("/admin/users/:id/role", protect, staffProtect, updateUserRole);
 router.delete("/admin/users/:id", protect, staffProtect, deleteUser);
 
+//forget password route
+
+// POST: Request reset link
+router.post("/forgot-password", requestPasswordReset);
+
+// POST: Verify OTP
+router.post("/verify-otp", verifyResetOTP);
+
+// POST: Reset password
+router.post("/reset-password", resetPassword);
 
 export default router;
