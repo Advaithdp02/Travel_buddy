@@ -85,11 +85,11 @@ export const DestinationPage = ({}) => {
 
   // Emergency Contacts
   const [emergencyContacts, setEmergencyContacts] = useState({
-    "Road side Assistant":"",
-    "Police Station":"",
-    "Ambulance":"",
-    "Local Support":"",
-});
+    "Road side Assistant": "",
+    "Police Station": "",
+    Ambulance: "",
+    "Local Support": "",
+  });
 
   // Map Info
   const [mapInfo, setMapInfo] = useState({
@@ -1033,32 +1033,37 @@ export const DestinationPage = ({}) => {
                   Emergency Contact Details
                 </h3>
                 <div className="space-y-3">
-  {Object.entries(emergencyContacts).map(([name, number], index) => (
-    <div
-      key={index}
-      className="bg-white border border-gray-200 rounded-lg p-4 flex justify-between items-center shadow-sm"
-    >
-      <div className="flex flex-col">
-        <div className="flex items-center">
-          <PhoneIcon className="mr-4 text-[#310a49]" />
-          <span className="font-semibold text-[#310a49]">{name}</span>
-        </div>
-        <p className="ml-10">{number || "Not available"}</p>
-      </div>
-      <div className="flex items-center space-x-4">
-        <ExternalLinkIcon
-          className="text-brand-gray cursor-pointer"
-          onClick={() => window.open(`tel:${number}`)} // opens phone dialer
-        />
-        <ClipboardIcon
-          className="text-brand-gray cursor-pointer w-5 h-5"
-          onClick={() => navigator.clipboard.writeText(number)} // copies to clipboard
-        />
-      </div>
-    </div>
-  ))}
-</div>
-
+                  {Object.entries(emergencyContacts).map(
+                    ([name, number], index) => (
+                      <div
+                        key={index}
+                        className="bg-white border border-gray-200 rounded-lg p-4 flex justify-between items-center shadow-sm"
+                      >
+                        <div className="flex flex-col">
+                          <div className="flex items-center">
+                            <PhoneIcon className="mr-4 text-[#310a49]" />
+                            <span className="font-semibold text-[#310a49]">
+                              {name}
+                            </span>
+                          </div>
+                          <p className="ml-10">{number || "Not available"}</p>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <ExternalLinkIcon
+                            className="text-brand-gray cursor-pointer"
+                            onClick={() => window.open(`tel:${number}`)} // opens phone dialer
+                          />
+                          <ClipboardIcon
+                            className="text-brand-gray cursor-pointer w-5 h-5"
+                            onClick={() =>
+                              navigator.clipboard.writeText(number)
+                            } // copies to clipboard
+                          />
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
             </div>
           </div>

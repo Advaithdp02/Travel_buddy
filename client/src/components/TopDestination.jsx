@@ -79,7 +79,7 @@ export const TopDestinations = ({ userCoords }) => {
 
   return (
     <section
-      className="w-screen flex flex-col md:-ml-[60px] md:flex-row items-start justify-between bg-cover bg-center text-white py-16 overflow-visible"
+      className=" flex flex-col md:-ml-[60px] md:flex-row items-start justify-between bg-cover bg-center text-white py-16 overflow-visible"
       style={{ backgroundImage: `url(${bgImage})`, height: "650px" }}
     >
       <div className="relative z-10 overflow-hidden w-full max-w-7xl mx-auto px-6">
