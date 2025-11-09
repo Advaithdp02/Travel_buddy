@@ -30,6 +30,18 @@ export const CommunityModal = ({
 
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isOpen]);
 
   // Sync props to local state
   useEffect(() => setLocalComments(comments), [comments]);
