@@ -11,7 +11,22 @@ const locationSchema = new mongoose.Schema(
     terrain: { type: String },
     reviewLength:{type:Number},
     review:{type:Number},
-
+    roadSideAssistant: {
+          type: String,
+          default: "",
+        },
+        policeStation: {
+          type: String,
+          default: "",
+        },
+        ambulance: {
+          type: String,
+          default: "",
+        },
+        localSupport: {
+          type: String,
+          default: "",
+        },
     // GeoJSON coordinates
     coordinates: {
       type: {

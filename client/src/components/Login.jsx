@@ -105,6 +105,15 @@ export const Login = ({ currentPage }) => {
               {isSubmitting ? "Logging in..." : "LOGIN"}
             </button>
           </form>
+          <p className="text-right text-sm pt-1">
+  <button
+    onClick={() => navigate("/forgot-password")}
+    className="text-[#9156F1] hover:underline"
+  >
+    Forgot password?
+  </button>
+</p>
+
 
           <p className="text-center text-sm text-brand-gray mt-6">
             Don’t have an account?{" "}

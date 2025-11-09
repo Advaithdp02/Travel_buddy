@@ -472,6 +472,23 @@ export const DestinationPage = ({}) => {
         return "/default.jpg";
     }
   };
+  useEffect(() => {
+    const scroll = document.getElementById("places-scroll");
+    const track = document.getElementById("places-scroll-track");
+
+    if (scroll && track) {
+      const checkScroll = () => {
+        if (scroll.scrollWidth <= scroll.clientWidth) {
+          track.style.opacity = "0";
+        } else {
+          track.style.opacity = "1";
+        }
+      };
+      checkScroll();
+      window.addEventListener("resize", checkScroll);
+      return () => window.removeEventListener("resize", checkScroll);
+    }
+  }, []);
 
   return (
     <div className="md:pl-[80px] md:pr-[80px] md:pt-[40px] mx-0">
@@ -663,14 +680,12 @@ export const DestinationPage = ({}) => {
                       </div>
                     ))}
 
-                  
-                    <button
-                      className="bg-[#9156F1] text-white font-semibold py-2 px-4 rounded mt-2"
-                      onClick={() => setIsModalOpen(true)}
-                    >
-                      Add Comment
-                    </button>
-                  
+                  <button
+                    className="bg-[#9156F1] text-white font-semibold py-2 px-4 rounded mt-2"
+                    onClick={() => setIsModalOpen(true)}
+                  >
+                    Add Comment
+                  </button>
                 </div>
               </div>
 
@@ -931,7 +946,7 @@ export const DestinationPage = ({}) => {
 
       {/* Main Content Area */}
       <section className="py-20 pl-8 pr-0 pb-0 ">
-        <div className="container mx-auto grid lg:grid-cols-4 gap-8 pr-8 mb-10">
+        <div className="container mx-auto grid lg:grid-cols-4 gap-8 pr-8 mb-10 justify-center">
           {/* Left Column */}
           <div className="lg:col-span-2 w-full max-w-[504px] space-y-10 ">
             {/* Weather */}
@@ -1120,19 +1135,42 @@ export const DestinationPage = ({}) => {
         <div className="flex flex-col md:flex-row w-[100%] md:w-full min-h-screen px-4 pb-0 md:px-12 pr-0 py-8">
           {/* Hotels & Resorts */}
           <div
-            className="flex-1 p-[4.5rem] md:p-6 ml-[-50px] md:ml-[-170px] bg-cover bg-center shadow-md rounded-tl-none rounded-tr-[100px] md:pl-[120px] z-10 relative"
-            style={{ backgroundImage: "url('/Destination_hotel.png')" }}
+            className={`
+    flex-1  md:p-6 ml-[-50px] md:ml-[-170px]
+    bg-cover bg-center shadow-md 
+    md:pl-[120px] z-10 relative
+    transition-all duration-300
+    ${
+      window.innerWidth < 768
+        ? "p-[3.5rem]"
+        : "p-[4.5rem] rounded-tl-none rounded-tr-[100px] "
+    }
+  `}
+            style={{
+              backgroundImage:
+                window.innerWidth < 768
+                  ? "none"
+                  : "url('/Destination_hotel.png')",
+              backgroundColor:
+                window.innerWidth < 768 ? "#310a49" : "transparent",
+            }}
           >
-            <h3 className="text-2xl font-bold text-brand-dark text-white mb-4">
+            {/* Title */}
+            <h3
+              className={`text-2xl font-bold text-white  mb-6 ${
+                window.innerWidth > 768 ? "" : "hidden"
+              }`}
+            >
               Hotels & Resorts
             </h3>
-            <div className="space-y-4 max-h-[780px] overflow-y-auto pr-2">
+
+            {/* --- Desktop View (same as before) --- */}
+            <div className="hidden md:block space-y-4 max-h-[780px] overflow-y-auto pr-2">
               {hotels.map((hotel, index) => (
                 <div
                   key={index}
                   className="md:flex bg-white shadow-md rounded-lg overflow-hidden mb-4"
                 >
-                  {/* Left Image */}
                   <div className="flex-shrink-0 md:w-56 h-52">
                     <img
                       src={hotel.img}
@@ -1141,7 +1179,6 @@ export const DestinationPage = ({}) => {
                     />
                   </div>
 
-                  {/* Right Content */}
                   <div className="flex flex-col justify-between flex-grow p-4">
                     <div className="p-3">
                       <h4 className="text-lg font-medium text-brand-dark">
@@ -1149,7 +1186,6 @@ export const DestinationPage = ({}) => {
                       </h4>
                       <p className="text-sm text-gray-500">{hotel.location}</p>
 
-                      {/* Amenities */}
                       {hotel.amenities?.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-2 text-xs text-gray-600">
                           {hotel.amenities.map((amenity, i) => (
@@ -1163,7 +1199,6 @@ export const DestinationPage = ({}) => {
                         </div>
                       )}
 
-                      {/* Show on Map */}
                       {hotel.coordinates?.link && (
                         <div className="mt-2">
                           <a
@@ -1178,7 +1213,6 @@ export const DestinationPage = ({}) => {
                       )}
                     </div>
 
-                    {/* Bottom Row: Rating + Button */}
                     <div className="flex items-center justify-between mt-4">
                       <div className="flex items-center bg-yellow-400 text-gray-900 font-bold px-2 py-1 rounded-md">
                         <StarIcon className="w-3 h-3 mr-1" />{" "}
@@ -1196,38 +1230,188 @@ export const DestinationPage = ({}) => {
                   </div>
                 </div>
               ))}
-              <div ref={loaderRef} className="h-10"></div>
+            </div>
+
+            {/* --- Mobile View: Horizontal Scroll --- */}
+            <div className="block md:hidden relative  py-8 rounded-t-[20px]">
+              {/* Header with Arrows */}
+              <div className="flex items-center justify-between px-6 mb-4">
+                <h3 className="text-2xl font-bold text-white">
+                  Hotels & Resorts
+                </h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      const scroll = document.getElementById("hotel-scroll");
+                      if (scroll)
+                        scroll.scrollBy({ left: -300, behavior: "smooth" });
+                    }}
+                    className="w-[35px] h-[35px] rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center transition"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-5 h-5 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const scroll = document.getElementById("hotel-scroll");
+                      if (scroll)
+                        scroll.scrollBy({ left: 300, behavior: "smooth" });
+                    }}
+                    className="w-[35px] h-[35px] rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center transition"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-5 h-5 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Horizontal Scroll Section */}
+              <div
+                id="hotel-scroll"
+                className="flex overflow-x-auto space-x-6 pb-6 px-4 scroll-smooth snap-x snap-mandatory hide-scrollbar"
+                onScroll={(e) => {
+                  const el = e.target;
+                  const thumb = document.getElementById("hotel-scroll-thumb");
+                  const track = document.getElementById("hotel-scroll-track");
+
+                  if (thumb && track) {
+                    const trackWidth = track.offsetWidth;
+                    const thumbWidth = thumb.offsetWidth;
+                    const scrollRatio =
+                      el.scrollLeft / (el.scrollWidth - el.clientWidth);
+                    const maxThumbLeft = trackWidth - thumbWidth;
+                    thumb.style.left = `${scrollRatio * maxThumbLeft}px`;
+                  }
+                }}
+              >
+                {hotels.map((hotel, index) => (
+                  <div
+                    key={index}
+                    className="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-lg p-4 snap-start"
+                  >
+                    <img
+                      src={hotel.img}
+                      alt={hotel.name}
+                      className="w-full h-40 object-cover rounded-xl mb-3"
+                    />
+                    <h4 className="text-lg font-semibold text-[#310a49] truncate">
+                      {hotel.name}
+                    </h4>
+                    <p className="text-sm text-gray-500 truncate">
+                      {hotel.location}
+                    </p>
+
+                    {hotel.amenities?.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2 text-[11px] text-gray-600">
+                        {hotel.amenities.slice(0, 3).map((amenity, i) => (
+                          <span
+                            key={i}
+                            className="bg-gray-100 px-2 py-1 rounded-md"
+                          >
+                            {amenity}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center bg-yellow-400 text-gray-900 font-bold px-2 py-1 rounded-md text-xs">
+                        <StarIcon className="w-3 h-3 mr-1" />{" "}
+                        {hotel.review || "N/A"}
+                      </div>
+                      <button
+                        className="bg-[#9156F1] text-white font-semibold py-1 px-4 rounded-full text-xs"
+                        onClick={() =>
+                          handleExternalLinkClick(hotel.coordinates.link, hotel)
+                        }
+                      >
+                        View
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Scroll Track + Moving Thumb */}
+              <div
+                id="hotel-scroll-track"
+                className="absolute bottom-2 left-4 right-4 h-[2px] bg-white/40 rounded-full"
+              >
+                <div
+                  id="hotel-scroll-thumb"
+                  className="absolute top-[-2px] left-0 w-[60px] h-[6px] bg-white rounded-full transition-all duration-150 ease-out"
+                ></div>
+              </div>
             </div>
           </div>
 
           {/* Nearby Places */}
           <div
-            className="flex-1 p-6 bg-cover bg-center shadow-md rounded-xl mt-0  relative z-0 ml-[-90px] pl-[100px]  md:mr-[-170px] "
+            className={`
+    flex-1 p-6 bg-cover bg-center shadow-md mt-0 relative z-0
+    ml-[-90px] pl-[100px] md:mr-[-170px]
+    transition-all duration-300
+    ${window.innerWidth < 768 ? "" : "rounded-xl "}
+  `}
             style={{
-              backgroundImage: "url('/Destination_nearby.png')",
-              backgroundColor: "#EFEFFF",
+              backgroundImage:
+                window.innerWidth < 768
+                  ? "none"
+                  : "url('/Destination_nearby.png')",
+              backgroundColor:
+                window.innerWidth < 768 ? "#fbebff" : "#EFEFFF",
             }}
           >
-            <h3 className="text-2xl font-bold text-brand-dark  mb-4">
+            <h3
+              className={`text-2xl font-bold text-white  mb-6 ${
+                window.innerWidth > 768 ? "" : "hidden"
+              }`}
+            >
               Nearby Places
             </h3>
-            <div className="space-y-4 max-h-[780px] overflow-y-auto pr-2">
+
+            {/* --- Desktop View (unchanged) --- */}
+            <div className="hidden md:block space-y-4 max-h-[780px] overflow-y-auto pr-2">
               {places.map((place, index) => (
-                <div>
+                <div key={index}>
                   <div
-                    key={index}
-                    className="flex-shrink-0 w-[90%] bg-white  shadow-lg p-0 snap-start"
+                    className="flex-shrink-0 w-[90%] bg-white shadow-lg p-0 snap-start"
                     style={{ borderRadius: "0px 20px 20px 0px" }}
                   >
-                    <div className="md:flex  flex-row gap-10">
+                    <div className="md:flex flex-row gap-10">
                       <img
                         src={place.images[0]}
                         alt={place.name}
-                        className="md:w-48 w-[100%] h-[210px] object-cover rounded-xl "
+                        className="md:w-48 w-[100%] h-[210px] object-cover rounded-xl"
                         style={{ borderRadius: "20px 0px 0px 20px" }}
                       />
                       <div className="p-3">
-                        <h3 className="text-lg pt-2  font-bold text-brand-dark">
+                        <h3 className="text-lg pt-2 font-bold text-brand-dark">
                           {place.name}
                         </h3>
                         <p className="text-xs text-brand-gray mb-3 truncate">
@@ -1295,6 +1479,146 @@ export const DestinationPage = ({}) => {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* --- Mobile View: Horizontal Scroll --- */}
+            <div className="block md:hidden relative  py-8 rounded-t-[20px]">
+              {/* Header with Arrows */}
+              <div className="flex items-center justify-between px-6 mb-4">
+                <h3 className="text-2xl font-bold text-[#310a49]">Nearby Places</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      const scroll = document.getElementById("places-scroll");
+                      if (scroll)
+                        scroll.scrollBy({ left: -300, behavior: "smooth" });
+                    }}
+                    className="w-[35px] h-[35px] rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center transition"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-5 h-5 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const scroll = document.getElementById("places-scroll");
+                      if (scroll)
+                        scroll.scrollBy({ left: 300, behavior: "smooth" });
+                    }}
+                    className="w-[35px] h-[35px] rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center transition"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-5 h-5 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Scrollable Cards */}
+              <div
+                id="places-scroll"
+                className="flex overflow-x-auto space-x-6 pb-6 px-4 scroll-smooth snap-x snap-mandatory hide-scrollbar"
+                onScroll={(e) => {
+                  const el = e.target;
+                  const thumb = document.getElementById("places-scroll-thumb");
+                  const track = document.getElementById("places-scroll-track");
+
+                  if (thumb && track) {
+                    const scrollable = el.scrollWidth > el.clientWidth;
+                    const trackWidth = track.offsetWidth;
+                    const thumbWidth = thumb.offsetWidth;
+
+                    if (!scrollable) {
+                      // No scroll → keep thumb fixed at start
+                      thumb.style.left = "0px";
+                      return;
+                    }
+
+                    const scrollRatio =
+                      el.scrollLeft / (el.scrollWidth - el.clientWidth);
+                    const maxThumbLeft = trackWidth - thumbWidth;
+                    thumb.style.left = `${scrollRatio * maxThumbLeft}px`;
+                  }
+                }}
+              >
+                {places.map((place, index) => (
+                  <div
+                    key={index}
+                    className="flex-shrink-0 w-[280px] bg-white rounded-2xl shadow-lg p-3 snap-start"
+                  >
+                    <img
+                      src={place.images[0]}
+                      alt={place.name}
+                      className="w-full h-40 object-cover rounded-xl mb-3"
+                    />
+                    <h4 className="text-lg font-semibold text-[#310a49] truncate">
+                      {place.name}
+                    </h4>
+                    <p className="text-sm text-gray-500 truncate">
+                      {place.location}
+                    </p>
+
+                    <div className="flex justify-between text-xs text-gray-600 mt-2">
+                      <div className="flex flex-col items-center">
+                        <DistanceArrow className="w-4 h-4 mb-1" />
+                        <span>{place.distance}</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <LocationWithTime className="w-4 h-4 mb-1" />
+                        <span>{place.travelTime}</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <TimeClock className="w-4 h-4 mb-1" />
+                        <span>{place.arrivalTime}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      className="mt-3 w-full bg-[#9156F1] text-white font-semibold py-2 rounded-full"
+                      onClick={() => {
+                        navigate(`/destination/${place._id}`);
+                        window.scrollTo(0, 0);
+                      }}
+                    >
+                      Lets Go
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Scroll Bar Track + Moving Thumb */}
+              <div
+                id="places-scroll-track"
+                className="absolute bottom-2 left-4 right-4 h-[2px] bg-white/40 rounded-full"
+              >
+                <div
+                  id="places-scroll-thumb"
+                  className="absolute top-[-2px] left-0 w-[60px] h-[6px] bg-white rounded-full transition-all duration-150 ease-out"
+                ></div>
+              </div>
             </div>
           </div>
         </div>
