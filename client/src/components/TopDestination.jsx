@@ -53,7 +53,7 @@ export const TopDestinations = ({ userCoords }) => {
                 loc.coordinates?.coordinates?.[0]  // longitude
               ),
             }))
-            .sort((a, b) => a.distance - b.distance); // nearest first
+            .sort((a, b) => a.distance - b.distance).slice(0, 10);; // nearest first
 
           setDestinations([...sorted]); // force re-render
           

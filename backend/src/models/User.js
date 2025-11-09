@@ -8,21 +8,47 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
 
-    gender: { type: String, enum: ["Male", "Female", "Other"], default: "Other" },
+    gender: {
+      type: String,
+      enum: ["Male", "Female", "Other", "Not Selected"],
+      default: "Other",
+    },
     dob: { type: Date }, // Date of Birth
     phone: { type: String },
     location: { type: String }, // e.g., "New York, USA"
     occupation: { type: String },
-    relationshipStatus: { type: String, enum: ["Single", "Married", "Other"], default: "Single" },
+    relationshipStatus: {
+      type: String,
+      enum: ["Single", "Married", "Other", "Not Selected"],
+      default: "Single",
+    },
 
     profilePic: { type: String }, // URL or filename
     coverPhoto: { type: String }, // URL or filename
     bio: { type: String, maxlength: 500 },
     wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Location" }],
-     // wishlist of locations
-  contributions: [{ type: mongoose.Schema.Types.ObjectId, ref: "Contribution" }],
+    // wishlist of locations
+    contributions: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "Contribution" },
+    ],
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    roadSideAssistant: {
+      type: String,
+      default: "",
+    },
+    policeStation: {
+      type: String,
+      default: "",
+    },
+    ambulance: {
+      type: String,
+      default: "",
+    },
+    localSupport: {
+      type: String,
+      default: "",
+    },
 
     locationsVisited: [
       {

@@ -13,6 +13,7 @@ import {
   LocationWithTime,
   Cloud,
   HeartIconOutline,
+  ClipboardIcon,
 } from "./Icons";
 import { useNavigate, useParams } from "react-router-dom";
 import { CommunityModal } from "./CommunityModal";
@@ -83,12 +84,12 @@ export const DestinationPage = ({}) => {
   });
 
   // Emergency Contacts
-  const [emergencyContacts, setEmergencyContacts] = useState([
-    "Road side Assistant",
-    "Police Station",
-    "Ambulance",
-    "Local Support",
-  ]);
+  const [emergencyContacts, setEmergencyContacts] = useState({
+    "Road side Assistant":"",
+    "Police Station":"",
+    "Ambulance":"",
+    "Local Support":"",
+});
 
   // Map Info
   const [mapInfo, setMapInfo] = useState({
@@ -1037,15 +1038,16 @@ export const DestinationPage = ({}) => {
                       key={index}
                       className="bg-white border border-gray-200 rounded-lg p-4 flex justify-between items-center shadow-sm"
                     >
-                      <div className="flex items-center">
-                        <PhoneIcon className="mr-4 text-[#310a49]" />
-                        <span className="font-semibold text-[#310a49]">
-                          {contact}
-                        </span>
-                      </div>
+                     <div className="flex flex-col">
+  <div className="flex items-center">
+    <PhoneIcon className="mr-4 text-[#310a49]" />
+    <span className="font-semibold text-[#310a49]">{contact}</span>
+  </div>
+  <p className="ml-10">{}</p>
+</div>
                       <div className="flex items-center space-x-4">
                         <ExternalLinkIcon className="text-brand-gray cursor-pointer" />
-                        <ChevronDownIcon className="text-brand-gray cursor-pointer" />
+                        <ClipboardIcon className="text-brand-gray cursor-pointer w-5 h-5" />
                       </div>
                     </div>
                   ))}
