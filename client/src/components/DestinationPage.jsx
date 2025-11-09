@@ -663,14 +663,14 @@ export const DestinationPage = ({}) => {
                       </div>
                     ))}
 
-                  {comments.length > 0 && comments.length <= 3 && (
+                  
                     <button
                       className="bg-[#9156F1] text-white font-semibold py-2 px-4 rounded mt-2"
                       onClick={() => setIsModalOpen(true)}
                     >
                       Add Comment
                     </button>
-                  )}
+                  
                 </div>
               </div>
 
