@@ -20,9 +20,22 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd Travel_buddy/
-            git pull origin main
-            docker-compose down
+            set -e  # stop on error
+
+            echo "📦 Navigating to project directory..."
+            cd ~/Travel_buddy || exit 1
+
+            echo "🔄 Pulling latest code..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "🧹 Cleaning up old containers..."
+            docker-compose down --remove-orphans
+
+            echo "🛠️ Building fresh images (no cache)..."
             docker-compose build --no-cache
+
+            echo "🚀 Starting containers..."
             docker-compose up -d
 
+            echo "✅ Deployment completed successfully!"
