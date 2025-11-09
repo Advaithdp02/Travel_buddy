@@ -19,13 +19,14 @@ import ContactUs from "./components/ContactUs";
 import { DistrictPage } from "./components/DistrictPage";
 
 import useUserTracking from "./hooks/usePageTimeTracker";
+import ScrollToTop from "./components/ScrollToTop";
 
 const App = () => {
   return (
     <Router>
       {/* ✅ Move inside Router so it has access to `useLocation()` */}
       <TrackingWrapper />
-
+      <ScrollToTop />
       <Header />
 
       <Routes>

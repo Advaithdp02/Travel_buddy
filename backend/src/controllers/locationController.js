@@ -6,42 +6,50 @@ import { uploadToS3, deleteFromS3 } from "./uploadController.js";
 // Get all locations
 export const getAllLocations = async (req, res) => {
   try {
-    const { district } = req.params; // can be name or ObjectId
+    const { district } = req.params;
 
     if (!district) {
       return res.status(400).json({ message: "District parameter is required" });
     }
 
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(district);
     let districtDoc;
 
-    // 🧠 Check if `district` looks like a MongoDB ObjectId (24 hex chars)
-    const isObjectId = /^[0-9a-fA-F]{24}$/.test(district);
-
     if (isObjectId) {
-      // Find district directly by _id
       districtDoc = await District.findById(district);
     } else {
-      // Otherwise, find by district name (case-insensitive)
-      districtDoc = await District.findOne({ name: { $regex: new RegExp(`^${district}$`, "i") } });
+      districtDoc = await District.findOne({
+        name: { $regex: new RegExp(district.trim(), "i") },
+      });
     }
 
     if (!districtDoc) {
       return res.status(404).json({ message: "District not found" });
     }
 
-    // ✅ Fetch all locations under that district
     const locations = await Location.find({ district: districtDoc._id }).populate("district");
 
+    // ✅ Handle empty results gracefully
     if (!locations.length) {
-      return res.status(404).json({ message: "No locations found for this district" });
+      return res.status(200).json({
+        message: `No locations available yet for ${districtDoc.name}`,
+        locations: [],
+      });
     }
 
-    res.status(200).json(locations);
+    // ✅ Success
+    res.status(200).json({
+      message: `Found ${locations.length} locations for ${districtDoc.name}`,
+      locations,
+    });
+
   } catch (err) {
     console.error("Error fetching locations:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
+
 
 
 export const getAllLocationsNoDistrict = async (req, res) => {
