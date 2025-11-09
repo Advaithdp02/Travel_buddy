@@ -680,13 +680,14 @@ export const DestinationPage = ({}) => {
                       </div>
                     ))}
 
-                  <button
-                    className="bg-[#9156F1] text-white font-semibold py-2 px-4 rounded mt-2"
+                 
+                </div>
+                 <button
+                    className={`bg-[#9156F1] text-white font-semibold py-2 px-4 rounded mt-2 ${comments.length===0?"hidden":""}`}
                     onClick={() => setIsModalOpen(true)}
                   >
                     Add Comment
                   </button>
-                </div>
               </div>
 
               {/* -------------------- CONTRIBUTIONS TAB -------------------- */}
