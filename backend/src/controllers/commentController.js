@@ -52,6 +52,40 @@ export const addReply = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+// Delete a reply to a comment
+export const deleteReply = async (req, res) => {
+  try {
+    const { commentId, replyId } = req.params;
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // Find the reply inside comment.replies
+    const reply = comment.replies.id(replyId);
+    if (!reply) {
+      return res.status(404).json({ message: "Reply not found" });
+    }
+
+    // Check if current user is the reply author
+    if (reply.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not authorized to delete this reply" });
+    }
+
+    // Remove the reply
+    reply.deleteOne();
+    await comment.save();
+
+    res.status(200).json({
+      message: "Reply deleted successfully",
+      comment,
+    });
+  } catch (err) {
+    console.error("Error deleting reply:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
 
 // Get comments by location
 

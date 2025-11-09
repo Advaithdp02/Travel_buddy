@@ -8,6 +8,7 @@ import {
   getAllComments,
   deleteComment,
   getCommentsForDistrict,
+  deleteReply,
 } from "../controllers/commentController.js";
 
 const router = express.Router();
@@ -27,6 +28,7 @@ router.put("/like/:id", protect, toggleLike);
 
 // Add a reply to a comment
 router.post("/reply/:id", protect, addReply);
+router.delete("/reply/:commentId/:replyId", protect, deleteReply);
 
 
 router.get("/district/:id", getCommentsForDistrict);
