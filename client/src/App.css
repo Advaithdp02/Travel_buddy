@@ -6,7 +6,7 @@ body{
 }
 .app-container {
   background-color: #fbebff;
-  
+  padding-top: 50px;
 
   display: flex;
   flex-direction: column;

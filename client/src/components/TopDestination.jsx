@@ -103,7 +103,7 @@ export const TopDestinations = ({ userCoords }) => {
         {/* Cards */}
         <div
           ref={scrollContainerRef}
-          className="flex flex-row gap-6 overflow-x-scroll hide-scrollbar  flex-nowrap"
+          className="flex flex-row gap-6 overflow-x-scroll hide-scrollbar pt-[50px] flex-nowrap"
         >
           {destinations.length > 0 ? (
             destinations.map((dest) => (
