@@ -12,7 +12,7 @@ export const AboutUs = () => {
   return (
     <section
       id="aboutUs"
-      className="relative flex flex-col md:-ml-[60px] md:flex-row items-center justify-between bg-gradient-to-r from-[#CB98ED] via-[#8B63DA] to-[#3C21B7] text-white  pb-0 mb-[-5] h-[900px] pb-[10px] md:pb-0 md:h-[464px] gap-10 md:gap-0 overflow-visible"
+      className="relative flex flex-col md:-ml-[60px] md:flex-row items-center justify-between bg-gradient-to-r from-[#CB98ED] via-[#8B63DA] to-[#3C21B7] text-white  pb-0 mb-[-5]  pb-[10px] md:pb-0 md:h-[464px] gap-10 md:gap-0 overflow-visible"
     >
       {/* Left Side */}
       <div className="relative md:w-1/2 flex justify-center md:justify-start pt-16 mb-10 md:mb-0 overflow-visible md:left-[160px]">

@@ -406,7 +406,7 @@ const handleDeleteReply = async (commentId, replyId) => {
         </div>
 
         {/* Content */}
-        <div className="p-4 max-h-[70vh] overflow-y-auto">
+        <div className="p-4 overflow-y-auto">
           {activeTab === "comments" ? (
             <>
               {/* Comments */}

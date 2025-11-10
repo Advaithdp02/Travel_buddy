@@ -12,8 +12,8 @@ export default function DestinationCard({ destination }) {
   const id=destination._id;
 
   return (
-    <div className="w-[315px] h-[354px] bg-white rounded-xl shadow-md relative overflow-hidden flex-shrink-0">
-      <div className="w-full h-[216px] bg-gray-300 relative">
+    <div className="w-[315px]  bg-white rounded-xl shadow-md relative overflow-hidden flex-shrink-0">
+      <div className="w-full h-[216px] bg-gray-300 relative ">
         <img
           src={destination.imageURL || `/Service.png`}
           alt={destination.name}
@@ -28,7 +28,7 @@ export default function DestinationCard({ destination }) {
         </h2>
       </div>
 
-      <div className="p-4">
+      <div className="p-4 px-2">
         <p className="text-[#310a49] text-sm truncate">
           Explore the beautiful district of {destination.name}
         </p>
