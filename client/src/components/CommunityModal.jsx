@@ -555,7 +555,7 @@ const handleDeleteReply = async (commentId, replyId) => {
                     placeholder="Add a comment..."
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
-                    className="flex-grow border border-[#9156F1] rounded-lg p-2"
+                    className="md:flex-grow   border border-[#9156F1] rounded-lg p-2"
                   />
                   <button
                     onClick={handleAddComment}
