@@ -180,48 +180,76 @@ export const DestinationPage = ({}) => {
     }
   };
 
-  const fetchhLocationDistrict = async (district) => {
-    if (!district) return;
-    try {
-      const districtRes = await fetch(
-        `${Backend_URL}/locations/district/${district}`
-      );
-      const districtData = await districtRes.json();
+ const fetchhLocationDistrict = async (district, terrain) => {
+  try {
+    // 🧩 Build the correct URL based on available filters
+    let url = "";
 
-      const userCoords = JSON.parse(
-        localStorage.getItem("userCoords") || '{"latitude":0,"longitude":0}'
-      );
-      const origin = { lat: userCoords.latitude, lon: userCoords.longitude };
+    if (district) {
+      // Base: /district/:district
+      url = `${Backend_URL}/locations/district/${encodeURIComponent(district)}`;
 
-      const enrichedPlaces = (districtData || []).map((place) => {
-        const [lon, lat] = place.coordinates.coordinates;
-        const distance = calculateDistance(origin.lat, origin.lon, lat, lon);
-        const travelTime = calculateTime(distance);
-        const now = new Date();
-        const timeHours = distance / 60;
-        const arrival = new Date(now.getTime() + timeHours * 3600 * 1000);
-        const arrivalTime = arrival.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        });
-        return {
-          ...place,
-          distance: `${distance.toFixed(2)} km`,
-          travelTime,
-          arrivalTime,
-        };
+      // Append optional terrain query
+      if (terrain) {
+        url += `?terrain=${encodeURIComponent(terrain)}`;
+      }
+    } else if (terrain) {
+      // Only terrain — if you have a dedicated terrain route
+      url = `${Backend_URL}/locations/terrain/${encodeURIComponent(terrain)}`;
+    } else {
+      // Nothing selected
+      return;
+    }
+
+    
+
+    // 🛰 Fetch filtered data
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.message || "Failed to fetch locations");
+
+    // 📍 Get user coordinates
+    const userCoords = JSON.parse(
+      localStorage.getItem("userCoords") || '{"latitude":0,"longitude":0}'
+    );
+    const origin = { lat: userCoords.latitude, lon: userCoords.longitude };
+
+    // 🧮 Enrich data with distance, time, and arrival info
+    const enrichedPlaces = (data || []).map((place) => {
+      const [lon, lat] = place.coordinates.coordinates;
+      const distance = calculateDistance(origin.lat, origin.lon, lat, lon);
+      const travelTime = calculateTime(distance);
+
+      const now = new Date();
+      const timeHours = distance / 60;
+      const arrival = new Date(now.getTime() + timeHours * 3600 * 1000);
+      const arrivalTime = arrival.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       });
 
-      setPlaces(enrichedPlaces);
-    } catch (err) {
-      console.error("Error fetching districts:", err);
-    }
-  };
+      return {
+        ...place,
+        distance: `${distance.toFixed(2)} km`,
+        travelTime,
+        arrivalTime,
+      };
+    });
+
+    // 🗺️ Update state
+    setPlaces(enrichedPlaces);
+  } catch (err) {
+    console.error("❌ Error fetching locations:", err);
+  }
+};
+
+
 
   useEffect(() => {
-    fetchhLocationDistrict(filters.district);
-  }, [filters.district]);
+    fetchhLocationDistrict(filters.district,filters.terrain);
+  }, [filters.district,filters.terrain]);
 
   useEffect(() => {
     let sessionId = localStorage.getItem("sessionId");
