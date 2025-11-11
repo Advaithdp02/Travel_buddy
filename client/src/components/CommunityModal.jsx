@@ -31,17 +31,34 @@ export const CommunityModal = ({
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
+  if (isOpen) {
+    // Prevent background scroll
+    const scrollY = window.scrollY;
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.overflow = "hidden";
+  } else {
+    // Restore scroll position
+    const scrollY = document.body.style.top;
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
+    document.body.style.overflow = "";
+    window.scrollTo(0, parseInt(scrollY || "0") * -1);
+  }
 
-    // Cleanup on unmount
-    return () => {
-      document.body.style.overflow = "auto";
-    };
-  }, [isOpen]);
+  return () => {
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
+    document.body.style.overflow = "";
+  };
+}, [isOpen]);
+
 
   // Sync props to local state
   useEffect(() => setLocalComments(comments), [comments]);
@@ -394,7 +411,8 @@ const handleDeleteReply = async (commentId, replyId) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-[#fbebff] w-11/12 md:w-4/5 lg:w-3/4  p-8 rounded-xl shadow-2xl overflow-hidden">
+      <div className="bg-[#fbebff] w-11/12 md:w-4/5 lg:w-3/4 max-h-[90vh] p-6 rounded-xl shadow-2xl overflow-y-auto relative">
+
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b">
           <h3 className="text-3xl font-bold text-[#310a49]">
@@ -549,21 +567,22 @@ const handleDeleteReply = async (commentId, replyId) => {
               {districtPage ? (
                 <></>
               ) : (
-                <div className="flex gap-2 mt-2">
-                  <input
-                    type="text"
-                    placeholder="Add a comment..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    className="md:flex-grow   border border-[#9156F1] rounded-lg p-2"
-                  />
-                  <button
-                    onClick={handleAddComment}
-                    className="bg-[#9156F1] flex items-center justify-center w-[25%] md:w-[5%] text-white items-center text-center font-semibold px-4 rounded-lg"
-                  >
-                    <SendIconAdd className="w-5 h-5" />
-                  </button>
-                </div>
+                <div className="flex flex-wrap items-center gap-2 mt-2 w-full">
+  <input
+    type="text"
+    placeholder="Add a comment..."
+    value={newComment}
+    onChange={(e) => setNewComment(e.target.value)}
+    className="flex-grow border border-[#9156F1] rounded-lg p-2 min-w-0 focus:outline-none focus:ring-2 focus:ring-[#9156F1]"
+  />
+  <button
+    onClick={handleAddComment}
+    className="bg-[#9156F1] flex items-center justify-center text-white font-semibold px-4 py-2 rounded-lg hover:bg-[#7a3be0] transition whitespace-nowrap"
+  >
+    <SendIconAdd className="w-5 h-5" />
+  </button>
+</div>
+
               )}
             </>
           ) : (
