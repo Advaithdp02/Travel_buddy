@@ -87,7 +87,7 @@ export const DestinationPage = ({}) => {
   const [emergencyContacts, setEmergencyContacts] = useState({
     "Road side Assistant": "",
     "Police Station": "",
-    Ambulance: "",
+    "Ambulance": "",
     "Local Support": "",
   });
 
@@ -105,7 +105,7 @@ export const DestinationPage = ({}) => {
   const [filters, setFilters] = useState({
     state: "Kerala",
     district: "",
-    terrain: "Mountain",
+    terrain: "",
   });
 
   const [allDistricts, setAllDistricts] = useState([]);

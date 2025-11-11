@@ -37,25 +37,17 @@ export const getAllLocations = async (req, res) => {
       query.terrain = { $regex: new RegExp(`^${terrain}$`, "i") };
     }
 
-   
-
     // 🧠 Fetch locations
     const locations = await Location.find(query).populate("district");
 
-    if (!locations.length) {
-      return res.status(404).json({
-        message: `No locations found for "${district}"${
-          terrain ? ` with terrain "${terrain}"` : ""
-        }`,
-      });
-    }
-
-    res.status(200).json(locations);
+    // ✅ Always return 200 — even if empty
+    return res.status(200).json(locations || []);
   } catch (err) {
     console.error("❌ Error fetching locations:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 
 
