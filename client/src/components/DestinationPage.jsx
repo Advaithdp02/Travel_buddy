@@ -87,7 +87,7 @@ export const DestinationPage = ({}) => {
   const [emergencyContacts, setEmergencyContacts] = useState({
     "Road side Assistant": "",
     "Police Station": "",
-    "Ambulance": "",
+    Ambulance: "",
     "Local Support": "",
   });
 
@@ -180,76 +180,74 @@ export const DestinationPage = ({}) => {
     }
   };
 
- const fetchhLocationDistrict = async (district, terrain) => {
-  try {
-    // 🧩 Build the correct URL based on available filters
-    let url = "";
+  const fetchhLocationDistrict = async (district, terrain) => {
+    try {
+      // 🧩 Build the correct URL based on available filters
+      let url = "";
 
-    if (district) {
-      // Base: /district/:district
-      url = `${Backend_URL}/locations/district/${encodeURIComponent(district)}`;
+      if (district) {
+        // Base: /district/:district
+        url = `${Backend_URL}/locations/district/${encodeURIComponent(
+          district
+        )}`;
 
-      // Append optional terrain query
-      if (terrain) {
-        url += `?terrain=${encodeURIComponent(terrain)}`;
+        // Append optional terrain query
+        if (terrain) {
+          url += `?terrain=${encodeURIComponent(terrain)}`;
+        }
+      } else if (terrain) {
+        // Only terrain — if you have a dedicated terrain route
+        url = `${Backend_URL}/locations/terrain/${encodeURIComponent(terrain)}`;
+      } else {
+        // Nothing selected
+        return;
       }
-    } else if (terrain) {
-      // Only terrain — if you have a dedicated terrain route
-      url = `${Backend_URL}/locations/terrain/${encodeURIComponent(terrain)}`;
-    } else {
-      // Nothing selected
-      return;
-    }
 
-    
+      // 🛰 Fetch filtered data
+      const res = await fetch(url);
+      const data = await res.json();
 
-    // 🛰 Fetch filtered data
-    const res = await fetch(url);
-    const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to fetch locations");
 
-    if (!res.ok) throw new Error(data.message || "Failed to fetch locations");
+      // 📍 Get user coordinates
+      const userCoords = JSON.parse(
+        localStorage.getItem("userCoords") || '{"latitude":0,"longitude":0}'
+      );
+      const origin = { lat: userCoords.latitude, lon: userCoords.longitude };
 
-    // 📍 Get user coordinates
-    const userCoords = JSON.parse(
-      localStorage.getItem("userCoords") || '{"latitude":0,"longitude":0}'
-    );
-    const origin = { lat: userCoords.latitude, lon: userCoords.longitude };
+      // 🧮 Enrich data with distance, time, and arrival info
+      const enrichedPlaces = (data || []).map((place) => {
+        const [lon, lat] = place.coordinates.coordinates;
+        const distance = calculateDistance(origin.lat, origin.lon, lat, lon);
+        const travelTime = calculateTime(distance);
 
-    // 🧮 Enrich data with distance, time, and arrival info
-    const enrichedPlaces = (data || []).map((place) => {
-      const [lon, lat] = place.coordinates.coordinates;
-      const distance = calculateDistance(origin.lat, origin.lon, lat, lon);
-      const travelTime = calculateTime(distance);
+        const now = new Date();
+        const timeHours = distance / 60;
+        const arrival = new Date(now.getTime() + timeHours * 3600 * 1000);
+        const arrivalTime = arrival.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
 
-      const now = new Date();
-      const timeHours = distance / 60;
-      const arrival = new Date(now.getTime() + timeHours * 3600 * 1000);
-      const arrivalTime = arrival.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
+        return {
+          ...place,
+          distance: `${distance.toFixed(2)} km`,
+          travelTime,
+          arrivalTime,
+        };
       });
 
-      return {
-        ...place,
-        distance: `${distance.toFixed(2)} km`,
-        travelTime,
-        arrivalTime,
-      };
-    });
-
-    // 🗺️ Update state
-    setPlaces(enrichedPlaces);
-  } catch (err) {
-    console.error("❌ Error fetching locations:", err);
-  }
-};
-
-
+      // 🗺️ Update state
+      setPlaces(enrichedPlaces);
+    } catch (err) {
+      console.error("❌ Error fetching locations:", err);
+    }
+  };
 
   useEffect(() => {
-    fetchhLocationDistrict(filters.district,filters.terrain);
-  }, [filters.district,filters.terrain]);
+    fetchhLocationDistrict(filters.district, filters.terrain);
+  }, [filters.district, filters.terrain]);
 
   useEffect(() => {
     let sessionId = localStorage.getItem("sessionId");
@@ -544,15 +542,14 @@ export const DestinationPage = ({}) => {
 
           {/* Main Heading */}
           <h1
-  className="text-white font-poppins
+            className="text-white font-poppins
              text-[clamp(20px,4vw,32px)]
              leading-tight mt-2
              line-clamp-2"
-  style={{ fontFamily: "Baloo, cursive" }}
->
-  {hero.subtitle}
-</h1>
-
+            style={{ fontFamily: "Baloo, cursive" }}
+          >
+            {hero.subtitle}
+          </h1>
         </div>
       </section>
 
@@ -711,15 +708,15 @@ export const DestinationPage = ({}) => {
                         </div>
                       </div>
                     ))}
-
-                 
                 </div>
-                 <button
-                    className={`bg-[#9156F1] text-white font-semibold py-2 px-4 rounded mt-2 ${comments.length===0?"hidden":""}`}
-                    onClick={() => setIsModalOpen(true)}
-                  >
-                    Add Comment
-                  </button>
+                <button
+                  className={`bg-[#9156F1] text-white font-semibold py-2 px-4 rounded mt-2 ${
+                    comments.length === 0 ? "hidden" : ""
+                  }`}
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  Add Comment
+                </button>
               </div>
 
               {/* -------------------- CONTRIBUTIONS TAB -------------------- */}
@@ -1416,8 +1413,7 @@ export const DestinationPage = ({}) => {
                 window.innerWidth < 768
                   ? "none"
                   : "url('/Destination_nearby.png')",
-              backgroundColor:
-                window.innerWidth < 768 ? "#fbebff" : "#EFEFFF",
+              backgroundColor: window.innerWidth < 768 ? "#fbebff" : "#EFEFFF",
             }}
           >
             <h3
@@ -1518,7 +1514,9 @@ export const DestinationPage = ({}) => {
             <div className="block md:hidden relative  py-8 rounded-t-[20px]">
               {/* Header with Arrows */}
               <div className="flex items-center justify-between px-6 mb-4">
-                <h3 className="text-2xl font-bold text-[#310a49]">Nearby Places</h3>
+                <h3 className="text-2xl font-bold text-[#310a49]">
+                  Nearby Places
+                </h3>
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
