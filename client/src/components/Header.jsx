@@ -134,7 +134,10 @@ export const Header = ({ variant = "light" }) => {
     logoClasses += " h-[150px] md:h-[165px] top-[-48px]";
   } else if (pathname.includes("/profile")) {
     logoClasses += " h-[111px] md:h-[115px] top-[-40px]";
-  } else {
+  }else if(pathname.includes("/admin")){
+     logoClasses += " h-[147px] top-[-50px] md:h-[149px] md:top-[-60px] left-[70px]";
+  }
+  else {
     logoClasses += " h-[147px] top-[-50px] md:h-[149px] md:top-[-60px]";
   }
 

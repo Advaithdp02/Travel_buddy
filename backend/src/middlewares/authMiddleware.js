@@ -42,7 +42,7 @@ export const adminProtect = (req, res, next) => {
   }
 };
 export const staffProtect = (req, res, next) => {
-  console.log("staffProtect req.user:", req.user);
+  
   if (req.user && (req.user.role === "admin" || req.user.role === "staff")) {
     next();
     console.log('passed')
