@@ -544,11 +544,15 @@ export const DestinationPage = ({}) => {
 
           {/* Main Heading */}
           <h1
-            className="text-white font-poppins text-[28px] md:text-[65px] md:leading-[70px] mt-2 sm:text-[32px] sm:leading-[38px] sm:mt-1"
-            style={{ fontFamily: "Baloo, cursive" }}
-          >
-            {hero.subtitle}
-          </h1>
+  className="text-white font-poppins
+             text-[clamp(20px,4vw,32px)]
+             leading-tight mt-2
+             line-clamp-2"
+  style={{ fontFamily: "Baloo, cursive" }}
+>
+  {hero.subtitle}
+</h1>
+
         </div>
       </section>
 
