@@ -849,9 +849,10 @@ export const DestinationPage = ({}) => {
                 <option value="Forest">Forests</option>
                 <option value="Desert">Deserts</option>
                 <option value="Plain">Plains</option>
-                <option value="Beach">Beaches</option>
-                <option value="Forest">Forests</option>
-                <option value="Desert">Deserts</option>
+                <option value="Rocky">Rocky</option>
+                <option value="River">River</option>
+                <option value="Hilly">Hilly</option>
+                <option value="Urban">Urban</option>
               </select>
             </div>
 
@@ -1171,7 +1172,7 @@ export const DestinationPage = ({}) => {
                   key={index}
                   className="md:flex bg-white shadow-md rounded-lg overflow-hidden mb-4"
                 >
-                  <div className="flex-shrink-0 md:w-56 h-52">
+                  <div className="flex-shrink-0 md:w-56 ">
                     <img
                       src={hotel.img}
                       alt={hotel.name}
@@ -1387,7 +1388,7 @@ export const DestinationPage = ({}) => {
             }}
           >
             <h3
-              className={`text-2xl font-bold text-white  mb-6 ${
+              className={`text-2xl font-bold text-[#310a49]  mb-6 ${
                 window.innerWidth > 768 ? "" : "hidden"
               }`}
             >
@@ -1400,7 +1401,7 @@ export const DestinationPage = ({}) => {
                 <div key={index}>
                   <div
                     className="flex-shrink-0 w-[90%] bg-white shadow-lg p-0 snap-start"
-                    style={{ borderRadius: "0px 20px 20px 0px" }}
+                    style={{ borderRadius: "20px 20px 20px 20px" }}
                   >
                     <div className="md:flex flex-row gap-10">
                       <img

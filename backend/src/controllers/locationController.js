@@ -6,14 +6,14 @@ import { uploadToS3, deleteFromS3 } from "./uploadController.js";
 // Get all locations
 export const getAllLocations = async (req, res) => {
   try {
-    const { district } = req.params; // e.g., Kannur
-    const { terrain } = req.query;   // e.g., Mountain or Beach
+    const { district } = req.params;  // e.g., Kannur
+    const { terrain } = req.query;    // e.g., Beach, Mountain
 
     if (!district) {
       return res.status(400).json({ message: "District parameter is required" });
     }
 
-    // 🔍 Find district by name (case-insensitive) or ObjectId
+    // Detect ObjectId or name
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(district);
 
     let districtDoc;
@@ -29,25 +29,30 @@ export const getAllLocations = async (req, res) => {
       return res.status(404).json({ message: "District not found" });
     }
 
-    // ✅ Initialize query AFTER district is confirmed
+    // Base query
     const query = { district: districtDoc._id };
 
-    // Add terrain filter if present
+    // Escape regex special chars
+    const escapeRegex = (str) =>
+      str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    // Add terrain filter (partial match, case-insensitive)
     if (terrain && terrain.trim() !== "") {
-      query.terrain = { $regex: new RegExp(`^${terrain}$`, "i") };
+      query.terrain = {
+        $regex: escapeRegex(terrain),
+        $options: "i",
+      };
     }
 
-    // 🧠 Fetch locations
+    // Fetch locations
     const locations = await Location.find(query).populate("district");
 
-    // ✅ Always return 200 — even if empty
     return res.status(200).json(locations || []);
   } catch (err) {
     console.error("❌ Error fetching locations:", err);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
-
 
 
 
