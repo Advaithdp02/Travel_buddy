@@ -137,7 +137,19 @@ export const DestinationPage = ({}) => {
     const minutes = Math.round((timeHours - hours) * 60);
     return `${hours} hr ${minutes} min`;
   };
+  const calculateArrival = (timeStr) => {
+    const now = new Date();
+    const [hours, minutes] = timeStr
+      .replace("hr", "")
+      .replace("min", "")
+      .trim()
+      .split(" ")
+      .map(Number);
 
+    now.setHours(now.getHours() + hours);
+    now.setMinutes(now.getMinutes() + minutes);
+    return now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
   const fetchHotels = async (reset = false) => {
     if (!hasMore && !reset) return;
 
@@ -300,15 +312,39 @@ export const DestinationPage = ({}) => {
         fetchhLocationDistrict(data.district.name);
         setNearbyPlaces(data.nearbyPlaces || []);
 
-        // User coordinates for map
+        // User coordinates
         const userCoords = JSON.parse(
           localStorage.getItem("userCoords") || '{"latitude":0,"longitude":0}'
         );
+
+        // Extract dest lon/lat from DB → [lon, lat]
+        const [maplon, maplat] = data.coordinates.coordinates;
+
+        // ✔ calculate distance (lat, lon)
+        const distanceKm = calculateDistance(
+          userCoords.latitude,
+          userCoords.longitude,
+          maplat, // destination LAT
+          maplon // destination LON
+        );
+
+        // ✔ calculate travel time
+        const timeStr = calculateTime(distanceKm);
+
+        // ✔ calculate arrival time
+        const arrival = calculateArrival(timeStr);
+
+        // Set map info with correct LAT/LON order
         setMapInfo((prev) => ({
           ...prev,
+          distance: `${distanceKm.toFixed(1)} km`,
+          time: timeStr,
+          arrival: arrival,
           userCoordinates: [userCoords.longitude, userCoords.latitude],
-          destinationCoordinates: data.coordinates.coordinates,
+          destinationCoords: [maplat, maplon],
         }));
+        console.log(mapInfo);
+
         setMapKey((prev) => prev + 1);
 
         // Latitude & Longitude for weather
@@ -363,11 +399,6 @@ export const DestinationPage = ({}) => {
         );
         const commentsData = await commentsRes.json();
         setComments(commentsData.comments || []);
-        const contributionsRes = await fetch(
-          `${Backend_URL}/contributions/location/${data._id}`
-        );
-        const contributionsData = await contributionsRes.json();
-        setContributions(contributionsData || []);
       } catch (err) {
         console.error("Error fetching location or weather data:", err);
       }
@@ -393,6 +424,9 @@ export const DestinationPage = ({}) => {
 
     fetchLocationData();
   }, [locationId]);
+  useEffect(() => {
+    console.log("UPDATED MAPINFO:", mapInfo);
+  }, [mapInfo]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -494,6 +528,14 @@ export const DestinationPage = ({}) => {
         return "/desert.jpg";
       case "Plains":
         return "/plains.jpg";
+      case "Rocky":
+        return "/Rocky.jpg";
+      case "River":
+        return "/river.jpg";
+      case "Hilly":
+        return "/Hilly.jpg";
+      case "Urban":
+        return "/Urban.jpg";
       default:
         return "/default.jpg";
     }
@@ -629,40 +671,23 @@ export const DestinationPage = ({}) => {
             Community Insights
           </h2>
 
-          {/* Tabs */}
+          {/* Tabs — remove contributions tab */}
           <div className="flex gap-6 mb-8 border-b border-gray-200">
             <button
-              onClick={() => setActiveTab("comments")}
-              className={`pb-2 font-semibold transition-colors ${
-                activeTab === "comments"
-                  ? "border-b-4 border-[#9156F1] text-white"
-                  : "text-[#fbebff]"
-              }`}
+              onClick={() => setIsModalOpen(true)}
+              className="pb-2 font-semibold border-b-4 border-[#9156F1] text-white"
             >
               Comments
             </button>
-            <button
-              onClick={() => setActiveTab("contributions")}
-              className={`pb-2 font-semibold transition-colors ${
-                activeTab === "contributions"
-                  ? "border-b-4 border-[#9156F1] text-white"
-                  : "text-[#fbebff]"
-              }`}
-            >
-              Contributions
-            </button>
           </div>
 
-          {/* Tab Content */}
+          {/* Tab Content — only comments */}
           <div className="relative overflow-hidden">
             <div
               className="flex transition-transform duration-500"
               style={{
-                transform:
-                  activeTab === "comments"
-                    ? "translateX(0%)"
-                    : "translateX(-50%)",
-                width: "200%",
+                transform: "translateX(0%)",
+                width: "100%",
               }}
             >
               {/* -------------------- COMMENTS TAB -------------------- */}
@@ -709,6 +734,7 @@ export const DestinationPage = ({}) => {
                       </div>
                     ))}
                 </div>
+
                 <button
                   className={`bg-[#9156F1] text-white font-semibold py-2 px-4 rounded mt-2 ${
                     comments.length === 0 ? "hidden" : ""
@@ -717,65 +743,6 @@ export const DestinationPage = ({}) => {
                 >
                   Add Comment
                 </button>
-              </div>
-
-              {/* -------------------- CONTRIBUTIONS TAB -------------------- */}
-              <div className="w-full pl-6">
-                <div className="space-y-4 h-[300px] overflow-y-auto">
-                  {contributions.length === 0 ? (
-                    <div className="bg-white p-4 rounded-xl shadow border border-gray-100 text-gray-500">
-                      No contributions yet
-                    </div>
-                  ) : (
-                    contributions.map((c, index) => (
-                      <div
-                        key={c._id || index}
-                        className="bg-white p-4 rounded-xl shadow border border-gray-100 cursor-pointer hover:shadow-md transition"
-                        onClick={() => setIsModalOpen(true)}
-                      >
-                        {/* Cover Image */}
-                        {c.coverImage && (
-                          <img
-                            src={c.coverImage}
-                            alt="Contribution cover"
-                            className="w-full h-32 object-cover rounded-lg mb-3"
-                          />
-                        )}
-
-                        {/* Description / Preview */}
-                        <h4 className="font-semibold text-brand-dark text-lg">
-                          {c.location?.name || "Contribution"}
-                        </h4>
-                        <p className="text-gray-600 text-sm mt-1 line-clamp-2">
-                          {c.description || "No description provided."}
-                        </p>
-
-                        {/* Meta Info */}
-                        <div className="text-xs text-brand-gray mt-2 flex justify-between items-center">
-                          <span>
-                            Shared by{" "}
-                            <strong>
-                              {c.user?.name ||
-                                c.user?.username ||
-                                "Unknown User"}
-                            </strong>
-                          </span>
-                          {c.bestTimeToVisit && (
-                            <span className="text-[11px] text-gray-500 italic">
-                              Best time: {c.bestTimeToVisit}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Likes */}
-                        <div className="mt-2 text-xs text-gray-500">
-                          ❤️ {c.likes?.length || 0}{" "}
-                          {c.likes?.length === 1 ? "like" : "likes"}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
               </div>
             </div>
           </div>
@@ -882,6 +849,9 @@ export const DestinationPage = ({}) => {
                 <option value="Forest">Forests</option>
                 <option value="Desert">Deserts</option>
                 <option value="Plain">Plains</option>
+                <option value="Beach">Beaches</option>
+                <option value="Forest">Forests</option>
+                <option value="Desert">Deserts</option>
               </select>
             </div>
 
@@ -1117,9 +1087,9 @@ export const DestinationPage = ({}) => {
           <div className="space-y-10 lg:col-span-2">
             {/* Map */}
             <div className="bg-gray-200 rounded-2xl overflow-hidden shadow-lg">
-              {mapInfo?.destinationCoordinates?.length === 2 ? (
+              {mapInfo?.destinationCoords?.length === 2 ? (
                 <iframe
-                  key={mapKey} // forces iframe reload on map update
+                  key={mapKey}
                   title="Destination Map"
                   width="100%"
                   height="400"
@@ -1127,14 +1097,14 @@ export const DestinationPage = ({}) => {
                   loading="lazy"
                   allowFullScreen
                   src={`https://www.openstreetmap.org/export/embed.html?bbox=${
-                    mapInfo.destinationCoordinates[0] - 0.01
-                  }%2C${mapInfo.destinationCoordinates[1] - 0.01}%2C${
-                    mapInfo.destinationCoordinates[0] + 0.01
-                  }%2C${
-                    mapInfo.destinationCoordinates[1] + 0.01
-                  }&layer=mapnik&marker=${
-                    mapInfo.destinationCoordinates[1]
-                  }%2C${mapInfo.destinationCoordinates[0]}`}
+                    mapInfo.destinationCoords[1] - 0.01
+                  },${mapInfo.destinationCoords[0] - 0.01},${
+                    mapInfo.destinationCoords[1] + 0.01
+                  },${
+                    mapInfo.destinationCoords[0] + 0.01
+                  }&layer=mapnik&marker=${mapInfo.destinationCoords[0]},${
+                    mapInfo.destinationCoords[1]
+                  }`}
                 ></iframe>
               ) : (
                 <div className="h-[400px] flex items-center justify-center text-gray-500">

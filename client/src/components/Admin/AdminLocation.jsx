@@ -338,6 +338,11 @@ export default function AdminLocations() {
               <MenuItem value="Forest">Forest</MenuItem>
               <MenuItem value="Desert">Desert</MenuItem>
               <MenuItem value="Plains">Plains</MenuItem>
+                <MenuItem value="Hilly">Hilly</MenuItem>
+                <MenuItem value="River">River</MenuItem>
+                <MenuItem value="Rocky">Rocky</MenuItem>
+                <MenuItem value="Urban">Urban</MenuItem>
+                
             </Select>
           </FormControl>
 

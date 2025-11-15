@@ -439,72 +439,83 @@ export const Profile = () => {
                 )}
 
                 {activeTab === "contribution" && (
-                  <div>
-                    <button
-                      className="w-full bg-[#9156F1] text-white py-2 rounded-lg flex items-center justify-center mb-4 hover:bg-yellow-500"
-                      onClick={() => setIsAddContributionOpen(true)}
-                    >
-                      <span className="mr-2">+</span> Add New Place
-                    </button>
+  <div>
+    {/* Add New Place Button */}
+    <button
+      className="w-full bg-[#9156F1] text-white py-2 rounded-lg flex items-center justify-center mb-4 hover:bg-yellow-500"
+      onClick={() => setIsAddContributionOpen(true)}
+    >
+      <span className="mr-2">+</span> Add New Place
+    </button>
 
-                    <div className="flex space-x-4 mb-4">
-                      {["all", "approved", "pending"].map((sub) => (
-                        <button
-                          key={sub}
-                          className={`flex-1 py-2 font-semibold rounded-lg transition-colors ${
-                            contribSubTab === sub
-                              ? "bg-[#310a49] text-white"
-                              : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                          }`}
-                          onClick={() => setContribSubTab(sub)}
-                        >
-                          {sub.charAt(0).toUpperCase() + sub.slice(1)}
-                        </button>
-                      ))}
-                    </div>
+    {/* Sub-tabs (All / Approved / Pending) */}
+    <div className="flex space-x-4 mb-4">
+      {["all", "approved", "pending"].map((sub) => (
+        <button
+          key={sub}
+          className={`flex-1 py-2 font-semibold rounded-lg transition-colors ${
+            contribSubTab === sub
+              ? "bg-[#310a49] text-white"
+              : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+          }`}
+          onClick={() => setContribSubTab(sub)}
+        >
+          {sub.charAt(0).toUpperCase() + sub.slice(1)}
+        </button>
+      ))}
+    </div>
 
-                    {/* Filtered Contributions */}
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {userContributions
-                        .filter((c) => {
-                          if (contribSubTab === "all") return true;
-                          if (contribSubTab === "approved") return c.verified;
-                          if (contribSubTab === "pending") return !c.verified;
-                        })
-                        .map((c) => (
-                          <div
-                            key={c._id}
-                            className={`bg-white rounded-lg shadow p-4 cursor-pointer border-t-4 ${
-                              c.verified
-                                ? "border-green-500"
-                                : "border-yellow-500"
-                            }`}
-                          >
-                            <img
-                              src={c.coverImage || "/defaultCoverPic.png"}
-                              alt={c.description || "Contribution"}
-                              className="w-full h-40 object-cover rounded mb-2"
-                            />
-                            <h4 className="font-bold">
-                              {c.location?.name || "Unknown Location"}
-                            </h4>
-                            <p className="text-sm text-gray-600 line-clamp-2">
-                              {c.description}
-                            </p>
-                            <p
-                              className={`mt-1 text-xs font-semibold ${
-                                c.verified
-                                  ? "text-green-600"
-                                  : "text-yellow-600"
-                              }`}
-                            >
-                              {c.verified ? "✅ Approved" : "🕒 Pending"}
-                            </p>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                )}
+    {/* Contributions Grid */}
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {userContributions
+        .filter((c) => {
+          if (contribSubTab === "all") return true;
+          if (contribSubTab === "approved") return c.verified;
+          if (contribSubTab === "pending") return !c.verified;
+        })
+        .map((c) => (
+          <div
+            key={c._id}
+            className={`bg-white rounded-lg shadow p-4 cursor-pointer border-t-4 ${
+              c.verified ? "border-green-500" : "border-yellow-500"
+            }`}
+          >
+            {/* Cover Image */}
+            <img
+              src={c.coverImage || "/defaultCoverPic.png"}
+              alt={c.title || "Contribution"}
+              className="w-full h-40 object-cover rounded mb-2"
+            />
+
+            {/* Title */}
+            <h4 className="font-bold text-lg">
+              {c.title || "Untitled Place"}
+            </h4>
+
+            {/* District */}
+            <p className="text-sm text-gray-500">
+              {c.district || "Unknown District"}
+            </p>
+
+            {/* Description Preview */}
+            <p className="text-sm text-gray-600 line-clamp-2 mt-1">
+              {c.description}
+            </p>
+
+            {/* Status Badge */}
+            <p
+              className={`mt-2 text-xs font-semibold ${
+                c.verified ? "text-green-600" : "text-yellow-600"
+              }`}
+            >
+              {c.verified ? "✅ Approved" : "🕒 Pending Approval"}
+            </p>
+          </div>
+        ))}
+    </div>
+  </div>
+)}
+
               </div>
             </div>
           </div>

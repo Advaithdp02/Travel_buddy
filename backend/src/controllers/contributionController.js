@@ -8,9 +8,21 @@ import ContributionComment from "../models/ContributionComment.js";
 
 export const createContribution = async (req, res) => {
   try {
+    // User authentication
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const userId = req.user._id;
+
+    // Extract fields from body
     const {
-      location,
+      title,
+      subtitle,
+      district,
       description,
+      latitude,
+      longitude,
       bestTimeToVisit,
       crowded,
       familyFriendly,
@@ -21,24 +33,30 @@ export const createContribution = async (req, res) => {
       ratings,
       tips,
       hiddenGems,
+      points,
     } = req.body;
 
-    // Make sure user is authenticated
-    if (!req.user || !req.user._id) {
-      return res.status(401).json({ message: "Unauthorized" });
+    // Required fields check
+    if (!title || !district || !description || !latitude || !longitude) {
+      return res.status(400).json({
+        message:
+          "Missing required fields (title, district, description, latitude, longitude)",
+      });
     }
 
-    const userId = req.user._id; // from auth middleware
-    const locationId = new mongoose.Types.ObjectId(location);
+    // Parse JSON fields if sent as string
+    const parsedActivities = typeof activities === "string" ? JSON.parse(activities) : activities || [];
+    const parsedFacilities = typeof facilities === "string" ? JSON.parse(facilities) : facilities || [];
+    const parsedRatings = typeof ratings === "string" ? JSON.parse(ratings) : ratings || {};
+    const parsedHiddenGems = typeof hiddenGems === "string" ? JSON.parse(hiddenGems) : hiddenGems || [];
+    const parsedPoints = typeof points === "string" ? JSON.parse(points) : points || [];
 
-    const folderName = `contributions/${locationId}/${userId}`;
-
+    // Upload files to S3
     let images = [];
     let coverImage = "";
 
-    console.log("Files received:", req.files);
+    const folderName = `contributions/${userId}/${Date.now()}`;
 
-    // Upload images to S3 if any
     if (req.files) {
       // Cover Image
       if (req.files.coverImage && req.files.coverImage.length > 0) {
@@ -51,90 +69,90 @@ export const createContribution = async (req, res) => {
         );
       }
 
-      // Other Images
+      // Images (multiple)
       if (req.files.images && req.files.images.length > 0) {
         for (const file of req.files.images) {
-          const url = await uploadToS3(
+          const uploaded = await uploadToS3(
             file.buffer,
             file.originalname,
             folderName,
             file.mimetype
           );
-          images.push(url);
+          images.push(uploaded);
         }
       }
     }
 
-    // Create contribution
+    // Create the Contribution (NO location field now)
     const contribution = new Contribution({
       user: userId,
-      location: locationId,
+      title,
+      subtitle,
+      district, // text – admin will map it later
       description,
+      coordinates: {
+        type: "Point",
+        coordinates: [parseFloat(longitude), parseFloat(latitude)],
+      },
+      points: parsedPoints,
+
       coverImage,
       images,
-      bestTimeToVisit: bestTimeToVisit || "",
+
+      bestTimeToVisit,
       crowded: crowded === "true" || crowded === true,
       familyFriendly: familyFriendly === "true" || familyFriendly === true,
       petFriendly: petFriendly === "true" || petFriendly === true,
       accessibility: accessibility || "Unknown",
-      activities: activities ? JSON.parse(activities) : [],
-      facilities: facilities ? JSON.parse(facilities) : [],
-      ratings: ratings ? JSON.parse(ratings) : {},
+
+      activities: parsedActivities,
+      facilities: parsedFacilities,
+      ratings: parsedRatings,
+
       tips: tips || "",
-      hiddenGems: hiddenGems ? JSON.parse(hiddenGems) : [],
-      verified: false,
+      hiddenGems: parsedHiddenGems,
+
+      verified: false, // Admin must approve
     });
 
     await contribution.save();
 
-    // Update Location
-    const loc = await Location.findById(locationId);
-    if (!loc) return res.status(404).json({ message: "Location not found" });
-    loc.contributions.push(contribution._id);
-    await loc.save();
-
-    // Update User
-    const userDoc = await User.findById(userId);
-    if (userDoc) {
-      userDoc.contributions.push(contribution._id);
-      await userDoc.save();
+    // Add to User contributions
+    const user = await User.findById(userId);
+    if (user) {
+      user.contributions.push(contribution._id);
+      await user.save();
     }
 
-    res.status(201).json(contribution);
+    res.status(201).json({ success: true, contribution });
   } catch (err) {
-    console.error("Create Contribution Error:", err);
+    console.error("❌ Create Contribution Error:", err);
     res.status(500).json({ message: err.message });
   }
 };
-// Get verified contributions for a specific location
-export const getContributionsByLocation = async (req, res) => {
-  try {
-    const contributions = await Contribution.find({
-      location: req.params.locationId,
-      verified: true,
-    })
-      .populate("user", "name username profilePic")
-      .populate("comments")
-      .populate("location", "name");
 
-    res.status(200).json(contributions);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+
 
 // Get a single contribution by ID
 export const getContributionById = async (req, res) => {
   try {
     const contribution = await Contribution.findById(req.params.id)
       .populate("user", "name username profilePic")
-      .populate("comments");
+      .populate({
+        path: "comments",
+        populate: { path: "user", select: "name username profilePic" }
+      });
 
-    if (!contribution)
+    if (!contribution) {
       return res.status(404).json({ message: "Contribution not found" });
+    }
 
-    res.status(200).json(contribution);
+    res.status(200).json({
+      success: true,
+      contribution,
+    });
   } catch (err) {
+    console.error("❌ Get Contribution Error:", err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -142,56 +160,198 @@ export const getContributionById = async (req, res) => {
 export const getContributionsForDistrict = async (req, res) => {
   try {
     const { id } = req.params;
-    const district = await District.findById(id).populate("locations");
-    if (!district)
-      return res.status(404).json({ message: "District not found" });
 
-    const locationIds = district.locations.map((loc) => loc._id);
+    // 1️⃣ Check if param is a District ID
+    let districtName = null;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      const district = await District.findById(id);
+      if (!district) {
+        return res.status(404).json({ message: "District not found" });
+      }
+      districtName = district.name;
+    } else {
+      // 2️⃣ Else it's a district NAME
+      districtName = id;
+    }
+
+    // 3️⃣ Now fetch contributions matching this district (case-insensitive)
     const contributions = await Contribution.find({
-      location: { $in: locationIds },
+      district: { $regex: `^${districtName}$`, $options: "i" }
     })
-      .populate("user", "name profileImage")
-      .populate("location", "name")
+      .populate("user", "name username profilePic")
       .sort({ createdAt: -1 });
-    console.log("District ID:", id);
-    console.log("District locations:", district.locations);
 
-    res.json(contributions);
+    res.status(200).json({
+      success: true,
+      district: districtName,
+      count: contributions.length,
+      contributions,
+    });
   } catch (err) {
-    console.error("Get District Contributions Error:", err);
+    console.error("❌ Get Contributions For District Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
+
 // Admin: Verify a contribution
 export const verifyContribution = async (req, res) => {
   try {
-    const contribution = await Contribution.findById(req.params.id);
-    if (!contribution)
-      return res.status(404).json({ message: "Contribution not found" });
+    const contribId = req.params.id;
+    const c = await Contribution.findById(contribId);
+    if (!c) return res.status(404).json({ message: "Contribution not found" });
 
-    contribution.verified = true;
-    await contribution.save();
+    if (c.verified && c.approvedLocation) {
+      return res.status(400).json({ message: "Contribution already verified" });
+    }
 
-    res.status(200).json({ message: "Contribution verified", contribution });
+    // ---------- DISTRICT ----------
+    let districtDoc = await District.findOne({
+      name: { $regex: `^${c.district}$`, $options: "i" }
+    });
+    if (!districtDoc) {
+      districtDoc = await District.create({ name: c.district });
+    }
+
+    // --------------------------------------------------
+    //  ⭐ AUTO-GENERATED CONTENT FROM USER CONTRIBUTION ⭐
+    // --------------------------------------------------
+
+    // Subtitle based on activities or best time
+    const generatedSubtitle =
+      c.activities?.length
+        ? `A popular place for ${c.activities.slice(0, 3).join(", ")}`
+        : `A notable destination in ${c.district}`;
+
+    // Points list (short facts)
+    const points = [];
+
+    if (c.bestTimeToVisit)
+      points.push(`Best time to visit: ${c.bestTimeToVisit}`);
+
+    if (c.activities?.length)
+      points.push(`Popular activities: ${c.activities.join(", ")}`);
+
+    if (c.facilities?.length)
+      points.push(`Available facilities: ${c.facilities.join(", ")}`);
+
+    points.push(
+      `Family friendly: ${c.familyFriendly ? "Yes" : "No"}`,
+      `Pet friendly: ${c.petFriendly ? "Yes" : "No"}`,
+      `Accessibility: ${c.accessibility}`,
+      `Crowd level: ${c.crowded ? "High" : "Low to Moderate"}`
+    );
+
+    // Ratings summary
+    if (c.ratings) {
+      const r = c.ratings;
+      points.push(
+        `Overall rating: ${r.overall || "-"}`,
+        `Cleanliness: ${r.cleanliness || "-"}`,
+        `Safety: ${r.safety || "-"}`,
+        `Value for money: ${r.valueForMoney || "-"}`
+      );
+    }
+
+    // Generated descriptive paragraph
+    const generatedDescription = `
+${c.description || ""}
+
+Visitors report that the atmosphere is ${
+      c.crowded ? "often crowded" : "generally calm"
+    } and family friendly. ${
+      c.bestTimeToVisit
+        ? `The recommended time to visit is ${c.bestTimeToVisit}.`
+        : ""
+    } ${
+      c.hiddenGems?.length
+        ? `Some hidden gems mentioned include: ${c.hiddenGems.join(", ")}.`
+        : ""
+    } ${
+      c.tips
+        ? `Traveler tips: ${c.tips}`
+        : ""
+    }
+`.replace(/\s+/g, " ").trim();
+
+    // --------------------------------------------------
+    //  CREATE LOCATION WITH GENERATED CONTENT
+    // --------------------------------------------------
+
+    const newLocation = await Location.create({
+      name: c.title,
+      subtitle: generatedSubtitle,
+      description: generatedDescription,
+      district: districtDoc._id,
+
+      points: points,
+      images: c.images || [],
+      coverImage: c.coverImage || "",
+
+      terrain: "",
+      reviewLength: 0,
+      review: 0,
+
+      coordinates: c.coordinates,
+      contributions: [c._id],
+      comments: [],
+
+      // Keep raw user suggestions for admin editing
+      contributionMeta: {
+        userSubtitle: c.subtitle,
+        userHiddenGems: c.hiddenGems,
+        userActivities: c.activities,
+        userFacilities: c.facilities,
+        userTips: c.tips,
+        userRatings: c.ratings,
+      },
+    });
+
+    // Mark Contribution Verified
+    c.verified = true;
+    c.approvedLocation = newLocation._id;
+    await c.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Contribution verified + Auto content generated",
+      location: newLocation,
+    });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("verifyContribution error:", err);
+    return res.status(500).json({ message: err.message });
   }
 };
+
+
 
 // ✅ Get all contributions (Admin)
 export const getAllContributions = async (req, res) => {
   try {
-    const contributions = await Contribution.find()
-      .populate("user", "name email")
-      .populate("location", "name country");
+    // Optional filtering: ?status=pending | verified | all
+    const status = req.query.status || "all";
+    let filter = {};
 
-    res.status(200).json(contributions);
+    if (status === "pending") filter.verified = false;
+    if (status === "verified") filter.verified = true;
+
+    const contributions = await Contribution.find(filter)
+      .populate("user", "name email username profilePic")
+      .populate("approvedLocation", "name district");
+
+    res.status(200).json({
+      success: true,
+      count: contributions.length,
+      contributions,
+    });
   } catch (error) {
-    console.error("Error fetching contributions:", error);
+    console.error("❌ Error fetching contributions:", error);
     res.status(500).json({ message: "Failed to fetch contributions" });
   }
 };
+
 
 export const deleteContribution = async (req, res) => {
   try {
@@ -206,16 +366,24 @@ export const deleteContribution = async (req, res) => {
       return res.status(404).json({ message: "Contribution not found" });
     }
 
-    // Remove reference from location
-    const location = await Location.findById(contribution.location);
-    if (location) {
-      location.contributions = location.contributions.filter(
-        (cId) => cId.toString() !== id
-      );
-      await location.save();
+    const userId = req.user._id || req.user.id;
+
+    // Authorization: only owner or admin can delete
+    const isOwner = contribution.user.toString() === userId.toString();
+    const isAdmin = req.user && req.user.role === "admin";
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: "Not authorized to delete this contribution" });
     }
 
-    // Remove reference from user
+    // Safety: Prevent deleting contribution that already created a Location
+    if (contribution.verified && contribution.approvedLocation) {
+      return res.status(400).json({
+        message: "Cannot delete a verified contribution that created a Location"
+      });
+    }
+
+    // Remove from User's contributions list
     const user = await User.findById(contribution.user);
     if (user) {
       user.contributions = user.contributions.filter(
@@ -224,176 +392,43 @@ export const deleteContribution = async (req, res) => {
       await user.save();
     }
 
+    // OPTIONAL: delete images from S3 (only if you want)
+    // contribute.images.forEach(url => deleteFromS3(extractKey(url)));
+    // if (contribution.coverImage) deleteFromS3(extractKey(contribution.coverImage));
+
     await contribution.deleteOne();
 
     res.status(200).json({ message: "Contribution deleted successfully" });
   } catch (err) {
-    console.error("Delete contribution error:", err);
+    console.error("❌ deleteContribution error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
-
 export const getContributionsByUser = async (req, res) => {
   try {
-    const userId = req.user.id; // set by protect middleware
-    const contributions = await Contribution.find({ user: userId });
+    const userId = req.user._id || req.user.id;
+
+    const contributions = await Contribution.find({ user: userId })
+      .populate("approvedLocation", "name")
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
+      count: contributions.length,
       contributions,
     });
   } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Server error fetching user contributions",
-      });
-  }
-};
-// Add comment to a contribution
-export const addContributionComment = async (req, res) => {
-  try {
-    const { text } = req.body;
-    const { id: contributionId } = req.params;
-    const userId = req.user._id;
-
-    if (!text?.trim())
-      return res.status(400).json({ message: "Comment cannot be empty" });
-
-    const comment = new ContributionComment({
-      user: userId,
-      contribution: contributionId,
-      text,
+    console.error("❌ Get user contributions error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error fetching user contributions",
     });
-
-    await comment.save();
-
-    // Add comment reference to contribution
-    const contribution = await Contribution.findById(contributionId);
-    contribution.comments.push(comment._id);
-    await contribution.save();
-
-    const populatedComment = await comment.populate(
-      "user",
-      "name username profilePic"
-    );
-
-    res.status(201).json(populatedComment);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
   }
 };
 
-// Like/unlike a comment
-export const toggleContributionCommentLike = async (req, res) => {
-  try {
-    const { contribId, commentId } = req.params;
-    const userId = req.user.id;
 
-    // Check contribution exists
-    const contribution = await Contribution.findById(contribId);
-    if (!contribution)
-      return res.status(404).json({ message: "Contribution not found" });
 
-    // Find comment
-    const comment = await ContributionComment.findById(commentId);
-    if (!comment) return res.status(404).json({ message: "Comment not found" });
 
-    // Toggle like/unlike
-    const hasLiked = comment.likes.some((id) => id.toString() === userId);
 
-    if (hasLiked) {
-      comment.likes = comment.likes.filter((id) => id.toString() !== userId);
-    } else {
-      comment.likes.push(userId);
-    }
 
-    await comment.save();
 
-    res.status(200).json({
-      message: hasLiked ? "Comment unliked" : "Comment liked",
-      likesCount: comment.likes.length,
-    });
-  } catch (err) {
-    console.error("❌ toggleContributionCommentLike Error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Get all comments for a contribution
-export const getContributionComments = async (req, res) => {
-  try {
-    const { id: contributionId } = req.params;
-    const comments = await ContributionComment.find({
-      contribution: contributionId,
-    })
-      .populate("user", "name username profilePic")
-      .sort({ createdAt: -1 });
-
-    res.status(200).json(comments);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
-  }
-};
-
-export const toggleContributionLike = async (req, res) => {
-  try {
-    const { id } = req.params; // contribution ID
-    const userId = req.user.id; // from protect middleware
-
-    if (!id)
-      return res.status(400).json({ message: "Contribution ID is required" });
-
-    const contribution = await Contribution.findById(id);
-    if (!contribution)
-      return res.status(404).json({ message: "Contribution not found" });
-
-    const hasLiked = contribution.likes.some(
-      (uid) => uid.toString() === userId
-    );
-
-    if (hasLiked) {
-      // Unlike
-      contribution.likes = contribution.likes.filter(
-        (uid) => uid.toString() !== userId
-      );
-    } else {
-      // Like
-      contribution.likes.push(userId);
-    }
-
-    await contribution.save();
-
-    res.status(200).json({
-      message: hasLiked ? "Contribution unliked" : "Contribution liked",
-      likes: contribution.likes.length,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-export const contributionCommentDelete = async (req, res) => {
-  try {
-    const comment = await ContributionComment.findById(req.params.commentId);
-    if (!comment) return res.status(404).json({ message: "Comment not found" });
-
-    // Only comment owner can delete
-    if (comment.user.toString() !== req.user._id.toString()) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to delete this comment" });
-    }
-
-    await comment.deleteOne();
-    res.status(200).json({ message: "Comment deleted successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-};

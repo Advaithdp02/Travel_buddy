@@ -2,18 +2,42 @@ import mongoose from "mongoose";
 
 const contributionSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    location: { type: mongoose.Schema.Types.ObjectId, ref: "Location", required: true },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    },
 
-    // Basic info
+    // NEW → The location info user is submitting
+    title: { type: String, required: true },               // Location Name
+    subtitle: { type: String },                            // Short description
+    district: { type: String, required: true },            // Text, admin will map
     description: { type: String, required: true },
-    images: [String], // multiple images
-    coverImage: String, // optional cover image
+
+    // GeoJSON coordinates
+    coordinates: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point"
+      },
+      coordinates: {
+        type: [Number], // [lng, lat]
+        required: true
+      }
+    },
+
+    // Points / highlights
+    points: [{ type: String }],
+
+    // Images
+    images: [String],
+    coverImage: String,
 
     // Visit details
     bestTimeToVisit: {
       type: String,
-      enum: ["Morning", "Afternoon", "Evening", "Sunrise", "Sunset", "Anytime"],
+      enum: ["Morning", "Afternoon", "Evening", "Sunrise", "Sunset", "Anytime"]
     },
     crowded: { type: Boolean, default: false },
     familyFriendly: { type: Boolean, default: true },
@@ -21,35 +45,44 @@ const contributionSchema = new mongoose.Schema(
     accessibility: {
       type: String,
       enum: ["Easy", "Moderate", "Difficult", "Unknown"],
-      default: "Unknown",
+      default: "Unknown"
     },
 
-    // Activities & facilities
-    activities: [{ type: String }], // e.g., ["Sightseeing", "Photography"]
-    facilities: [{ type: String }], // e.g., ["Parking", "Toilets", "Cafes"]
+    // Activities & Facilities
+    activities: [{ type: String }],
+    facilities: [{ type: String }],
 
-    // Ratings (1–5)
+    // Ratings
     ratings: {
       overall: { type: Number, min: 1, max: 5 },
       cleanliness: { type: Number, min: 1, max: 5 },
       safety: { type: Number, min: 1, max: 5 },
       crowd: { type: Number, min: 1, max: 5 },
-      valueForMoney: { type: Number, min: 1, max: 5 },
+      valueForMoney: { type: Number, min: 1, max: 5 }
     },
 
-    // Tips / notes
     tips: String,
-    hiddenGems: [String], // optional array of tips or nearby attractions
+    hiddenGems: [String],
 
-    // Social interactions
+    // Social
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }],
-    
-    // Admin verification
+
+    // Admin Approval
     verified: { type: Boolean, default: false },
+
+    // If approved → link to created Location
+    approvedLocation: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Location",
+      default: null
+    }
   },
   { timestamps: true }
 );
+
+// Geo index
+contributionSchema.index({ coordinates: "2dsphere" });
 
 const Contribution = mongoose.model("Contribution", contributionSchema);
 export default Contribution;
