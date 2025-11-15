@@ -206,25 +206,82 @@ export const verifyContribution = async (req, res) => {
       return res.status(400).json({ message: "Contribution already verified" });
     }
 
-    // ---------- DISTRICT ----------
+    // -----------------------------------------
+    // FIND DISTRICT OR CREATE NEW
+    // -----------------------------------------
     let districtDoc = await District.findOne({
       name: { $regex: `^${c.district}$`, $options: "i" }
     });
+
     if (!districtDoc) {
       districtDoc = await District.create({ name: c.district });
     }
 
-    // --------------------------------------------------
-    //  ⭐ AUTO-GENERATED CONTENT FROM USER CONTRIBUTION ⭐
-    // --------------------------------------------------
+    // -----------------------------------------
+    // ELEVATION FETCH
+    // -----------------------------------------
+    async function getElevation(lat, lng) {
+      try {
+        const response = await fetch(
+          `https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`
+        );
+        const data = await response.json();
 
-    // Subtitle based on activities or best time
+        if (!data.results?.length) return null;
+        return data.results[0].elevation; // meters
+      } catch (err) {
+        console.error("Elevation API error:", err);
+        return null;
+      }
+    }
+
+    // -----------------------------------------
+    // TERRAIN DETECTION
+    // -----------------------------------------
+    function detectTerrain(elevation, activities, description) {
+      const text = (description || "").toLowerCase();
+
+      // ✔ Activity based
+      if (activities?.includes("Beach / Swimming")) return "Beach";
+      if (activities?.includes("Adventure / Trekking")) return "Hilly";
+      if (activities?.includes("Photography") && elevation > 600) return "Mountain";
+
+      // ✔ Keyword based
+      if (text.includes("forest") || text.includes("trees") || text.includes("wildlife")) return "Forest";
+      if (text.includes("desert") || text.includes("sand") || text.includes("dunes")) return "Desert";
+      if (text.includes("rock") || text.includes("cliff") || text.includes("boulder")) return "Rocky";
+      if (text.includes("river") || text.includes("stream") || text.includes("waterfall")) return "River";
+      if (text.includes("town") || text.includes("city") || text.includes("urban")) return "Urban";
+
+      // ✔ Elevation based
+      if (elevation !== null) {
+        if (elevation < 30) return "Beach";
+        if (elevation < 200) return "Plain";
+        if (elevation < 800) return "Hilly";
+        return "Mountain";
+      }
+
+      return "Unknown";
+    }
+
+    // Get elevation from coordinates
+    const [lng, lat] = c.coordinates.coordinates;
+    const elevation = await getElevation(lat, lng);
+
+    // Final terrain guess
+    const autoTerrain = detectTerrain(elevation, c.activities, c.description);
+
+    // -----------------------------------------
+    // AUTO-GENERATED SUBTITLE
+    // -----------------------------------------
     const generatedSubtitle =
       c.activities?.length
         ? `A popular place for ${c.activities.slice(0, 3).join(", ")}`
         : `A notable destination in ${c.district}`;
 
-    // Points list (short facts)
+    // -----------------------------------------
+    // AUTO-GENERATED POINTS
+    // -----------------------------------------
     const points = [];
 
     if (c.bestTimeToVisit)
@@ -243,7 +300,7 @@ export const verifyContribution = async (req, res) => {
       `Crowd level: ${c.crowded ? "High" : "Low to Moderate"}`
     );
 
-    // Ratings summary
+    // Ratings
     if (c.ratings) {
       const r = c.ratings;
       points.push(
@@ -254,31 +311,28 @@ export const verifyContribution = async (req, res) => {
       );
     }
 
-    // Generated descriptive paragraph
+    // -----------------------------------------
+    // AUTO-GENERATED DESCRIPTION
+    // -----------------------------------------
     const generatedDescription = `
 ${c.description || ""}
 
-Visitors report that the atmosphere is ${
+Visitors describe the atmosphere as ${
       c.crowded ? "often crowded" : "generally calm"
-    } and family friendly. ${
-      c.bestTimeToVisit
-        ? `The recommended time to visit is ${c.bestTimeToVisit}.`
-        : ""
+    } and family-friendly. ${
+      c.bestTimeToVisit ? `Recommended time to visit: ${c.bestTimeToVisit}.` : ""
     } ${
       c.hiddenGems?.length
-        ? `Some hidden gems mentioned include: ${c.hiddenGems.join(", ")}.`
+        ? `Hidden gems: ${c.hiddenGems.join(", ")}.`
         : ""
     } ${
-      c.tips
-        ? `Traveler tips: ${c.tips}`
-        : ""
+      c.tips ? `Traveler tips: ${c.tips}` : ""
     }
 `.replace(/\s+/g, " ").trim();
 
-    // --------------------------------------------------
-    //  CREATE LOCATION WITH GENERATED CONTENT
-    // --------------------------------------------------
-
+    // -----------------------------------------
+    // CREATE LOCATION
+    // -----------------------------------------
     const newLocation = await Location.create({
       name: c.title,
       subtitle: generatedSubtitle,
@@ -289,7 +343,7 @@ Visitors report that the atmosphere is ${
       images: c.images || [],
       coverImage: c.coverImage || "",
 
-      terrain: "",
+      terrain: autoTerrain,  // ⭐ AUTO TERRAIN HERE ⭐
       reviewLength: 0,
       review: 0,
 
@@ -297,14 +351,13 @@ Visitors report that the atmosphere is ${
       contributions: [c._id],
       comments: [],
 
-      // Keep raw user suggestions for admin editing
+      // Store raw data for admin reference
       contributionMeta: {
-        userSubtitle: c.subtitle,
-        userHiddenGems: c.hiddenGems,
-        userActivities: c.activities,
-        userFacilities: c.facilities,
-        userTips: c.tips,
-        userRatings: c.ratings,
+        rawActivities: c.activities,
+        rawFacilities: c.facilities,
+        rawTips: c.tips,
+        rawHiddenGems: c.hiddenGems,
+        rawRatings: c.ratings,
       },
     });
 
@@ -315,7 +368,7 @@ Visitors report that the atmosphere is ${
 
     return res.status(200).json({
       success: true,
-      message: "Contribution verified + Auto content generated",
+      message: "Contribution verified + Auto terrain + Auto content",
       location: newLocation,
     });
 
