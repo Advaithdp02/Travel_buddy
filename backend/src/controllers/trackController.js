@@ -3,11 +3,7 @@ import Location from "../models/Location.js";
 import User from "../models/User.js"
 import mongoose from "mongoose";
 
-// POST /api/track
-import PageVisit from "../models/PageVisit.js";
-import Location from "../models/Location.js";
-import User from "../models/User.js";
-import mongoose from "mongoose";
+
 
 // -------------------- POST /api/track --------------------
 export const trackVisit = async (req, res) => {
