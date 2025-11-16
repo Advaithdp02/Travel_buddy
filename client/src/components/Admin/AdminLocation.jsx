@@ -49,7 +49,6 @@ export default function AdminLocations() {
   });
   const [deletedImages, setDeletedImages] = useState([]);
 
-
   const token = localStorage.getItem("token");
 
   const fetchLocations = async () => {
@@ -126,100 +125,98 @@ export default function AdminLocations() {
   };
 
   const handleSubmit = async () => {
-  try {
-    const data = new FormData();
-    data.append("name", formData.name);
-    data.append("terrain", formData.terrain);
-    data.append("district", formData.district);
-    data.append("description", formData.description);
-    data.append("subtitle", formData.subtitle);
-    data.append("review", formData.review); 
-    data.append("reviewLength", formData.reviewLength); 
+    try {
+      const data = new FormData();
+      data.append("name", formData.name);
+      data.append("terrain", formData.terrain);
+      data.append("district", formData.district);
+      data.append("description", formData.description);
+      data.append("subtitle", formData.subtitle);
+      data.append("review", formData.review);
+      data.append("reviewLength", formData.reviewLength);
 
-    data.append(
-      "coordinates",
-      JSON.stringify([
-        parseFloat(formData.longitude),
-        parseFloat(formData.latitude),
-      ])
-    );
+      data.append(
+        "coordinates",
+        JSON.stringify([
+          parseFloat(formData.longitude),
+          parseFloat(formData.latitude),
+        ])
+      );
 
-    const pointsArray = formData.points.split(",").map((p) => p.trim());
-    pointsArray.forEach((point) => data.append("points", point));
+      const pointsArray = formData.points.split(",").map((p) => p.trim());
+      pointsArray.forEach((point) => data.append("points", point));
 
-    // emergency
-    data.append("roadSideAssistant", formData.roadSideAssistant);
-    data.append("policeStation", formData.policeStation);
-    data.append("ambulance", formData.ambulance);
-    data.append("localSupport", formData.localSupport);
+      // emergency
+      data.append("roadSideAssistant", formData.roadSideAssistant);
+      data.append("policeStation", formData.policeStation);
+      data.append("ambulance", formData.ambulance);
+      data.append("localSupport", formData.localSupport);
 
-    // ADD 🔥 deleted images
-    if (deletedImages.length > 0) {
-      data.append("deletedImages", JSON.stringify(deletedImages));
-    }
-
-    // new upload
-    if (formData.images?.length > 0) {
-      for (const file of formData.images) {
-        data.append("images", file);
+      // ADD 🔥 deleted images
+      if (deletedImages.length > 0) {
+        data.append("deletedImages", JSON.stringify(deletedImages));
       }
-    }
 
-    let res;
-    if (formData._id) {
-      // UPDATE
-      res = await axios.put(
-        `${BACKEND_URL}/locations/${formData._id}`,
-        data,
-        {
+      // new upload
+      if (formData.images?.length > 0) {
+        for (const file of formData.images) {
+          data.append("images", file);
+        }
+      }
+
+      let res;
+      if (formData._id) {
+        // UPDATE
+        res = await axios.put(
+          `${BACKEND_URL}/locations/${formData._id}`,
+          data,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+      } else {
+        // CREATE
+        res = await axios.post(`${BACKEND_URL}/locations`, data, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
-        }
-      );
-    } else {
-      // CREATE
-      res = await axios.post(`${BACKEND_URL}/locations`, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
+        });
+      }
+
+      // Reload
+      await fetchLocations();
+
+      setOpen(false);
+      setFormData({
+        _id: null,
+        name: "",
+        terrain: "",
+        district: "",
+        description: "",
+        longitude: "",
+        latitude: "",
+        subtitle: "",
+        points: "",
+        images: [],
+        existingImages: [],
+        review: "",
+        reviewLength: "",
+        roadSideAssistant: "",
+        policeStation: "",
+        ambulance: "",
+        localSupport: "",
       });
+
+      // RESET deleted images
+      setDeletedImages([]);
+    } catch (err) {
+      console.error("Submit failed:", err);
     }
-
-    // Reload
-    await fetchLocations();
-
-    setOpen(false);
-    setFormData({
-      _id: null,
-      name: "",
-      terrain: "",
-      district: "",
-      description: "",
-      longitude: "",
-      latitude: "",
-      subtitle: "",
-      points: "",
-      images: [],
-      existingImages: [],
-      review: "",
-      reviewLength: "",
-      roadSideAssistant: "",
-      policeStation: "",
-      ambulance: "",
-      localSupport: "",
-    });
-
-    // RESET deleted images
-    setDeletedImages([]);
-
-  } catch (err) {
-    console.error("Submit failed:", err);
-  }
-};
-
+  };
 
   // ---------------- Filtering ----------------
   const filteredLocations = locations.filter((loc) => {
@@ -238,15 +235,15 @@ export default function AdminLocations() {
 
   if (loading)
     return <Typography className="p-6">Loading locations...</Typography>;
-const handleRemoveImage = (imgUrl) => {
-  setFormData((prev) => ({
-    ...prev,
-    existingImages: prev.existingImages.filter((img) => img !== imgUrl),
-  }));
+  const handleRemoveImage = (imgUrl) => {
+    setFormData((prev) => ({
+      ...prev,
+      existingImages: prev.existingImages.filter((img) => img !== imgUrl),
+    }));
 
-  // Track deleted image for backend
-  setDeletedImages((prev) => [...prev, imgUrl]);
-};
+    // Track deleted image for backend
+    setDeletedImages((prev) => [...prev, imgUrl]);
+  };
 
   return (
     <Box className="p-6 bg-gray-100 min-h-screen">
