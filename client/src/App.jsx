@@ -103,6 +103,7 @@ function GlobalAuthCheck() {
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
     localStorage.removeItem("location_id");
+    localStorage.removeItem("isLoggedIn");
     navigate("/login");
   };
 
