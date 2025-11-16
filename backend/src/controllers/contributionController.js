@@ -4,7 +4,7 @@ import User from "../models/User.js";
 import District from "../models/District.js";
 import mongoose from "mongoose";
 import { uploadToS3, deleteFromS3 } from "./uploadController.js";
-import ContributionComment from "../models/ContributionComment.js";
+
 
 export const createContribution = async (req, res) => {
   try {

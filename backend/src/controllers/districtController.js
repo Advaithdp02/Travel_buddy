@@ -132,27 +132,41 @@ export const getNearestDistrict = async (req, res) => {
       return res.status(400).json({ message: "Latitude and longitude are required" });
     }
 
+    // Step 1: find nearest
     const nearest = await District.findOne({
       coordinates: {
         $near: {
           $geometry: {
             type: "Point",
-            coordinates: [parseFloat(lon), parseFloat(lat)], // [longitude, latitude]
-          },
-        },
-      },
+            coordinates: [parseFloat(lon), parseFloat(lat)]
+          }
+        }
+      }
     }).populate("locations");
 
     if (!nearest) {
       return res.status(404).json({ message: "No nearby districts found" });
     }
 
-    res.json(nearest);
+    // Step 2: get same state districts
+    const sameStateDistricts = await District.find({
+      State: nearest.State
+    });
+
+    // Step 3: merge into ONE JSON object
+    const finalResponse = {
+      ...nearest.toObject(),       // flatten nearest district fields
+      relatedDistricts: sameStateDistricts // add rest of districts in same state
+    };
+
+    res.json(finalResponse);
+
   } catch (err) {
     console.error("Get Nearest District Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // 🟢 Get districts by State
 export const getDistrictByState = async (req, res) => {

@@ -8,23 +8,21 @@ import {
   TimeClock,
   LocationWithTime,
 } from "./Icons"; 
-import CommunityModal from "../components/CommunityModal";
+
 
 export const DistrictPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [district, setDistrict] = useState(null);
-  const [comments, setComments] = useState([]);
-  const [contributions, setContributions] = useState([]);
+
   const [places, setPlaces] = useState([]);
   const [filters, setFilters] = useState({
     state: "Kerala",
     district: "",
     terrain: "Mountain",
   });
-  const [activeTab, setActiveTab] = useState("comments");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [allDistricts, setAllDistricts] = useState([]);
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -65,17 +63,6 @@ useEffect(() => {
         state: districtData.State,
       }));
 
-      // 💬 Fetch comments
-      const commentsRes = await axios.get(
-        `${BACKEND_URL}/comments/district/${id}`
-      );
-      setComments(commentsRes.data);
-
-      // 🙌 Fetch contributions
-      const contribRes = await axios.get(
-        `${BACKEND_URL}/contributions/district/${id}`
-      );
-      setContributions(contribRes.data);
 
       // 🌍 Fetch all districts (for the dropdown filter)
       const allDistrictsRes = await axios.get(`${BACKEND_URL}/districts`);
@@ -274,156 +261,7 @@ useEffect(() => {
         </div>
       </section>
 
-      {/* 💬 Comments & Contributions */}
-      <section className="py-16 px-8 bg-[#fbebff] ">
-  <div className="container mx-auto">
-    <h2 className="text-3xl font-bold text-brand-dark mb-6">Community Insights</h2>
 
-    {/* Tabs */}
-    <div className="flex gap-6 mb-8 border-b border-gray-200">
-      <button
-        onClick={() => setActiveTab("comments")}
-        className={`pb-2 font-semibold transition-colors ${
-          activeTab === "comments"
-            ? "border-b-2 border-[#9156F1] text-brand-dark"
-            : "text-brand-gray"
-        }`}
-      >
-        Comments
-      </button>
-      <button
-        onClick={() => setActiveTab("contributions")}
-        className={`pb-2 font-semibold transition-colors ${
-          activeTab === "contributions"
-            ? "border-b-2 border-[#9156F1] text-brand-dark"
-            : "text-brand-gray"
-        }`}
-      >
-        Contributions
-      </button>
-    </div>
-
-    {/* Tab Content */}
-    <div className="relative overflow-hidden">
-      <div
-        className="flex transition-transform duration-500"
-        style={{
-          transform:
-            activeTab === "comments" ? "translateX(0%)" : "translateX(-50%)",
-          width: "200%",
-        }}
-      >
-        {/* -------------------- COMMENTS TAB -------------------- */}
-        <div className="w-full pr-6">
-          <div className="space-y-4 h-[300px] overflow-y-auto">
-            {comments.length === 0 && (
-              <div className="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center">
-                <span className="text-gray-500">No comments yet</span>
-                
-              </div>
-            )}
-
-            {comments.length > 0 &&
-              comments.map((c, index) => (
-                <div
-                  key={c._id || index}
-                  className="bg-white p-4 rounded-xl shadow border border-gray-100 cursor-pointer flex gap-3 hover:shadow-md transition"
-                  onClick={() => setIsModalOpen(true)}
-                >
-                  {/* Profile Picture */}
-                  {c.user?.profilePic && (
-                    <img
-                      src={c.user.profilePic}
-                      alt={c.user.name || c.user.username}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  )}
-
-                  <div className="flex-1">
-                    <p className="text-sm text-brand-dark font-semibold">
-                      {c.user?.name || c.user?.username || "Unknown User"}
-                    </p>
-                    <p className="text-gray-600 text-sm mt-1">{c.text}</p>
-                  </div>
-                </div>
-              ))}
-
-            {comments.length > 0 && comments.length <= 3 && (
-              <></>
-            )}
-          </div>
-        </div>
-
-        {/* -------------------- CONTRIBUTIONS TAB -------------------- */}
-        <div className="w-full pl-6">
-          <div className="space-y-4 h-[300px] overflow-y-auto">
-            {contributions.length === 0 ? (
-              <div className="bg-white p-4 rounded-xl shadow border border-gray-100 text-gray-500">
-                No contributions yet
-              </div>
-            ) : (
-              contributions.map((c, index) => (
-                <div
-                  key={c._id || index}
-                  className="bg-white p-4 rounded-xl shadow border border-gray-100 cursor-pointer hover:shadow-md transition"
-                  onClick={() => setIsModalOpen(true)}
-                >
-                  {/* Cover Image */}
-                  {c.coverImage && (
-                    <img
-                      src={c.coverImage}
-                      alt="Contribution cover"
-                      className="w-full h-32 object-cover rounded-lg mb-3"
-                    />
-                  )}
-
-                  {/* Description / Preview */}
-                  <h4 className="font-semibold text-brand-dark text-lg">
-                    {c.location?.name || "Contribution"}
-                  </h4>
-                  <p className="text-gray-600 text-sm mt-1 line-clamp-2">
-                    {c.description || "No description provided."}
-                  </p>
-
-                  {/* Meta Info */}
-                  <div className="text-xs text-brand-gray mt-2 flex justify-between items-center">
-                    <span>
-                      Shared by{" "}
-                      <strong>
-                        {c.user?.name || c.user?.username || "Unknown User"}
-                      </strong>
-                    </span>
-                    {c.bestTimeToVisit && (
-                      <span className="text-[11px] text-gray-500 italic">
-                        Best time: {c.bestTimeToVisit}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Likes */}
-                  <div className="mt-2 text-xs text-gray-500">
-                    ❤️ {c.likes?.length || 0}{" "}
-                    {c.likes?.length === 1 ? "like" : "likes"}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-      <CommunityModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        activeTab={activeTab}
-        comments={comments}
-        contributions={contributions}
-        districtPage={true}
-      />
       {/* Filter & Places Section */}
             {/* 🌍 Filter Section */}
 <section className="bg-[#fbebff] py-12 px-8">

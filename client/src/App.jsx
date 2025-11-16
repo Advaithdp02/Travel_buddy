@@ -25,7 +25,7 @@ import ForgotPassword from "./components/ForgotPassword";
 const App = () => {
   return (
     <Router>
-      {/* ✅ Move inside Router so it has access to `useLocation()` */}
+     
       <TrackingWrapper />
       <ScrollToTop />
       <Header />
@@ -57,7 +57,6 @@ const App = () => {
   );
 };
 
-// 👇 A simple wrapper component that runs the tracking hook
 function TrackingWrapper() {
   useUserTracking();
   return null; // no UI

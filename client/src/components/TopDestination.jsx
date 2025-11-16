@@ -19,17 +19,7 @@ const ArrowButton = ({ direction = "right", onClick }) => {
 };
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-// 🔹 Utility: Calculate distance between two coordinates (Haversine formula)
-const getDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // km
-  const toRad = (deg) => (deg * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-};
+
 
 export const TopDestinations = ({ userCoords }) => {
   const [destinations, setDestinations] = useState([]);
@@ -37,35 +27,38 @@ export const TopDestinations = ({ userCoords }) => {
   const bgImage = "/TopDestinationBG.png";
 
   useEffect(() => {
-    const fetchDestinations = async () => {
-      try {
-        const res = await fetch(`${BACKEND_URL}/districts`);
-        const data = await res.json();
+  const fetchDestinations = async () => {
+    try {
+      if (!userCoords) return;
 
-        if (userCoords && Array.isArray(data)) {
-          const sorted = data
-            .map((loc) => ({
-              ...loc,
-              distance: getDistance(
-                userCoords.latitude,
-                userCoords.longitude,
-                loc.coordinates?.coordinates?.[1], // latitude
-                loc.coordinates?.coordinates?.[0]  // longitude
-              ),
-            }))
-            .sort((a, b) => a.distance - b.distance).slice(0, 10);; // nearest first
+      const { latitude, longitude } = userCoords;
 
-          setDestinations([...sorted]); // force re-render
-          
-        } else {
-          setDestinations(data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch destinations:", err);
+      const res = await fetch(
+        `${BACKEND_URL}/districts/nearest/${latitude}/${longitude}`
+      );
+
+      const districtData = await res.json();
+
+      // the API returns ONE merged object like:
+      // { ...district, relatedDistricts: [...] }
+
+      // If the frontend expects a list → send relatedDistricts
+      if (districtData?.relatedDistricts) {
+        setDestinations(districtData.relatedDistricts);
+      } 
+      else {
+        // fallback → just nearest district
+        setDestinations([districtData]);
       }
-    };
-    fetchDestinations();
-  }, [userCoords]);
+      
+    } catch (err) {
+      console.error("Failed to fetch nearest destinations:", err);
+    }
+  };
+
+  fetchDestinations();
+}, [userCoords]);
+
 
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
