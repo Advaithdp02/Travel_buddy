@@ -216,13 +216,12 @@ export const createLocation = async (req, res) => {
 
 
 // ====================== UPDATE LOCATION ======================
-
 export const updateLocation = async (req, res) => {
   try {
     const location = await Location.findById(req.params.id).populate("district");
     if (!location) return res.status(404).json({ message: "Location not found" });
 
-    const oldDistrictId = location.district?._id?.toString(); // save old district
+    const oldDistrictId = location.district?._id?.toString();
 
     const {
       name,
@@ -234,11 +233,12 @@ export const updateLocation = async (req, res) => {
       review,
       reviewLength,
       coordinates,
-      images: clearImagesFlag,
       roadSideAssistant,
       policeStation,
       ambulance,
       localSupport,
+      clearImagesFlag,
+      deletedImages,
     } = req.body;
 
     // ========== BASIC FIELDS ==========
@@ -251,7 +251,7 @@ export const updateLocation = async (req, res) => {
     if (review) location.review = review;
     if (reviewLength) location.reviewLength = reviewLength;
 
-    // ========== NEW FIELDS ==========
+    // ========== NEW EMERGENCY FIELDS ==========
     if (roadSideAssistant !== undefined) location.roadSideAssistant = roadSideAssistant;
     if (policeStation !== undefined) location.policeStation = policeStation;
     if (ambulance !== undefined) location.ambulance = ambulance;
@@ -259,68 +259,96 @@ export const updateLocation = async (req, res) => {
 
     // ========== UPDATE COORDINATES ==========
     if (coordinates && coordinates !== "[]" && coordinates !== "[null,null]") {
-  let coordsArray;
+      let coordsArray;
 
-  try {
-    coordsArray = JSON.parse(coordinates);
-  } catch (err) {
-    return res.status(400).json({ message: "Invalid coordinates format" });
-  }
-
-  if (
-    !Array.isArray(coordsArray) ||
-    coordsArray.length !== 2 ||
-    coordsArray.some((v) => typeof v !== "number" || isNaN(v))
-  ) {
-    return res
-      .status(400)
-      .json({ message: "Coordinates must be two valid numbers [lng, lat]" });
-  }
-
-  location.coordinates = { type: "Point", coordinates: coordsArray };
-}
-
-
-    // ========== S3 IMAGE HANDLING ==========
-    const districtDoc = await District.findById(location.district);
-    const folderName = `places/${districtDoc.name}/${location.name}`;
-
-    if (req.files?.length > 0) {
-      if (location.images?.length > 0) {
-        for (const oldUrl of location.images) await deleteFromS3(oldUrl);
+      try {
+        coordsArray = JSON.parse(coordinates);
+      } catch (err) {
+        return res.status(400).json({ message: "Invalid coordinates format" });
       }
 
-      const uploadedUrls = [];
-      for (const file of req.files) {
-        const url = await uploadToS3(file.buffer, file.originalname, folderName, file.mimetype);
-        uploadedUrls.push(url);
+      if (
+        !Array.isArray(coordsArray) ||
+        coordsArray.length !== 2 ||
+        coordsArray.some((v) => typeof v !== "number" || isNaN(v))
+      ) {
+        return res
+          .status(400)
+          .json({ message: "Coordinates must be two valid numbers [lng, lat]" });
       }
-      location.images = uploadedUrls;
+
+      location.coordinates = { type: "Point", coordinates: coordsArray };
     }
 
-    // Clear images only if explicitly requested
-    if (clearImagesFlag === "" || clearImagesFlag === null) {
-      if (location.images?.length > 0) {
-        for (const oldUrl of location.images) await deleteFromS3(oldUrl);
+    // =====================================================================
+    // =========================   IMAGE HANDLING   =========================
+    // =====================================================================
+
+    // ========== DELETE SELECTED IMAGES ==========
+    if (deletedImages) {
+      let toDelete = [];
+
+      try {
+        toDelete = JSON.parse(deletedImages);
+      } catch {
+        return res.status(400).json({ message: "Invalid deletedImages format" });
+      }
+
+      if (Array.isArray(toDelete)) {
+        for (const imgUrl of toDelete) {
+          await deleteFromS3(imgUrl);
+        }
+
+        // Remove from DB
+        location.images = location.images.filter((img) => !toDelete.includes(img));
+      }
+    }
+
+    // ========== UPLOAD NEW FILES (APPEND) ==========
+    if (req.files?.length > 0) {
+      const districtDoc = await District.findById(location.district);
+      const folderName = `places/${districtDoc.name}/${location.name}`;
+
+      const uploadedUrls = [];
+
+      for (const file of req.files) {
+        const url = await uploadToS3(
+          file.buffer,
+          file.originalname,
+          folderName,
+          file.mimetype
+        );
+        uploadedUrls.push(url);
+      }
+
+      // Append new images instead of replacing old ones
+      location.images = [...location.images, ...uploadedUrls];
+    }
+
+    // ========== CLEAR ALL IMAGES (ONLY IF EXPLICIT TRUE) ==========
+    if (clearImagesFlag === "true") {
+      for (const oldUrl of location.images) {
+        await deleteFromS3(oldUrl);
       }
       location.images = [];
     }
 
-    // Save updated location
+    // =====================================================================
+    // ======================= END IMAGE HANDLING ===========================
+    // =====================================================================
+
     await location.save();
 
     // ========== DISTRICT REASSIGNMENT LOGIC ==========
     const newDistrictId = location.district.toString();
 
     if (oldDistrictId !== newDistrictId) {
-      // Remove from old district
       await District.findByIdAndUpdate(oldDistrictId, {
         $pull: { locations: location._id },
       });
 
-      // Add to new district only if not already added
       await District.findByIdAndUpdate(newDistrictId, {
-        $addToSet: { locations: location._id }, // prevents duplicates
+        $addToSet: { locations: location._id },
       });
     }
 

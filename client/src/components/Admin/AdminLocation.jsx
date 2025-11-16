@@ -40,13 +40,15 @@ export default function AdminLocations() {
     points: "",
     images: [],
     existingImages: [],
-    review: "",          // ✅ added
-    reviewLength: "",    // ✅ added
+    review: "", // ✅ added
+    reviewLength: "", // ✅ added
     roadSideAssistant: "",
     policeStation: "",
     ambulance: "",
     localSupport: "",
   });
+  const [deletedImages, setDeletedImages] = useState([]);
+
 
   const token = localStorage.getItem("token");
 
@@ -113,8 +115,8 @@ export default function AdminLocations() {
       latitude: loc.coordinates?.coordinates[1] || "",
       images: [],
       existingImages: loc.images || [],
-      review: loc.review || "",                  // ✅ added
-      reviewLength: loc.reviewLength || "",      // ✅ added
+      review: loc.review || "", // ✅ added
+      reviewLength: loc.reviewLength || "", // ✅ added
       roadSideAssistant: loc.roadSideAssistant || "",
       policeStation: loc.policeStation || "",
       ambulance: loc.ambulance || "",
@@ -124,84 +126,100 @@ export default function AdminLocations() {
   };
 
   const handleSubmit = async () => {
-    try {
-      const data = new FormData();
-      data.append("name", formData.name);
-      data.append("terrain", formData.terrain);
-      data.append("district", formData.district);
-      data.append("description", formData.description);
-      data.append("subtitle", formData.subtitle);
-      data.append("review", formData.review);                // ✅ added
-      data.append("reviewLength", formData.reviewLength);    // ✅ added
+  try {
+    const data = new FormData();
+    data.append("name", formData.name);
+    data.append("terrain", formData.terrain);
+    data.append("district", formData.district);
+    data.append("description", formData.description);
+    data.append("subtitle", formData.subtitle);
+    data.append("review", formData.review); 
+    data.append("reviewLength", formData.reviewLength); 
 
-      data.append(
-        "coordinates",
-        JSON.stringify([parseFloat(formData.longitude), parseFloat(formData.latitude)])
-      );
+    data.append(
+      "coordinates",
+      JSON.stringify([
+        parseFloat(formData.longitude),
+        parseFloat(formData.latitude),
+      ])
+    );
 
-      const pointsArray = formData.points.split(",").map((p) => p.trim());
-      pointsArray.forEach((point) => data.append("points", point));
+    const pointsArray = formData.points.split(",").map((p) => p.trim());
+    pointsArray.forEach((point) => data.append("points", point));
 
-      // emergency
-      data.append("roadSideAssistant", formData.roadSideAssistant);
-      data.append("policeStation", formData.policeStation);
-      data.append("ambulance", formData.ambulance);
-      data.append("localSupport", formData.localSupport);
+    // emergency
+    data.append("roadSideAssistant", formData.roadSideAssistant);
+    data.append("policeStation", formData.policeStation);
+    data.append("ambulance", formData.ambulance);
+    data.append("localSupport", formData.localSupport);
 
-      if (formData.images?.length > 0) {
-        for (const file of formData.images) {
-          data.append("images", file);
-        }
-      }
-
-      let res;
-      if (formData._id) {
-        // UPDATE
-        res = await axios.put(`${BACKEND_URL}/locations/${formData._id}`, data, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        });
-      } else {
-        // CREATE
-        res = await axios.post(`${BACKEND_URL}/locations`, data, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        });
-      }
-
-      // 🔥 Reload locations
-      await fetchLocations();
-
-      // Reset + close
-      setOpen(false);
-      setFormData({
-        _id: null,
-        name: "",
-        terrain: "",
-        district: "",
-        description: "",
-        longitude: "",
-        latitude: "",
-        subtitle: "",
-        points: "",
-        images: [],
-        existingImages: [],
-        review: "",
-        reviewLength: "",
-        roadSideAssistant: "",
-        policeStation: "",
-        ambulance: "",
-        localSupport: "",
-      });
-
-    } catch (err) {
-      console.error("Submit failed:", err);
+    // ADD 🔥 deleted images
+    if (deletedImages.length > 0) {
+      data.append("deletedImages", JSON.stringify(deletedImages));
     }
-  };
+
+    // new upload
+    if (formData.images?.length > 0) {
+      for (const file of formData.images) {
+        data.append("images", file);
+      }
+    }
+
+    let res;
+    if (formData._id) {
+      // UPDATE
+      res = await axios.put(
+        `${BACKEND_URL}/locations/${formData._id}`,
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+    } else {
+      // CREATE
+      res = await axios.post(`${BACKEND_URL}/locations`, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+    }
+
+    // Reload
+    await fetchLocations();
+
+    setOpen(false);
+    setFormData({
+      _id: null,
+      name: "",
+      terrain: "",
+      district: "",
+      description: "",
+      longitude: "",
+      latitude: "",
+      subtitle: "",
+      points: "",
+      images: [],
+      existingImages: [],
+      review: "",
+      reviewLength: "",
+      roadSideAssistant: "",
+      policeStation: "",
+      ambulance: "",
+      localSupport: "",
+    });
+
+    // RESET deleted images
+    setDeletedImages([]);
+
+  } catch (err) {
+    console.error("Submit failed:", err);
+  }
+};
+
 
   // ---------------- Filtering ----------------
   const filteredLocations = locations.filter((loc) => {
@@ -209,15 +227,26 @@ export default function AdminLocations() {
       loc.name.toLowerCase().includes(search.toLowerCase()) ||
       loc.terrain?.toLowerCase().includes(search.toLowerCase()) ||
       loc.subtitle?.toLowerCase().includes(search.toLowerCase()) ||
-      (loc.points && loc.points.join(" ").toLowerCase().includes(search.toLowerCase()));
+      (loc.points &&
+        loc.points.join(" ").toLowerCase().includes(search.toLowerCase()));
 
-    const matchesDistrict = !districtFilter || loc.district?._id === districtFilter;
+    const matchesDistrict =
+      !districtFilter || loc.district?._id === districtFilter;
 
     return matchesSearch && matchesDistrict;
   });
 
   if (loading)
     return <Typography className="p-6">Loading locations...</Typography>;
+const handleRemoveImage = (imgUrl) => {
+  setFormData((prev) => ({
+    ...prev,
+    existingImages: prev.existingImages.filter((img) => img !== imgUrl),
+  }));
+
+  // Track deleted image for backend
+  setDeletedImages((prev) => [...prev, imgUrl]);
+};
 
   return (
     <Box className="p-6 bg-gray-100 min-h-screen">
@@ -252,7 +281,11 @@ export default function AdminLocations() {
         </FormControl>
       </Box>
 
-      <Button variant="contained" onClick={() => setOpen(true)} className="mb-4">
+      <Button
+        variant="contained"
+        onClick={() => setOpen(true)}
+        className="mb-4"
+      >
         + Add New Location
       </Button>
 
@@ -262,7 +295,11 @@ export default function AdminLocations() {
           <Grid item xs={12} sm={6} md={4} key={loc._id}>
             <Card className="shadow-md rounded-xl bg-white overflow-hidden">
               {loc.images && loc.images[0] && (
-                <img src={loc.images[0]} alt={loc.name} className="w-full h-48 object-cover" />
+                <img
+                  src={loc.images[0]}
+                  alt={loc.name}
+                  className="w-full h-48 object-cover"
+                />
               )}
 
               <CardContent>
@@ -277,10 +314,17 @@ export default function AdminLocations() {
                 </Typography>
 
                 <Box className="flex gap-2 mt-4">
-                  <Button variant="contained" onClick={() => openModalForEdit(loc)}>
+                  <Button
+                    variant="contained"
+                    onClick={() => openModalForEdit(loc)}
+                  >
                     Edit
                   </Button>
-                  <Button variant="contained" color="error" onClick={() => handleDelete(loc._id)}>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={() => handleDelete(loc._id)}
+                  >
                     Delete
                   </Button>
                 </Box>
@@ -305,11 +349,22 @@ export default function AdminLocations() {
           </Typography>
 
           {/* BASIC FIELDS */}
-          <TextField label="Name" name="name" fullWidth margin="dense" value={formData.name} onChange={handleFormChange} />
+          <TextField
+            label="Name"
+            name="name"
+            fullWidth
+            margin="dense"
+            value={formData.name}
+            onChange={handleFormChange}
+          />
 
           <FormControl fullWidth margin="dense">
             <InputLabel>District</InputLabel>
-            <Select name="district" value={formData.district} onChange={handleFormChange}>
+            <Select
+              name="district"
+              value={formData.district}
+              onChange={handleFormChange}
+            >
               {districts.map((d) => (
                 <MenuItem key={d._id} value={d._id}>
                   {d.name}
@@ -318,38 +373,90 @@ export default function AdminLocations() {
             </Select>
           </FormControl>
 
-          <TextField label="Description" name="description" multiline minRows={3} fullWidth margin="dense" value={formData.description} onChange={handleFormChange} />
+          <TextField
+            label="Description"
+            name="description"
+            multiline
+            minRows={3}
+            fullWidth
+            margin="dense"
+            value={formData.description}
+            onChange={handleFormChange}
+          />
 
-          <TextField label="Subtitle" name="subtitle" fullWidth margin="dense" value={formData.subtitle} onChange={handleFormChange} />
+          <TextField
+            label="Subtitle"
+            name="subtitle"
+            fullWidth
+            margin="dense"
+            value={formData.subtitle}
+            onChange={handleFormChange}
+          />
 
           {/* REVIEW FIELDS */}
-          <TextField label="Review" name="review" fullWidth margin="dense" value={formData.review} onChange={handleFormChange} />
+          <TextField
+            label="Review"
+            name="review"
+            fullWidth
+            margin="dense"
+            value={formData.review}
+            onChange={handleFormChange}
+          />
 
-          <TextField label="Review Length" name="reviewLength" fullWidth margin="dense" value={formData.reviewLength} onChange={handleFormChange} />
+          <TextField
+            label="Review Length"
+            name="reviewLength"
+            fullWidth
+            margin="dense"
+            value={formData.reviewLength}
+            onChange={handleFormChange}
+          />
 
-          <TextField label="Points (comma separated)" name="points" fullWidth margin="dense" value={formData.points} onChange={handleFormChange} />
+          <TextField
+            label="Points (comma separated)"
+            name="points"
+            fullWidth
+            margin="dense"
+            value={formData.points}
+            onChange={handleFormChange}
+          />
 
           {/* TERRAIN */}
           <FormControl fullWidth margin="dense">
             <InputLabel>Terrain</InputLabel>
-            <Select name="terrain" value={formData.terrain} onChange={handleFormChange}>
+            <Select
+              name="terrain"
+              value={formData.terrain}
+              onChange={handleFormChange}
+            >
               <MenuItem value="Mountain">Mountain</MenuItem>
               <MenuItem value="Beach">Beach</MenuItem>
               <MenuItem value="Forest">Forest</MenuItem>
               <MenuItem value="Desert">Desert</MenuItem>
               <MenuItem value="Plains">Plains</MenuItem>
-                <MenuItem value="Hilly">Hilly</MenuItem>
-                <MenuItem value="River">River</MenuItem>
-                <MenuItem value="Rocky">Rocky</MenuItem>
-                <MenuItem value="Urban">Urban</MenuItem>
-                
+              <MenuItem value="Hilly">Hilly</MenuItem>
+              <MenuItem value="River">River</MenuItem>
+              <MenuItem value="Rocky">Rocky</MenuItem>
+              <MenuItem value="Urban">Urban</MenuItem>
             </Select>
           </FormControl>
 
           {/* COORDINATES */}
           <Box className="flex gap-2 mt-2">
-            <TextField label="Longitude" name="longitude" fullWidth value={formData.longitude} onChange={handleFormChange} />
-            <TextField label="Latitude" name="latitude" fullWidth value={formData.latitude} onChange={handleFormChange} />
+            <TextField
+              label="Longitude"
+              name="longitude"
+              fullWidth
+              value={formData.longitude}
+              onChange={handleFormChange}
+            />
+            <TextField
+              label="Latitude"
+              name="latitude"
+              fullWidth
+              value={formData.latitude}
+              onChange={handleFormChange}
+            />
           </Box>
 
           {/* EMERGENCY CONTACTS */}
@@ -357,18 +464,62 @@ export default function AdminLocations() {
             Emergency Contacts
           </Typography>
 
-          <TextField label="Roadside Assistance" name="roadSideAssistant" fullWidth margin="dense" value={formData.roadSideAssistant} onChange={handleFormChange} />
-          <TextField label="Police Station" name="policeStation" fullWidth margin="dense" value={formData.policeStation} onChange={handleFormChange} />
-          <TextField label="Ambulance" name="ambulance" fullWidth margin="dense" value={formData.ambulance} onChange={handleFormChange} />
-          <TextField label="Local Support" name="localSupport" fullWidth margin="dense" value={formData.localSupport} onChange={handleFormChange} />
+          <TextField
+            label="Roadside Assistance"
+            name="roadSideAssistant"
+            fullWidth
+            margin="dense"
+            value={formData.roadSideAssistant}
+            onChange={handleFormChange}
+          />
+          <TextField
+            label="Police Station"
+            name="policeStation"
+            fullWidth
+            margin="dense"
+            value={formData.policeStation}
+            onChange={handleFormChange}
+          />
+          <TextField
+            label="Ambulance"
+            name="ambulance"
+            fullWidth
+            margin="dense"
+            value={formData.ambulance}
+            onChange={handleFormChange}
+          />
+          <TextField
+            label="Local Support"
+            name="localSupport"
+            fullWidth
+            margin="dense"
+            value={formData.localSupport}
+            onChange={handleFormChange}
+          />
 
           {/* IMAGE UPLOAD */}
-          <input type="file" name="images" multiple onChange={handleFormChange} className="mt-2" />
+          <input
+            type="file"
+            name="images"
+            multiple
+            onChange={handleFormChange}
+            className="mt-2"
+          />
 
           {formData.existingImages?.length > 0 && (
             <Box className="flex gap-2 mt-2 flex-wrap">
               {formData.existingImages.map((img, idx) => (
-                <img key={idx} src={img} className="w-20 h-20 object-cover rounded" />
+                <Box key={idx} className="relative">
+                  <img src={img} className="w-20 h-20 object-cover rounded" />
+
+                  {/* DELETE BUTTON */}
+                  <button
+                    onClick={() => handleRemoveImage(img)}
+                    className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full text-xs"
+                  >
+                    ✕
+                  </button>
+                </Box>
               ))}
             </Box>
           )}
