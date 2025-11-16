@@ -517,29 +517,23 @@ export const DestinationPage = ({}) => {
   };
 
   const getBackgroundImage = (terrain) => {
-    switch (terrain) {
-      case "Beach":
-        return "/beach.jpg";
-      case "Mountain":
-        return "/mountain.jpg";
-      case "Forest":
-        return "/forest.jpg";
-      case "Desert":
-        return "/desert.jpg";
-      case "Plains":
-        return "/plains.jpg";
-      case "Rocky":
-        return "/Rocky.jpg";
-      case "River":
-        return "/river.jpg";
-      case "Hilly":
-        return "/Hilly.jpg";
-      case "Urban":
-        return "/Urban.jpg";
-      default:
-        return "/default.jpg";
-    }
+    if (!terrain) return "/default.jpg";
+
+    const t = terrain.toLowerCase(); // normalize
+
+    if (t.includes("beach")) return "/beach.jpg";
+    if (t.includes("mountain")) return "/mountain.jpg";
+    if (t.includes("forest")) return "/forest.jpg";
+    if (t.includes("desert")) return "/desert.jpg";
+    if (t.includes("plain")) return "/plains.jpg";
+    if (t.includes("rocky")) return "/Rocky.jpg";
+    if (t.includes("river")) return "/river.jpg";
+    if (t.includes("hilly")) return "/Hilly.jpg";
+    if (t.includes("urban")) return "/Urban.jpg";
+
+    return "/default.jpg";
   };
+
   useEffect(() => {
     const scroll = document.getElementById("places-scroll");
     const track = document.getElementById("places-scroll-track");
