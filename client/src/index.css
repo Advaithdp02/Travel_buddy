@@ -1,3 +1,6 @@
+/* index.css */
+@import "leaflet/dist/leaflet.css";
+
 /* Default — Desktop, Laptop, Tablet (Normal 100%) */
 #root {
   zoom: 1;

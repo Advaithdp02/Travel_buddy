@@ -529,3 +529,29 @@ export const getTopHotels = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch top hotels" });
   }
 };
+
+
+export const getGeoStats = async (req, res) => {
+  try {
+    const visits = await PageVisit.find({
+      "geoLocation.coordinates": { $exists: true, $ne: null }
+    })
+      .populate("user", "username name") // fetch minimal user data
+      .lean();
+
+    const result = visits.map((v) => ({
+      username: v.user?.username || v.user?.name || "Anonymous",
+      location: v.location,
+      district: v.district,
+      timeSpent: v.timeSpent,
+      exitReason: v.exitReason,
+      visitedAt: v.visitedAt,
+      geoLocation: v.geoLocation, // contains { type: "Point", coordinates: [lng, lat] }
+    }));
+
+    res.json({ success: true, data: result });
+  } catch (err) {
+    console.error("Geo Stats Error:", err);
+    res.status(500).json({ success: false, message: "Failed to load geo stats" });
+  }
+};

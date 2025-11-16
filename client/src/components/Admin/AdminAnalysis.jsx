@@ -16,6 +16,8 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import GeoAnalyticsMap from "./GeoAnalyticsMap";
+
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -258,6 +260,8 @@ export default function AdminAnalysis() {
           <Tab label="User Analytics" />
           <Tab label="Location Analytics" />
           <Tab label="Hotel Analytics" />
+          <Tab label="Geo Map Analytics" />
+
         </Tabs>
 
         {/* USER TABLE */}
@@ -355,6 +359,12 @@ export default function AdminAnalysis() {
             </Paper>
           )
         )}
+        {tabValue === 3 && (
+  <Paper sx={{ height: 650, width: "100%", p: 2 }}>
+    <GeoAnalyticsMap />
+  </Paper>
+)}
+
 
         {/* USER MODAL */}
         <Modal open={openModal} onClose={handleCloseModal}>

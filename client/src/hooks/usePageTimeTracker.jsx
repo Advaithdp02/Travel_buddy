@@ -20,6 +20,24 @@ const usePageTimeTracker = () => {
 
   const getUserId = () => localStorage.getItem("userId") || null;
 
+  // ⭐ Add geolocation reader
+  const getUserCoords = () => {
+    const coords = localStorage.getItem("userCoords");
+    if (!coords) return null;
+
+    try {
+      const { latitude, longitude } = JSON.parse(coords);
+      if (!latitude || !longitude) return null;
+
+      return {
+        type: "Point",
+        coordinates: [longitude, latitude], // GeoJSON format
+      };
+    } catch (err) {
+      return null;
+    }
+  };
+
   const sendTrackingData = async (path, timeSpent, reason = "unknown", isSiteExit = false) => {
     try {
       await fetch(`${BACKEND_URL}/track`, {
@@ -33,6 +51,7 @@ const usePageTimeTracker = () => {
           exitReason: reason,
           isSiteExit,
           isAnonymous: !getUserId(),
+          geoLocation: getUserCoords(), // ⭐ NEW
         }),
         keepalive: true,
       });
@@ -41,15 +60,17 @@ const usePageTimeTracker = () => {
     }
   };
 
-  // Detect exit reason
+  // Exit reason detection
   const detectExitReason = (eventType = "unknown") => {
     if (eventType === "beforeunload") return "tab_closed_or_reload";
     return "unknown";
   };
 
+  // Send + reset timer
   const handleSendAndReset = (path, reason, isSiteExit) => {
     const now = Date.now();
     const timeSpent = Math.floor((now - startTimeRef.current) / 1000);
+
     sendTrackingData(path, timeSpent, reason, isSiteExit);
     startTimeRef.current = now;
   };
@@ -57,19 +78,17 @@ const usePageTimeTracker = () => {
   const resetIdleTimer = () => {
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     idleTimerRef.current = setTimeout(() => {
-      // User idle for 15 min, consider as site exit
       handleSendAndReset(location.pathname, "idle_timeout", true);
     }, IDLE_TIMEOUT);
   };
 
   useEffect(() => {
-    // SPA route change
+    // SPA navigation tracking
     if (prevPathRef.current !== location.pathname) {
       handleSendAndReset(prevPathRef.current, "internal_navigation", false);
       prevPathRef.current = location.pathname;
     }
 
-    // Set idle timer
     resetIdleTimer();
 
     const handleActivity = () => resetIdleTimer();
@@ -83,10 +102,9 @@ const usePageTimeTracker = () => {
       if (link && link.href && !link.href.includes(window.location.host)) {
         handleSendAndReset(location.pathname, "external_link", true);
       }
-      handleActivity(); // any click resets idle timer
+      handleActivity();
     };
 
-    // Events to detect user activity
     window.addEventListener("beforeunload", handleBeforeUnload);
     document.addEventListener("click", handleClick);
     document.addEventListener("mousemove", handleActivity);
