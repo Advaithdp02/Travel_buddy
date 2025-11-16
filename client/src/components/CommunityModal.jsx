@@ -8,8 +8,7 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 // Helper: Trim text with short/full versions
 const trimText = (text, limit) => {
   if (!text) return { short: "", full: "", trimmed: false };
-  if (text.length <= limit)
-    return { short: text, full: text, trimmed: false };
+  if (text.length <= limit) return { short: text, full: text, trimmed: false };
 
   return {
     short: text.slice(0, limit) + "...",
@@ -30,8 +29,6 @@ export const CommunityModal = ({
   const [replyText, setReplyText] = useState("");
   const [expandedComments, setExpandedComments] = useState({});
   const [expandedReplies, setExpandedReplies] = useState({});
-  
-
 
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
@@ -57,7 +54,6 @@ export const CommunityModal = ({
       window.scrollTo(0, parseInt(scrollY || "0") * -1);
     }
   }, [isOpen]);
-
 
   // Expand toggles
   const toggleExpandComment = (id) =>
@@ -195,7 +191,6 @@ export const CommunityModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-[#fbebff] w-11/12 md:w-4/5 lg:w-3/4 max-h-[90vh] p-0 rounded-xl shadow-2xl overflow-y-auto relative">
-
         {/* Header - Sticky */}
         <div className="flex justify-between items-center p-4 border-b bg-[#fbebff] sticky top-0 z-50">
           <h3 className="text-3xl font-bold text-[#310a49]">Comments</h3>
@@ -207,7 +202,6 @@ export const CommunityModal = ({
         {/* Comments */}
         <div className="p-4">
           <div className="space-y-4 mb-4">
-
             {comments.map((c) => {
               const hasLiked = c.likes.includes(userId);
               const isOwnComment = c.user?._id === userId;
@@ -215,8 +209,10 @@ export const CommunityModal = ({
               const isCommentExpanded = expandedComments[c._id];
 
               return (
-                <div key={c._id} className="bg-white border rounded-2xl p-4 shadow-md">
-
+                <div
+                  key={c._id}
+                  className="bg-white border rounded-2xl p-4 shadow-md"
+                >
                   {/* User */}
                   <div
                     className="flex items-center gap-2 cursor-pointer"
@@ -252,7 +248,7 @@ export const CommunityModal = ({
                   </div>
 
                   {/* Buttons */}
-                  <div className="flex items-center gap-3 text-sm">
+                  <div className="flex items-center gap-5 text-sm">
                     <button
                       className={`flex items-center gap-1 px-2 py-1 rounded-full ${
                         hasLiked
@@ -291,8 +287,10 @@ export const CommunityModal = ({
                         const isReplyExpanded = expandedReplies[r._id];
 
                         return (
-                          <div key={r._id} className="bg-[#fbebff]/60 p-3 rounded-lg text-sm shadow-md break-words">
-
+                          <div
+                            key={r._id}
+                            className="bg-[#fbebff]/60 p-3 rounded-lg text-sm shadow-md break-words"
+                          >
                             {/* User */}
                             <p
                               className="font-semibold cursor-pointer hover:text-[#9156F1]"
@@ -308,14 +306,18 @@ export const CommunityModal = ({
                             {/* Reply text */}
                             <div className="mt-1 break-words whitespace-pre-wrap">
                               <p>
-                                {isReplyExpanded ? replyTrim.full : replyTrim.short}
+                                {isReplyExpanded
+                                  ? replyTrim.full
+                                  : replyTrim.short}
 
                                 {replyTrim.trimmed && (
                                   <span
                                     onClick={() => toggleExpandReply(r._id)}
                                     className="text-[#9156F1] text-xs font-semibold cursor-pointer ml-1"
                                   >
-                                    {isReplyExpanded ? "Read less" : "Read more"}
+                                    {isReplyExpanded
+                                      ? "Read less"
+                                      : "Read more"}
                                   </span>
                                 )}
                               </p>
@@ -364,14 +366,15 @@ export const CommunityModal = ({
 
           {/* Add comment */}
           {!districtPage && (
-            <div className="flex items-center gap-2 mt-3">
+            <div className="flex flex-wrap items-center gap-2 mt-3">
               <input
                 type="text"
                 placeholder="Add a comment..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="flex-grow border border-[#9156F1] rounded-lg p-2 focus:ring-2 focus:ring-[#9156F1]"
+                className="flex-grow min-w-[200px] border border-[#9156F1] rounded-lg p-2 focus:ring-2 focus:ring-[#9156F1]"
               />
+
               <button
                 onClick={handleAddComment}
                 className="bg-[#9156F1] text-white px-4 py-2 rounded-lg hover:bg-[#7a3be0]"

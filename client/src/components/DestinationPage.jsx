@@ -367,8 +367,7 @@ useEffect(() => {
           userCoordinates: [userCoords.longitude, userCoords.latitude],
           destinationCoords: [maplat, maplon],
         }));
-        console.log(mapInfo);
-
+        
         setMapKey((prev) => prev + 1);
 
         // Latitude & Longitude for weather
@@ -769,6 +768,7 @@ useEffect(() => {
 
       <CommunityModal
   isOpen={isModalOpen}
+   onClose={() => setIsModalOpen(false)}
   comments={comments}
   refreshComments={fetchComments}
 />

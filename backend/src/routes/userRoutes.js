@@ -17,6 +17,7 @@ import {
   requestPasswordReset,
   verifyResetOTP,
   resetPassword,
+  verifyToken,
 } from "../controllers/userController.js";
 import { protect,staffProtect } from "../middlewares/authMiddleware.js";
 
@@ -32,6 +33,8 @@ router.post("/login", loginUser);
 
 // ---------------- PROFILE ----------------
 router.get("/profile", protect, getUserProfile);
+
+router.get("/verify", protect, verifyToken);
 
 // ✅ Allow updating profile info + image uploads
 router.put("/profile",protect,upload.fields([

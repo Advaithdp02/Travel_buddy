@@ -508,3 +508,17 @@ export const resetPassword = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+export const verifyToken = async (req, res) => {
+  // If this runs, protect() already validated the token
+  res.status(200).json({
+    success: true,
+    message: "Token is valid",
+    user: {
+      id: req.user._id,
+      name: req.user.name,
+      username: req.user.username,
+      role: req.user.role,
+    },
+  });
+};

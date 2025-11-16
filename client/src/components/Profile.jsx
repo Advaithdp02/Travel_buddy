@@ -94,6 +94,8 @@ export const Profile = () => {
       // Optionally: refetch wishlist from backend to restore state
     }
   };
+  
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -182,17 +184,15 @@ export const Profile = () => {
 
           {/* Profile Info */}
           <div className="relative -mt-12 md:-mt-16 flex md:px-0 px-5 md:py-0 py-2 flex-col md:flex-col items-start space-x-0 md:space-x-6">
-  <div className="flex-shrink-0 ml-4 md:ml-10 -mt-6 md:mt-0">
-    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg overflow-hidden">
-      <img
-        src={userData?.profilePic || "/defaultProfilePic.webp"}
-        alt="profile"
-        className="w-full h-full object-cover"
-      />
-    </div>
-  </div>
-
-
+            <div className="flex-shrink-0 ml-4 md:ml-10 -mt-6 md:mt-0">
+              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg overflow-hidden">
+                <img
+                  src={userData?.profilePic || "/defaultProfilePic.webp"}
+                  alt="profile"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
 
             <div className="flex flex-col md:flex-row ml-4 md:ml-10 mt-4 justify-between md:px-4 w-full">
               <div className="flex flex-col justify-center mb-3 md:mb-5">
@@ -298,19 +298,29 @@ export const Profile = () => {
                       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {wishlist.map((item) => (
                           <div
-                            key={item.id}
+                            key={item._id}
                             className="bg-white shadow-md rounded-xl p-3 flex items-center justify-between hover:shadow-lg transition-shadow"
                           >
                             <div className="flex items-center gap-3">
                               <img
                                 src={item.images?.[0] || "/defaultCoverPic.png"}
                                 alt={item.name}
-                                className="w-14 h-14 rounded-lg object-cover border border-gray-200"
+                                className="w-14 h-14 rounded-lg object-cover border border-gray-200 cursor-pointer"
+                                onClick={() =>
+                                  navigate(`/destination/${item._id}`)
+                                }
                               />
+
                               <div className="flex flex-col">
-                                <p className="font-medium text-gray-800 text-sm md:text-base">
+                                <p
+                                  className="font-medium text-gray-800 text-sm md:text-base cursor-pointer"
+                                  onClick={() =>
+                                    navigate(`/destination/${item._id}`)
+                                  }
+                                >
                                   {item.name}
                                 </p>
+
                                 <p className="font-medium text-gray-800 text-xs md:text-sm">
                                   {item.district.name}
                                 </p>
@@ -335,187 +345,194 @@ export const Profile = () => {
 
                 {/* followers, following, contribution — unchanged */}
                 {activeTab === "followers" && (
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
-                    {followers.length ? (
-                      followers.map((f) => (
-                        <div
-                          key={f._id}
-                          className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
-                          onClick={(e) => {
-                            if (e.target.tagName !== "BUTTON") {
-                              navigate(`/profile/${f.username}`);
-                            }
-                          }}
-                        >
-                          <div className="flex items-center gap-4">
-                            <img
-                              src={f.profilePic || "/defaultProfilePic.webp"}
-                              alt={f.username}
-                              className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
-                            />
-                            <div>
-                              <p className="font-semibold text-gray-800">
-                                {f.username}
-                              </p>
+                  <div className="max-h-[400px] overflow-y-auto pr-2">
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+                      {followers?.length ? (
+                        followers.map((f) => (
+                          <div
+                            key={f._id}
+                            className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+                            onClick={() => navigate(`/profile/${f.username}`)}
+                          >
+                            <div className="flex items-center gap-4">
+                              <img
+                                src={f.profilePic || "/defaultProfilePic.webp"}
+                                alt={f.username}
+                                className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
+                              />
+                              <div>
+                                <p className="font-semibold text-gray-800">
+                                  {f.username}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-gray-500 text-center col-span-full mt-4">
-                        No followers yet
-                      </p>
-                    )}
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-center col-span-full mt-4">
+                          No followers yet
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
 
                 {/* Following Tab */}
                 {activeTab === "following" && (
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
-                    {following.length ? (
-                      following.map((f) => (
-                        <div
-                          key={f._id}
-                          className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
-                          onClick={(e) => {
-                            if (e.target.tagName !== "BUTTON") {
-                              navigate(`/profile/${f.username}`);
-                            }
-                          }}
-                        >
-                          <div className="flex items-center gap-4">
-                            <img
-                              src={f.profilePic || "/defaultProfilePic.webp"}
-                              alt={f.username}
-                              className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
-                            />
-                            <div>
-                              <p className="font-semibold text-gray-800">
-                                {f.username}
-                              </p>
-                            </div>
-                          </div>
+  <div className="max-h-[400px] overflow-y-auto pr-2">
 
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              try {
-                                const token = localStorage.getItem("token");
-                                if (!token) return;
-
-                                const res = await fetch(
-                                  `${BACKEND_URL}/users/${f.username}/toggle-follow`,
-                                  {
-                                    method: "POST",
-                                    headers: {
-                                      Authorization: `Bearer ${token}`,
-                                    },
-                                  }
-                                );
-
-                                if (!res.ok)
-                                  throw new Error("Failed to unfollow");
-
-                                setFollowing((prev) =>
-                                  prev.filter((u) => u._id !== f._id)
-                                );
-                              } catch (err) {
-                                console.error(err);
-                                alert("Error unfollowing user");
-                              }
-                            }}
-                            className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors"
-                          >
-                            Unfollow
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-gray-500 text-center col-span-full mt-4">
-                        Not following anyone yet
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {activeTab === "contribution" && (
-  <div>
-    {/* Add New Place Button */}
-    <button
-      className="w-full bg-[#9156F1] text-white py-2 rounded-lg flex items-center justify-center mb-4 hover:bg-yellow-500"
-      onClick={() => setIsAddContributionOpen(true)}
-    >
-      <span className="mr-2">+</span> Add New Place
-    </button>
-
-    {/* Sub-tabs (All / Approved / Pending) */}
-    <div className="flex space-x-4 mb-4">
-      {["all", "approved", "pending"].map((sub) => (
-        <button
-          key={sub}
-          className={`flex-1 py-2 font-semibold rounded-lg transition-colors ${
-            contribSubTab === sub
-              ? "bg-[#310a49] text-white"
-              : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-          }`}
-          onClick={() => setContribSubTab(sub)}
-        >
-          {sub.charAt(0).toUpperCase() + sub.slice(1)}
-        </button>
-      ))}
-    </div>
-
-    {/* Contributions Grid */}
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {userContributions
-        .filter((c) => {
-          if (contribSubTab === "all") return true;
-          if (contribSubTab === "approved") return c.verified;
-          if (contribSubTab === "pending") return !c.verified;
-        })
-        .map((c) => (
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+      {following.length ? (
+        following.map((f) => (
           <div
-            key={c._id}
-            className={`bg-white rounded-lg shadow p-4 cursor-pointer border-t-4 ${
-              c.verified ? "border-green-500" : "border-yellow-500"
-            }`}
+            key={f._id}
+            className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={(e) => {
+              if (e.target.tagName !== "BUTTON") {
+                navigate(`/profile/${f.username}`);
+              }
+            }}
           >
-            {/* Cover Image */}
-            <img
-              src={c.coverImage || "/defaultCoverPic.png"}
-              alt={c.title || "Contribution"}
-              className="w-full h-40 object-cover rounded mb-2"
-            />
+            <div className="flex items-center gap-4">
+              <img
+                src={f.profilePic || "/defaultProfilePic.webp"}
+                alt={f.username}
+                className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
+              />
+              <div>
+                <p className="font-semibold text-gray-800">
+                  {f.username}
+                </p>
+              </div>
+            </div>
 
-            {/* Title */}
-            <h4 className="font-bold text-lg">
-              {c.title || "Untitled Place"}
-            </h4>
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                try {
+                  const token = localStorage.getItem("token");
+                  if (!token) return;
 
-            {/* District */}
-            <p className="text-sm text-gray-500">
-              {c.district || "Unknown District"}
-            </p>
+                  const res = await fetch(
+                    `${BACKEND_URL}/users/follow/${f.username}`,
+                    {
+                      method: "PUT",
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                      },
+                    }
+                  );
 
-            {/* Description Preview */}
-            <p className="text-sm text-gray-600 line-clamp-2 mt-1">
-              {c.description}
-            </p>
+                  if (!res.ok) throw new Error("Failed to unfollow");
 
-            {/* Status Badge */}
-            <p
-              className={`mt-2 text-xs font-semibold ${
-                c.verified ? "text-green-600" : "text-yellow-600"
-              }`}
+                  setFollowing((prev) =>
+                    prev.filter((u) => u._id !== f._id)
+                  );
+                } catch (err) {
+                  console.error(err);
+                  alert("Error unfollowing user");
+                }
+              }}
+              className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors"
             >
-              {c.verified ? "✅ Approved" : "🕒 Pending Approval"}
-            </p>
+              Unfollow
+            </button>
           </div>
-        ))}
+        ))
+      ) : (
+        <p className="text-gray-500 text-center col-span-full mt-4">
+          Not following anyone yet
+        </p>
+      )}
     </div>
+
   </div>
 )}
 
+
+                {activeTab === "contribution" && (
+                  <div>
+                    {/* Add New Place Button */}
+                    <button
+                      className="w-full bg-[#9156F1] text-white py-2 rounded-lg flex items-center justify-center mb-4 hover:bg-yellow-500"
+                      onClick={() => setIsAddContributionOpen(true)}
+                    >
+                      <span className="mr-2">+</span> Add New Place
+                    </button>
+
+                    {/* Sub-tabs (All / Approved / Pending) */}
+                    <div className="flex space-x-4 mb-4">
+                      {["all", "approved", "pending"].map((sub) => (
+                        <button
+                          key={sub}
+                          className={`flex-1 py-2 font-semibold rounded-lg transition-colors ${
+                            contribSubTab === sub
+                              ? "bg-[#310a49] text-white"
+                              : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                          }`}
+                          onClick={() => setContribSubTab(sub)}
+                        >
+                          {sub.charAt(0).toUpperCase() + sub.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Contributions Grid */}
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {userContributions
+                        .filter((c) => {
+                          if (contribSubTab === "all") return true;
+                          if (contribSubTab === "approved") return c.verified;
+                          if (contribSubTab === "pending") return !c.verified;
+                        })
+                        .map((c) => (
+                          <div
+                            key={c._id}
+                            className={`bg-white rounded-lg shadow p-4 cursor-pointer border-t-4 ${
+                              c.verified
+                                ? "border-green-500"
+                                : "border-yellow-500"
+                            }`}
+                          >
+                            {/* Cover Image */}
+                            <img
+                              src={c.coverImage || "/defaultCoverPic.png"}
+                              alt={c.title || "Contribution"}
+                              className="w-full h-40 object-cover rounded mb-2"
+                            />
+
+                            {/* Title */}
+                            <h4 className="font-bold text-lg">
+                              {c.title || "Untitled Place"}
+                            </h4>
+
+                            {/* District */}
+                            <p className="text-sm text-gray-500">
+                              {c.district || "Unknown District"}
+                            </p>
+
+                            {/* Description Preview */}
+                            <p className="text-sm text-gray-600 line-clamp-2 mt-1">
+                              {c.description}
+                            </p>
+
+                            {/* Status Badge */}
+                            <p
+                              className={`mt-2 text-xs font-semibold ${
+                                c.verified
+                                  ? "text-green-600"
+                                  : "text-yellow-600"
+                              }`}
+                            >
+                              {c.verified
+                                ? "✅ Approved"
+                                : "🕒 Pending Approval"}
+                            </p>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

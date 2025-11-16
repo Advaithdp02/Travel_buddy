@@ -1,5 +1,5 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import React, { useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 
 import "./App.css";
 
@@ -22,12 +22,15 @@ import useUserTracking from "./hooks/usePageTimeTracker";
 import ScrollToTop from "./components/ScrollToTop";
 import ForgotPassword from "./components/ForgotPassword";
 
-const App = () => {
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+export default function App() {
   return (
     <Router>
-     
+      <GlobalAuthCheck />   {/* 🔥 Automatic token validation at app start */}
       <TrackingWrapper />
       <ScrollToTop />
+
       <Header />
 
       <Routes>
@@ -41,6 +44,8 @@ const App = () => {
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/district/:id" element={<DistrictPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        {/* ADMIN PANEL */}
         <Route
           path="/admin"
           element={
@@ -49,17 +54,65 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
 
       <Footer />
     </Router>
   );
-};
-
-function TrackingWrapper() {
-  useUserTracking();
-  return null; // no UI
 }
 
-export default App;
+/* ----------------------------------------------------
+   🔥 GLOBAL AUTH CHECK — RUNS ONCE WHEN SITE LOADS
+---------------------------------------------------- */
+function GlobalAuthCheck() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    // No token? logout directly
+    if (!token) {
+      logoutUser();
+      return;
+    }
+
+    const verifyToken = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/users/verify`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.status === 401 || res.status === 403) {
+          logoutUser();
+        }
+      } catch (err) {
+        console.error("Token verification failed:", err);
+        logoutUser();
+      }
+    };
+
+    verifyToken();
+  }, []);
+
+  const logoutUser = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("location_id");
+    navigate("/login");
+  };
+
+  return null;
+}
+
+/* ----------------------------------------------------
+   Page Tracking Wrapper (Your existing code)
+---------------------------------------------------- */
+function TrackingWrapper() {
+  useUserTracking();
+  return null;
+}

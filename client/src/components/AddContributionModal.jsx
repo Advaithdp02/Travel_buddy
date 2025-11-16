@@ -21,13 +21,23 @@ const facilitiesList = [
   "Entry Fee / Paid",
 ];
 
-const bestTimes = ["Morning", "Afternoon", "Evening", "Sunrise", "Sunset", "Anytime"];
+const bestTimes = [
+  "Morning",
+  "Afternoon",
+  "Evening",
+  "Sunrise",
+  "Sunset",
+  "Anytime",
+];
 const accessibilityOptions = ["Easy", "Moderate", "Difficult", "Unknown"];
 
 const Backend_URL = import.meta.env.VITE_BACKEND_URL;
 
 export const AddContributionModal = ({ isOpen, onClose }) => {
   const [districts, setDistricts] = useState([]);
+  const [states, setStates] = useState([]); // <-- ADDED
+  const [selectedState, setSelectedState] = useState(""); // <-- ADDED
+
   const [previewImages, setPreviewImages] = useState([]);
   const [coverPreview, setCoverPreview] = useState(null);
   const fileInputRef = useRef(null);
@@ -100,7 +110,6 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
   const handleImagesChange = (e) => {
     const files = Array.from(e.target.files);
     setFormData((prev) => ({ ...prev, images: files }));
-
     setPreviewImages(files.map((file) => URL.createObjectURL(file)));
   };
 
@@ -110,7 +119,10 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
       file.type.startsWith("image/")
     );
     setFormData((prev) => ({ ...prev, images: [...prev.images, ...files] }));
-    setPreviewImages((prev) => [...prev, ...files.map((f) => URL.createObjectURL(f))]);
+    setPreviewImages((prev) => [
+      ...prev,
+      ...files.map((f) => URL.createObjectURL(f)),
+    ]);
   };
 
   // -----------------------------
@@ -130,7 +142,6 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
       data.append("description", formData.description);
       data.append("latitude", formData.latitude);
       data.append("longitude", formData.longitude);
-
       data.append("bestTimeToVisit", formData.bestTimeToVisit);
       data.append("crowded", formData.crowded);
       data.append("familyFriendly", formData.familyFriendly);
@@ -142,7 +153,6 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
       data.append("ratings", JSON.stringify(formData.ratings));
       data.append("hiddenGems", JSON.stringify(formData.hiddenGems));
       data.append("points", JSON.stringify(formData.points));
-
       data.append("tips", formData.tips);
 
       if (formData.coverImage) data.append("coverImage", formData.coverImage);
@@ -174,6 +184,10 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
         const res = await fetch(`${Backend_URL}/districts`);
         const data = await res.json();
         setDistricts(data);
+
+        // Extract unique states ---- ADDED
+        const uniqueStates = [...new Set(data.map((d) => d.State))];
+        setStates(uniqueStates);
       } catch (err) {
         console.error("Error loading districts:", err);
       }
@@ -201,17 +215,59 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
           ×
         </button>
 
-        {/* Title */}
+        {/* ---------------- STATE (NEW) ---------------- */}
         <div className="mb-4">
-          <label className="font-semibold">Title *</label>
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
+          {/* Title */}
+          <div className="mb-4">
+            <label className="font-semibold">Title *</label>
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded-lg"
+              placeholder="Eg: Dharmadam Island"
+            />
+          </div>
+          <label className="font-semibold">State *</label>
+          <select
+            value={selectedState}
+            onChange={(e) => {
+              setSelectedState(e.target.value);
+              setFormData((prev) => ({ ...prev, district: "" }));
+            }}
+            className="w-full border px-3 py-2 rounded-lg"
+          >
+            <option value="">Select State</option>
+            {states.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mb-4">
+          <label className="font-semibold">District *</label>
+          <select
+            name="district"
+            value={formData.district}
             onChange={handleChange}
             className="w-full border px-3 py-2 rounded-lg"
-            placeholder="Eg: Dharmadam Island"
-          />
+            disabled={!selectedState}
+          >
+            <option value="">
+              {selectedState ? "Select District" : "Select State First"}
+            </option>
+
+            {districts
+              .filter((d) => d.State === selectedState)
+              .map((d) => (
+                <option key={d._id} value={d.name}>
+                  {d.name}
+                </option>
+              ))}
+          </select>
         </div>
 
         {/* Subtitle */}
@@ -225,24 +281,6 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
             className="w-full border px-3 py-2 rounded-lg"
             placeholder="Eg: A hidden gem in Kannur"
           />
-        </div>
-
-        {/* District */}
-        <div className="mb-4">
-          <label className="font-semibold">District *</label>
-          <select
-            name="district"
-            value={formData.district}
-            onChange={handleChange}
-            className="w-full border px-3 py-2 rounded-lg"
-          >
-            <option value="">Select district</option>
-            {districts.map((d) => (
-              <option key={d._id} value={d.name}>
-                {d.name}
-              </option>
-            ))}
-          </select>
         </div>
 
         {/* Coordinates */}
@@ -299,7 +337,7 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
 
         {/* Image Upload */}
         <div
-          className="border-2 border-dashed p-4 rounded-lg text-center"
+          className="border-2 h-[200px] border-dashed p-4 rounded-lg text-center"
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           onClick={() => fileInputRef.current.click()}
