@@ -4,9 +4,15 @@ import User from "../models/User.js"
 import mongoose from "mongoose";
 
 // POST /api/track
+import PageVisit from "../models/PageVisit.js";
+import Location from "../models/Location.js";
+import User from "../models/User.js";
+import mongoose from "mongoose";
+
+// -------------------- POST /api/track --------------------
 export const trackVisit = async (req, res) => {
   try {
-    const { user, sessionId, path, timeSpent, isAnonymous, deviceInfo } = req.body;
+    const { user, sessionId, path, timeSpent, isAnonymous, deviceInfo, geoLocation } = req.body;
 
     if (!sessionId || !path || timeSpent == null) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -16,11 +22,14 @@ export const trackVisit = async (req, res) => {
     let districtName = "Unknown";
 
     try {
-      const segments = path.split("/"); // handle paths like '/locations/64f123abc...'
+      const segments = path.split("/");
       const possibleId = segments[segments.length - 1];
 
       if (mongoose.Types.ObjectId.isValid(possibleId)) {
-        const locationDoc = await Location.findById(possibleId).populate("district", "name").select("name district");
+        const locationDoc = await Location.findById(possibleId)
+          .populate("district", "name")
+          .select("name district");
+
         if (locationDoc) {
           locationName = locationDoc.name;
           districtName = locationDoc.district?.name || "Unknown";
@@ -28,6 +37,15 @@ export const trackVisit = async (req, res) => {
       }
     } catch (err) {
       console.warn("Failed to resolve location ID:", err);
+    }
+
+    // --- Build GeoJSON safely ---
+    let geoJSON = null;
+    if (geoLocation?.coordinates?.length === 2) {
+      geoJSON = {
+        type: "Point",
+        coordinates: geoLocation.coordinates, // [lng, lat]
+      };
     }
 
     // Save page visit
@@ -38,12 +56,87 @@ export const trackVisit = async (req, res) => {
       district: districtName,
       timeSpent,
       isAnonymous,
-      deviceInfo: deviceInfo || {}
+      deviceInfo: deviceInfo || {},
+      geoLocation: geoJSON
     });
 
     res.status(201).json({ success: true, visit });
   } catch (err) {
     console.error("Track error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// -------------------- POST /api/track/exit --------------------
+export const recordExit = async (req, res) => {
+  try {
+    const {
+      sessionId,
+      userId,
+      location,
+      timeSpent,
+      exitReason,
+      isSiteExit,
+      hotelId,
+      destinationUrl,
+      geoLocation // <-- NEW
+    } = req.body;
+
+    if (!sessionId || !location) {
+      return res.status(400).json({ success: false, message: "Missing sessionId or location" });
+    }
+
+    let locationName = typeof location === "string" ? location : location.name || "";
+    let districtName = "Unknown";
+
+    try {
+      let locationId = "";
+      if (typeof location === "object" && location.id) locationId = location.id;
+      else if (typeof location === "string") {
+        const segments = location.split("/");
+        const possibleId = segments[segments.length - 1];
+        if (mongoose.Types.ObjectId.isValid(possibleId)) locationId = possibleId;
+      }
+
+      if (locationId) {
+        const locationDoc = await Location.findById(locationId)
+          .populate("district", "name")
+          .select("name district");
+        if (locationDoc) {
+          locationName = locationDoc.name;
+          districtName = locationDoc.district?.name || "Unknown";
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to resolve location ID:", err);
+    }
+
+    // --- Build GEO JSON ---
+    let geoJSON = null;
+    if (geoLocation?.coordinates?.length === 2) {
+      geoJSON = {
+        type: "Point",
+        coordinates: geoLocation.coordinates
+      };
+    }
+
+    const visit = await PageVisit.create({
+      user: userId || null,
+      sessionId,
+      location: locationName,
+      district: districtName,
+      timeSpent: timeSpent || 0,
+      exitReason: exitReason || "unknown",
+      isSiteExit: !!isSiteExit,
+      isAnonymous: !userId,
+      hotelId: hotelId || null,
+      destinationUrl: destinationUrl || null,
+      geoLocation: geoJSON
+    });
+
+    res.status(201).json({ success: true, visit });
+  } catch (err) {
+    console.error("Exit tracking error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -145,69 +238,6 @@ export const getStats = async (req, res) => {
   }
 };
 
-export const recordExit = async (req, res) => {
-  try {
-    const {
-      sessionId,
-      userId,
-      location,
-      timeSpent,
-      exitReason,
-      isSiteExit,
-      hotelId,         // <--- Add this
-      destinationUrl,  // <--- Add this
-    } = req.body;
-    console.log(hotelId)
-    if (!sessionId || !location) {
-      return res.status(400).json({ success: false, message: "Missing sessionId or location" });
-    }
-
-    let locationName = typeof location === "string" ? location : location.name || "";
-    let districtName = "Unknown";
-
-    try {
-      let locationId = "";
-      if (typeof location === "object" && location.id) locationId = location.id;
-      else if (typeof location === "string") {
-        const segments = location.split("/");
-        const possibleId = segments[segments.length - 1];
-        if (mongoose.Types.ObjectId.isValid(possibleId)) locationId = possibleId;
-      }
-
-      if (locationId) {
-        const locationDoc = await Location.findById(locationId)
-          .populate("district", "name")
-          .select("name district");
-        if (locationDoc) {
-          locationName = locationDoc.name;
-          districtName = locationDoc.district?.name || "Unknown";
-        }
-      }
-    } catch (err) {
-      console.warn("Failed to resolve location ID:", err);
-    }
-    console.log("userID:",userId)
-    console.log("hotelID:",hotelId)
-    // ✅ Save exit with hotel and URL
-    const visit = await PageVisit.create({
-      user: userId || null,
-      sessionId,
-      location: locationName,
-      district: districtName,
-      timeSpent: timeSpent || 0,
-      exitReason: exitReason || "unknown",
-      isSiteExit: !!isSiteExit,
-      isAnonymous: !userId,
-      hotelId: hotelId || null,
-      destinationUrl: destinationUrl || null,
-    });
-
-    res.status(201).json({ success: true, visit });
-  } catch (err) {
-    console.error("Exit tracking error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-};
 
 
 // GET /api/track/user-stats

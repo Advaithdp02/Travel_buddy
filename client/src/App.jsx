@@ -1,119 +1,141 @@
-import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
-
-import "./App.css";
-
-import { Header } from "./components/Header";
-import { Footer } from "./components/Footer";
-import { HomePage } from "./pages/HomePage";
-import { DestinationPageFull } from "./pages/DestinationPageFull";
-import Login from "./components/Login";
-import { Registration } from "./components/Registration";
-import { Profile } from "./components/Profile";
-import { ProfilePublic } from "./components/ProfilePublic";
-import { AdminPage } from "./components/Admin/AdminPage";
-import ProtectedRoute from "./components/ProtectedRoute";
-import { NotFoundPage } from "./components/ErrorPage";
-import { BlogPage } from "./components/BlogPage";
-import ContactUs from "./components/ContactUs";
-import { DistrictPage } from "./components/DistrictPage";
-
-import useUserTracking from "./hooks/usePageTimeTracker";
-import ScrollToTop from "./components/ScrollToTop";
-import ForgotPassword from "./components/ForgotPassword";
+import { useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
+import { v4 as uuidv4 } from "uuid";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const IDLE_TIMEOUT = 15 * 60 * 1000; // 15 minutes
 
-export default function App() {
-  return (
-    <Router>
-      <GlobalAuthCheck />   {/* 🔥 Automatic token validation at app start */}
-      <TrackingWrapper />
-      <ScrollToTop />
+const usePageTimeTracker = () => {
+  const location = useLocation();
+  const startTimeRef = useRef(Date.now());
+  const prevPathRef = useRef(location.pathname);
+  const idleTimerRef = useRef(null);
 
-      <Header />
+  /* ---------------------------------------------------------
+     Get / persist sessionId
+  --------------------------------------------------------- */
+  let sessionId = localStorage.getItem("sessionId");
+  if (!sessionId) {
+    sessionId = uuidv4();
+    localStorage.setItem("sessionId", sessionId);
+  }
 
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/destination/:id" element={<DestinationPageFull />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Registration />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/profile/:username" element={<ProfilePublic />} />
-        <Route path="/blogs/:slug" element={<BlogPage />} />
-        <Route path="/contact" element={<ContactUs />} />
-        <Route path="/district/:id" element={<DistrictPage />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
+  /* ---------------------------------------------------------
+     Get userId 
+  --------------------------------------------------------- */
+  const getUserId = () => localStorage.getItem("userId") || null;
 
-        {/* ADMIN PANEL */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
-              <AdminPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-
-      <Footer />
-    </Router>
-  );
-}
-
-/* ----------------------------------------------------
-   🔥 GLOBAL AUTH CHECK — RUNS ONCE WHEN SITE LOADS
----------------------------------------------------- */
-function GlobalAuthCheck() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    // No token? logout directly
-    if (!token) {
-      logoutUser();
-      return;
-    }
-
-    const verifyToken = async () => {
-      try {
-        const res = await fetch(`${BACKEND_URL}/users/verify`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (res.status === 401 || res.status === 403) {
-          logoutUser();
-        }
-      } catch (err) {
-        console.error("Token verification failed:", err);
-        logoutUser();
+  /* ---------------------------------------------------------
+     Get user coordinates from localStorage → userCoords
+  --------------------------------------------------------- */
+  const getGeoLocation = () => {
+    try {
+      const coords = JSON.parse(localStorage.getItem("userCoords"));
+      if (coords && coords.latitude && coords.longitude) {
+        return {
+          type: "Point",
+          coordinates: [coords.longitude, coords.latitude], // GeoJSON format
+        };
       }
-    };
-
-    verifyToken();
-  }, []);
-
-  const logoutUser = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("location_id");
-    localStorage.removeItem("isLoggedIn");
-    navigate("/login");
+    } catch {}
+    return null;
   };
 
-  return null;
-}
+  /* ---------------------------------------------------------
+     Send tracking data to backend
+  --------------------------------------------------------- */
+  const sendTrackingData = async (path, timeSpent, reason = "unknown", isSiteExit = false) => {
+    try {
+      await fetch(`${BACKEND_URL}/track`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user: getUserId(),
+          sessionId,
+          path,
+          timeSpent,
+          exitReason: reason,
+          isSiteExit,
+          isAnonymous: !getUserId(),
+          geoLocation: getGeoLocation(), // ⭐ Include geolocation here
+        }),
+        keepalive: true,
+      });
+    } catch (err) {
+      console.error("Tracking error:", err);
+    }
+  };
 
-/* ----------------------------------------------------
-   Page Tracking Wrapper (Your existing code)
----------------------------------------------------- */
-function TrackingWrapper() {
-  useUserTracking();
-  return null;
-}
+  /* ---------------------------------------------------------
+     Detect exit reason
+  --------------------------------------------------------- */
+  const detectExitReason = (eventType = "unknown") => {
+    if (eventType === "beforeunload") return "tab_closed_or_reload";
+    return "unknown";
+  };
+
+  /* ---------------------------------------------------------
+     Send + reset timers
+  --------------------------------------------------------- */
+  const handleSendAndReset = (path, reason, isSiteExit) => {
+    const now = Date.now();
+    const timeSpent = Math.floor((now - startTimeRef.current) / 1000);
+    sendTrackingData(path, timeSpent, reason, isSiteExit);
+    startTimeRef.current = now;
+  };
+
+  /* ---------------------------------------------------------
+     Idle timer logic
+  --------------------------------------------------------- */
+  const resetIdleTimer = () => {
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+
+    idleTimerRef.current = setTimeout(() => {
+      handleSendAndReset(location.pathname, "idle_timeout", true);
+    }, IDLE_TIMEOUT);
+  };
+
+  /* ---------------------------------------------------------
+     Main effect
+  --------------------------------------------------------- */
+  useEffect(() => {
+    // Route changed → store previous page visit
+    if (prevPathRef.current !== location.pathname) {
+      handleSendAndReset(prevPathRef.current, "internal_navigation", false);
+      prevPathRef.current = location.pathname;
+    }
+
+    resetIdleTimer();
+
+    const handleActivity = () => resetIdleTimer();
+
+    const handleBeforeUnload = () => {
+      handleSendAndReset(location.pathname, detectExitReason("beforeunload"), true);
+    };
+
+    const handleClick = (e) => {
+      const link = e.target.closest("a");
+      if (link && link.href && !link.href.includes(window.location.host)) {
+        handleSendAndReset(location.pathname, "external_link", true);
+      }
+      handleActivity();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("click", handleClick);
+    document.addEventListener("mousemove", handleActivity);
+    document.addEventListener("keydown", handleActivity);
+    document.addEventListener("scroll", handleActivity);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("click", handleClick);
+      document.removeEventListener("mousemove", handleActivity);
+      document.removeEventListener("keydown", handleActivity);
+      document.removeEventListener("scroll", handleActivity);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, [location.pathname]);
+};
+
+export default usePageTimeTracker;

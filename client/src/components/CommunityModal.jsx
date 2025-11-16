@@ -4,6 +4,7 @@ import { ThumbsUp, Trash2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const MAX_CHAR = 2000; // character limit
 
 // Helper: Trim text with short/full versions
 const trimText = (text, limit) => {
@@ -186,6 +187,19 @@ export const CommunityModal = ({
     }
   };
 
+  // input handlers that enforce MAX_CHAR
+  const handleNewCommentChange = (e) => {
+    const val = e.target.value;
+    if (val.length <= MAX_CHAR) setNewComment(val);
+    else setNewComment(val.slice(0, MAX_CHAR));
+  };
+
+  const handleReplyChange = (e) => {
+    const val = e.target.value;
+    if (val.length <= MAX_CHAR) setReplyText(val);
+    else setReplyText(val.slice(0, MAX_CHAR));
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -310,14 +324,12 @@ export const CommunityModal = ({
                                   ? replyTrim.full
                                   : replyTrim.short}
 
-                                {replyTrim.trimmed && (
+                                {replyTrim.trimed && (
                                   <span
                                     onClick={() => toggleExpandReply(r._id)}
                                     className="text-[#9156F1] text-xs font-semibold cursor-pointer ml-1"
                                   >
-                                    {isReplyExpanded
-                                      ? "Read less"
-                                      : "Read more"}
+                                    {isReplyExpanded ? "Read less" : "Read more"}
                                   </span>
                                 )}
                               </p>
@@ -348,7 +360,7 @@ export const CommunityModal = ({
                         type="text"
                         placeholder="Write a reply..."
                         value={replyText}
-                        onChange={(e) => setReplyText(e.target.value)}
+                        onChange={handleReplyChange}
                         className="flex-grow border rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#9156F1]"
                       />
                       <button
@@ -357,6 +369,10 @@ export const CommunityModal = ({
                       >
                         Send
                       </button>
+                      {/* Reply char counter */}
+                      <div className="w-full mt-1 text-right text-xs text-gray-400">
+                        {replyText.length.toLocaleString()} / {MAX_CHAR.toLocaleString()}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -371,7 +387,7 @@ export const CommunityModal = ({
                 type="text"
                 placeholder="Add a comment..."
                 value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
+                onChange={handleNewCommentChange}
                 className="flex-grow min-w-[200px] border border-[#9156F1] rounded-lg p-2 focus:ring-2 focus:ring-[#9156F1]"
               />
 
@@ -381,6 +397,10 @@ export const CommunityModal = ({
               >
                 <SendIconAdd className="w-5 h-5" />
               </button>
+              {/* Comment char counter */}
+              <div className="w-full mt-1 text-right text-xs text-gray-400">
+                {newComment.length.toLocaleString()} / {MAX_CHAR.toLocaleString()}
+              </div>
             </div>
           )}
         </div>

@@ -345,37 +345,95 @@ export const Profile = () => {
 
                 {/* followers, following, contribution — unchanged */}
                 {activeTab === "followers" && (
-                  <div className="max-h-[400px] overflow-y-auto pr-2">
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
-                      {followers?.length ? (
-                        followers.map((f) => (
-                          <div
-                            key={f._id}
-                            className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
-                            onClick={() => navigate(`/profile/${f.username}`)}
-                          >
-                            <div className="flex items-center gap-4">
-                              <img
-                                src={f.profilePic || "/defaultProfilePic.webp"}
-                                alt={f.username}
-                                className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
-                              />
-                              <div>
-                                <p className="font-semibold text-gray-800">
-                                  {f.username}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-gray-500 text-center col-span-full mt-4">
-                          No followers yet
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
+  <div className="max-h-[400px] overflow-y-auto pr-2">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+      {followers?.length ? (
+        followers.map((f) => {
+
+          // Check if current user already follows them
+          const isFollowing = following.some((u) => u._id === f._id);
+
+          return (
+            <div
+              key={f._id}
+              className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={(e) => {
+                if (e.target.tagName !== "BUTTON") {
+                  navigate(`/profile/${f.username}`);
+                }
+              }}
+            >
+              <div className="flex items-center gap-4">
+                <img
+                  src={f.profilePic || "/defaultProfilePic.webp"}
+                  alt={f.username}
+                  className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
+                />
+                <div>
+                  <p className="font-semibold text-gray-800">
+                    {f.username}
+                  </p>
+                </div>
+              </div>
+
+              {/* ▼▼ FOLLOW / UNFOLLOW BUTTON ▼▼ */}
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    const token = localStorage.getItem("token");
+                    if (!token) return;
+
+                    const res = await fetch(
+                      `${BACKEND_URL}/users/follow/${f.username}`,
+                      {
+                        method: "PUT",
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                        },
+                      }
+                    );
+
+                    if (!res.ok)
+                      throw new Error("Failed to toggle follow");
+
+                    // Update UI instantly
+                    if (isFollowing) {
+                      // remove from following
+                      setFollowing((prev) =>
+                        prev.filter((u) => u._id !== f._id)
+                      );
+                    } else {
+                      // add to following
+                      setFollowing((prev) => [...prev, f]);
+                    }
+
+                  } catch (err) {
+                    console.error(err);
+                    alert("Error toggling follow");
+                  }
+                }}
+                className={`px-3 py-1 rounded-lg text-sm font-semibold transition-colors ${
+                  isFollowing
+                    ? "bg-red-500 text-white hover:bg-red-600"
+                    : "bg-blue-500 text-white hover:bg-blue-600"
+                }`}
+              >
+                {isFollowing ? "Unfollow" : "Follow"}
+              </button>
+
+            </div>
+          );
+        })
+      ) : (
+        <p className="text-gray-500 text-center col-span-full mt-4">
+          No followers yet
+        </p>
+      )}
+    </div>
+  </div>
+)}
+
 
                 {/* Following Tab */}
                 {activeTab === "following" && (
