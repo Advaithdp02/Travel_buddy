@@ -525,7 +525,7 @@ export const DestinationPage = ({}) => {
     if (t.includes("mountain")) return "/mountain.jpg";
     if (t.includes("forest")) return "/forest.jpg";
     if (t.includes("desert")) return "/desert.jpg";
-    if (t.includes("plain")) return "/plains.jpg";
+    if (t.includes("plain")) return "/plain.jpg";
     if (t.includes("rocky")) return "/Rocky.jpg";
     if (t.includes("river")) return "/river.jpg";
     if (t.includes("hilly")) return "/Hilly.jpg";
