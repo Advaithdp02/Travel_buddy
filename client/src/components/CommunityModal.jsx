@@ -1,30 +1,46 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { SendIconAdd } from "./Icons";
 import { ThumbsUp, Trash2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
+// Helper: Trim text with short/full versions
+const trimText = (text, limit) => {
+  if (!text) return { short: "", full: "", trimmed: false };
+  if (text.length <= limit)
+    return { short: text, full: text, trimmed: false };
+
+  return {
+    short: text.slice(0, limit) + "...",
+    full: text,
+    trimmed: true,
+  };
+};
+
 export const CommunityModal = ({
   isOpen,
   onClose,
-  activeTab,
   comments,
   refreshComments,
   districtPage,
 }) => {
   const [newComment, setNewComment] = useState("");
-  const [localComments, setLocalComments] = useState([]);
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState("");
-  const [dataChanged, setDataChanged] = useState(false);
+  const [expandedComments, setExpandedComments] = useState({});
+  const [expandedReplies, setExpandedReplies] = useState({});
+  
+
 
   const navigate = useNavigate();
-
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
 
-  // Disable/enable scroll
+  // For auto-scroll to reply input
+  const replyInputRefs = useRef({});
+
+  // Disable background scroll when modal is open
   useEffect(() => {
     if (isOpen) {
       const scrollY = window.scrollY;
@@ -37,51 +53,37 @@ export const CommunityModal = ({
       const scrollY = document.body.style.top;
       document.body.style.position = "";
       document.body.style.top = "";
-      document.body.style.left = "";
-      document.body.style.right = "";
       document.body.style.overflow = "";
       window.scrollTo(0, parseInt(scrollY || "0") * -1);
     }
-
-    return () => {
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.left = "";
-      document.body.style.right = "";
-      document.body.style.overflow = "";
-    };
   }, [isOpen]);
 
-  // Sync comments
-  useEffect(() => setLocalComments(comments), [comments]);
 
+  // Expand toggles
+  const toggleExpandComment = (id) =>
+    setExpandedComments((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  const toggleExpandReply = (id) =>
+    setExpandedReplies((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  // Toggle reply input + scroll to it
   const toggleReplyInput = (commentId) => {
-    setReplyingTo(replyingTo === commentId ? null : commentId);
+    setReplyingTo(commentId === replyingTo ? null : commentId);
+
+    setTimeout(() => {
+      replyInputRefs.current[commentId]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 100);
   };
 
+  // Submit reply
   const handleReplySubmit = async (commentId) => {
     if (!replyText.trim()) return;
     if (!token) return alert("You must be logged in");
 
-    // Temporary reply
-    const tempReply = {
-      _id: `temp-${Date.now()}`,
-      text: replyText.trim(),
-      user: { _id: userId, name: "You" },
-      likes: [],
-      createdAt: new Date().toISOString(),
-    };
-
-    // Optimistic UI
-    setLocalComments((prev) =>
-      prev.map((c) =>
-        c._id === commentId
-          ? { ...c, replies: [...(c.replies || []), tempReply] }
-          : c
-      )
-    );
-
-    const replyTextValue = replyText.trim();
+    const replyVal = replyText.trim();
     setReplyText("");
     setReplyingTo(null);
 
@@ -92,38 +94,37 @@ export const CommunityModal = ({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ text: replyTextValue }),
+        body: JSON.stringify({ text: replyVal }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to post reply");
+      if (!res.ok) throw new Error("Failed to reply");
 
-      setDataChanged(true);
+      refreshComments(); // LIVE UPDATE
     } catch (err) {
       console.error(err);
-
-      // Rollback
-      setLocalComments((prev) =>
-        prev.map((c) =>
-          c._id === commentId
-            ? {
-                ...c,
-                replies: (c.replies || []).filter(
-                  (r) => r._id !== tempReply._id
-                ),
-              }
-            : c
-        )
-      );
-
-      alert(err.message);
     }
   };
 
+  // Like comment
+  const handleLikeComment = async (commentId) => {
+    if (!userId) return alert("You must be logged in");
+
+    try {
+      await fetch(`${BACKEND_URL}/comments/like/${commentId}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      refreshComments();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Delete comment
   const handleDeleteComment = async (commentId) => {
     if (!token) return alert("You must be logged in");
-
-    if (!confirm("Are you sure you want to delete this comment?")) return;
+    if (!confirm("Delete this comment?")) return;
 
     try {
       const res = await fetch(`${BACKEND_URL}/comments/${commentId}`, {
@@ -132,15 +133,16 @@ export const CommunityModal = ({
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to delete comment");
+      if (!res.ok) throw new Error(data.message);
 
-      refreshComments?.();
+      refreshComments(); // LIVE UPDATE
     } catch (err) {
       console.error(err);
       alert(err.message);
     }
   };
 
+  // Delete reply
   const handleDeleteReply = async (commentId, replyId) => {
     try {
       const res = await fetch(
@@ -150,43 +152,25 @@ export const CommunityModal = ({
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+
       const data = await res.json();
+      if (!res.ok) return;
 
-      if (!res.ok) return console.error(data.message);
-
-      // Remove reply from UI
-      setLocalComments((prev) =>
-        prev.map((c) =>
-          c._id === commentId
-            ? {
-                ...c,
-                replies: c.replies.filter((r) => r._id !== replyId),
-              }
-            : c
-        )
-      );
+      refreshComments(); // LIVE UPDATE
     } catch (err) {
       console.error(err);
     }
   };
 
+  // Add new comment
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
     if (!token) return alert("You must be logged in");
 
-    const locationId = localStorage.getItem("location_id");
-
-    const tempComment = {
-      _id: `temp-${Date.now()}`,
-      text: newComment.trim(),
-      user: { _id: userId, name: "You" },
-      likes: [],
-      createdAt: new Date().toISOString(),
-    };
-
-    setLocalComments((prev) => [tempComment, ...prev]);
-    const newCommentVal = newComment.trim();
+    const textVal = newComment.trim();
     setNewComment("");
+
+    const locationId = localStorage.getItem("location_id");
 
     try {
       const res = await fetch(`${BACKEND_URL}/comments`, {
@@ -195,49 +179,14 @@ export const CommunityModal = ({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ location: locationId, text: newCommentVal }),
+        body: JSON.stringify({ location: locationId, text: textVal }),
       });
 
-      if (!res.ok) throw new Error("Failed to post comment");
+      if (!res.ok) throw new Error("Failed to add comment");
 
-      setDataChanged(true);
+      refreshComments(); // LIVE UPDATE
     } catch (err) {
       console.error(err);
-      alert(err.message);
-
-      setLocalComments((prev) =>
-        prev.filter((c) => c._id !== tempComment._id)
-      );
-    }
-  };
-
-  const handleLikeComment = async (commentId) => {
-    if (!userId) return alert("You must be logged in");
-
-    // Optimistic UI
-    setLocalComments((prev) =>
-      prev.map((c) =>
-        c._id === commentId
-          ? {
-              ...c,
-              likes: c.likes.includes(userId)
-                ? c.likes.filter((id) => id !== userId)
-                : [...c.likes, userId],
-            }
-          : c
-      )
-    );
-
-    try {
-      const res = await fetch(
-        `${BACKEND_URL}/comments/like/${commentId}`,
-        { method: "PUT", headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (!res.ok) throw new Error("Failed to like");
-    } catch (err) {
-      console.error(err);
-      refreshComments?.();
     }
   };
 
@@ -245,10 +194,10 @@ export const CommunityModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-[#fbebff] w-11/12 md:w-4/5 lg:w-3/4 max-h-[90vh] p-6 rounded-xl shadow-2xl overflow-y-auto relative">
+      <div className="bg-[#fbebff] w-11/12 md:w-4/5 lg:w-3/4 max-h-[90vh] p-0 rounded-xl shadow-2xl overflow-y-auto relative">
 
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b">
+        {/* Header - Sticky */}
+        <div className="flex justify-between items-center p-4 border-b bg-[#fbebff] sticky top-0 z-50">
           <h3 className="text-3xl font-bold text-[#310a49]">Comments</h3>
           <button onClick={onClose}>
             <X className="w-10 h-10 text-[#fbebff] bg-[#37377B] rounded-full p-1 hover:bg-blue-700" />
@@ -256,15 +205,18 @@ export const CommunityModal = ({
         </div>
 
         {/* Comments */}
-        <div className="p-4 overflow-y-auto">
+        <div className="p-4">
           <div className="space-y-4 mb-4">
-            {localComments.map((c) => {
+
+            {comments.map((c) => {
               const hasLiked = c.likes.includes(userId);
               const isOwnComment = c.user?._id === userId;
+              const commentTrim = trimText(c.text, 200);
+              const isCommentExpanded = expandedComments[c._id];
 
               return (
                 <div key={c._id} className="bg-white border rounded-2xl p-4 shadow-md">
-                  
+
                   {/* User */}
                   <div
                     className="flex items-center gap-2 cursor-pointer"
@@ -283,14 +235,29 @@ export const CommunityModal = ({
                     </p>
                   </div>
 
-                  {/* Text */}
-                  <p className="text-gray-700 mt-2 mb-2">{c.text}</p>
+                  {/* Comment text */}
+                  <div className="text-gray-700 mt-2 mb-2 break-words whitespace-pre-wrap">
+                    <p>
+                      {isCommentExpanded ? commentTrim.full : commentTrim.short}
+
+                      {commentTrim.trimmed && (
+                        <span
+                          onClick={() => toggleExpandComment(c._id)}
+                          className="text-[#9156F1] text-sm font-semibold cursor-pointer ml-1"
+                        >
+                          {isCommentExpanded ? "Read less" : "Read more"}
+                        </span>
+                      )}
+                    </p>
+                  </div>
 
                   {/* Buttons */}
                   <div className="flex items-center gap-3 text-sm">
                     <button
                       className={`flex items-center gap-1 px-2 py-1 rounded-full ${
-                        hasLiked ? "bg-[#9156F1]/90 text-white" : "bg-gray-100 text-gray-500"
+                        hasLiked
+                          ? "bg-[#9156F1]/90 text-white"
+                          : "bg-gray-100 text-gray-500"
                       }`}
                       onClick={() => handleLikeComment(c._id)}
                     >
@@ -320,28 +287,49 @@ export const CommunityModal = ({
                       {c.replies.map((r) => {
                         const isOwnReply = r.user?._id === userId;
 
-                        return (
-                          <div key={r._id} className="bg-[#fbebff]/60 p-3 rounded-lg text-sm shadow-md">
-                            <div className="flex justify-between">
-                              <p
-                                className="font-semibold cursor-pointer hover:text-[#9156F1]"
-                                onClick={() =>
-                                  navigate(`/profile/${r.user?.username || r.user?.name}`)
-                                }
-                              >
-                                {r.user?.name}
-                              </p>
+                        const replyTrim = trimText(r.text, 150);
+                        const isReplyExpanded = expandedReplies[r._id];
 
-                              {isOwnReply && (
-                                <button
-                                  className="text-red-500 hover:text-red-700"
-                                  onClick={() => handleDeleteReply(c._id, r._id)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              )}
+                        return (
+                          <div key={r._id} className="bg-[#fbebff]/60 p-3 rounded-lg text-sm shadow-md break-words">
+
+                            {/* User */}
+                            <p
+                              className="font-semibold cursor-pointer hover:text-[#9156F1]"
+                              onClick={() =>
+                                navigate(
+                                  `/profile/${r.user?.username || r.user?.name}`
+                                )
+                              }
+                            >
+                              {r.user?.name}
+                            </p>
+
+                            {/* Reply text */}
+                            <div className="mt-1 break-words whitespace-pre-wrap">
+                              <p>
+                                {isReplyExpanded ? replyTrim.full : replyTrim.short}
+
+                                {replyTrim.trimmed && (
+                                  <span
+                                    onClick={() => toggleExpandReply(r._id)}
+                                    className="text-[#9156F1] text-xs font-semibold cursor-pointer ml-1"
+                                  >
+                                    {isReplyExpanded ? "Read less" : "Read more"}
+                                  </span>
+                                )}
+                              </p>
                             </div>
-                            <p className="mt-1">{r.text}</p>
+
+                            {/* Delete */}
+                            {isOwnReply && (
+                              <button
+                                className="text-red-500 hover:text-red-700 text-xs flex items-center gap-1 mt-2"
+                                onClick={() => handleDeleteReply(c._id, r._id)}
+                              >
+                                <Trash2 className="w-3 h-3" /> Delete
+                              </button>
+                            )}
                           </div>
                         );
                       })}
@@ -350,7 +338,10 @@ export const CommunityModal = ({
 
                   {/* Reply Input */}
                   {replyingTo === c._id && (
-                    <div className="ml-6 mt-2 flex items-center gap-2">
+                    <div
+                      ref={(el) => (replyInputRefs.current[c._id] = el)}
+                      className="ml-6 mt-2 flex items-center gap-2"
+                    >
                       <input
                         type="text"
                         placeholder="Write a reply..."
@@ -371,7 +362,7 @@ export const CommunityModal = ({
             })}
           </div>
 
-          {/* Add comment input */}
+          {/* Add comment */}
           {!districtPage && (
             <div className="flex items-center gap-2 mt-3">
               <input

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useCallback } from "react";
 
 import {
   StarIcon,
@@ -129,6 +129,29 @@ export const DestinationPage = ({}) => {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c; // distance in km
   };
+  
+
+const fetchComments = useCallback(async () => {
+  if (!locationId?.id) return;
+
+  const res = await fetch(`${Backend_URL}/comments/location/${locationId.id}`);
+  const data = await res.json();
+
+  setComments(data.comments || []);
+}, [locationId.id]);
+
+useEffect(() => {
+  if (isModalOpen) {
+    fetchComments(); // refresh when modal opens
+  }
+}, [isModalOpen]);
+
+useEffect(() => {
+  if (!isModalOpen) {
+    fetchComments(); // refresh when modal closes
+  }
+}, [isModalOpen]);
+
 
   // Travel time
   const calculateTime = (distanceKm, speedKmph = 60) => {
@@ -191,6 +214,7 @@ export const DestinationPage = ({}) => {
       console.error("Error fetching hotels:", err);
     }
   };
+  
 
   const fetchhLocationDistrict = async (district, terrain) => {
     try {
@@ -257,6 +281,7 @@ export const DestinationPage = ({}) => {
     }
   };
 
+
   useEffect(() => {
     fetchhLocationDistrict(filters.district, filters.terrain);
   }, [filters.district, filters.terrain]);
@@ -302,7 +327,6 @@ export const DestinationPage = ({}) => {
 
         // Community & Contributions
 
-        setContributions(data.contributions || []);
         setFilters((prev) => ({
           ...prev,
           district: data.district.name,
@@ -744,12 +768,10 @@ export const DestinationPage = ({}) => {
       </section>
 
       <CommunityModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        activeTab={activeTab}
-        comments={comments}
-        contributions={contributions}
-      />
+  isOpen={isModalOpen}
+  comments={comments}
+  refreshComments={fetchComments}
+/>
 
       {/* Filter & Places Section */}
       {/* 🌍 Filter Section */}
