@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+
 import { Home } from "../components/Home";
 import { AboutUs } from "../components/AboutUs";
 import { Service } from "../components/Service";
@@ -47,7 +48,7 @@ function useGeolocation({
   enableFallback = true,
   ipFallbackUrl = "https://ipapi.co/json/",
   refreshInterval = 2 * 60 * 1000,
-  run = true, // **NEW** — geolocation only runs after clicking Allow
+  run = true,
 } = {}) {
   const [coords, setCoords] = useState(null);
   const [status, setStatus] = useState("idle");
@@ -57,9 +58,8 @@ function useGeolocation({
     try {
       setStatus("fallback");
       const res = await fetch(ipFallbackUrl);
-      if (!res.ok) throw new Error("IP fallback request failed");
-
       const data = await res.json();
+
       const lat = data.latitude ?? data.lat;
       const lon = data.longitude ?? data.lon;
 
@@ -108,10 +108,11 @@ function useGeolocation({
   }, [enableFallback, fallbackToIP]);
 
   useEffect(() => {
-    if (!run) return; // **IMPORTANT** — do NOT request until user clicks Allow
+    if (!run) return; // DO NOT request geolocation until user clicks Allow
 
     requestGeolocation();
     const interval = setInterval(requestGeolocation, refreshInterval);
+
     return () => clearInterval(interval);
   }, [run, requestGeolocation, refreshInterval]);
 
@@ -122,12 +123,18 @@ function useGeolocation({
    HomePage Component
 ----------------------------------------------------------- */
 export const HomePage = () => {
-  const [showLocationPopup, setShowLocationPopup] = useState(true);
-  const [locationAllowed, setLocationAllowed] = useState(false);
+  // 🔥 Check if user already granted permission
+  const [locationAllowed, setLocationAllowed] = useState(
+    localStorage.getItem("locationPermission") === "granted"
+  );
+
+  const [showLocationPopup, setShowLocationPopup] = useState(
+    localStorage.getItem("locationPermission") !== "granted"
+  );
 
   const { coords } = useGeolocation({
     enableFallback: true,
-    run: locationAllowed, // **RUN ONLY AFTER USER CLICKS ALLOW**
+    run: locationAllowed, // ⭐ Only run after user allows
   });
 
   const [nearestLocation, setNearestLocation] = useState(null);
@@ -135,12 +142,11 @@ export const HomePage = () => {
   useEffect(() => {
     const fetchNearest = async () => {
       if (!coords) return;
+
       try {
         const res = await fetch(
           `${BACKEND_URL}/locations/nearest/${coords.latitude}/${coords.longitude}`
         );
-        if (!res.ok) throw new Error("Failed to fetch nearest location");
-
         const data = await res.json();
         setNearestLocation(data._id);
         localStorage.setItem("nearestLocation", data._id);
@@ -148,23 +154,25 @@ export const HomePage = () => {
         console.error("Error fetching nearest location:", err);
       }
     };
+
     fetchNearest();
   }, [coords]);
 
   return (
     <div className="app-container">
 
-      {/* ---------- POPUP FIRST ---------- */}
+      {/* ---------- LOCATION POPUP ---------- */}
       <LocationRequestModal
         open={showLocationPopup}
         onAllow={() => {
-          setLocationAllowed(true);    // now geolocation starts
-          setShowLocationPopup(false); // hide popup
+          localStorage.setItem("locationPermission", "granted"); // ⭐ Save
+          setLocationAllowed(true); 
+          setShowLocationPopup(false);
         }}
         onClose={() => setShowLocationPopup(false)}
       />
 
-      {/* ---------- MAIN SECTIONS ---------- */}
+      {/* ---------- MAIN CONTENT ---------- */}
       <Home nearestLocation={nearestLocation} />
       <AboutUs />
       <Service />
