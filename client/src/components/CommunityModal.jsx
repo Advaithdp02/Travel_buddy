@@ -230,8 +230,10 @@ export const CommunityModal = ({
                   {/* User */}
                   <div
                     className="flex items-center gap-2 cursor-pointer"
-                    onClick={() =>
+                    onClick={() =>{
+                      onClose();
                       navigate(`/profile/${c.user?.username || c.user?.name}`)
+                    }
                     }
                   >
                     {c.user?.profilePic && (
@@ -308,10 +310,12 @@ export const CommunityModal = ({
                             {/* User */}
                             <p
                               className="font-semibold cursor-pointer hover:text-[#9156F1]"
-                              onClick={() =>
+                              onClick={() =>{
+                                onClose();
                                 navigate(
                                   `/profile/${r.user?.username || r.user?.name}`
                                 )
+                              }
                               }
                             >
                               {r.user?.name}

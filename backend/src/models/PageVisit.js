@@ -32,7 +32,7 @@ const pageVisitSchema = new mongoose.Schema(
       },
       coordinates: {
         type: [Number], // [long, lat]
-        required: true
+        required: false
       }
     },
 
