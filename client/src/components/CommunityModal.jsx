@@ -357,27 +357,32 @@ export const CommunityModal = ({
                   {/* Reply Input */}
                   {replyingTo === c._id && (
                     <div
-                      ref={(el) => (replyInputRefs.current[c._id] = el)}
-                      className="ml-6 mt-2 flex items-center gap-2"
-                    >
-                      <input
-                        type="text"
-                        placeholder="Write a reply..."
-                        value={replyText}
-                        onChange={handleReplyChange}
-                        className="flex-grow border rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#9156F1]"
-                      />
-                      <button
-                        onClick={() => handleReplySubmit(c._id)}
-                        className="bg-[#9156F1] text-white px-4 py-2 rounded-lg hover:bg-[#7a3be0]"
-                      >
-                        Send
-                      </button>
-                      {/* Reply char counter */}
-                      <div className="w-full mt-1 text-right text-xs text-gray-400">
-                        {replyText.length.toLocaleString()} / {MAX_CHAR.toLocaleString()}
-                      </div>
-                    </div>
+  ref={(el) => (replyInputRefs.current[c._id] = el)}
+  className="ml-6 mt-2 flex items-center gap-2 relative"
+>
+  <div className="relative flex-grow">
+    <input
+      type="text"
+      placeholder="Write a reply..."
+      value={replyText}
+      onChange={handleReplyChange}
+      className="w-full border rounded-lg p-2 pr-14 text-sm focus:ring-2 focus:ring-[#9156F1]"
+    />
+
+    {/* Counter inside input */}
+    <span className="absolute right-2 bottom-1 text-[10px] text-gray-400 bg-white px-1">
+      {replyText.length} / {MAX_CHAR}
+    </span>
+  </div>
+
+  <button
+    onClick={() => handleReplySubmit(c._id)}
+    className="bg-[#9156F1] text-white px-4 py-2 rounded-lg hover:bg-[#7a3be0]"
+  >
+    Send
+  </button>
+</div>
+
                   )}
                 </div>
               );
