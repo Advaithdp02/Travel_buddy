@@ -28,7 +28,7 @@ export const getDistrictById = async (req, res) => {
 // 🟢 Create a district (supports image upload + coordinates + additional fields)
 export const createDistrict = async (req, res) => {
   try {
-    const { name, State, locations, coordinates, description, subtitle, points } = req.body;
+    const { name, State, locations, coordinates, description, subtitle, points,DistrictCode } = req.body;
     let imageURL = null;
 
     // Optional image upload
@@ -42,6 +42,7 @@ export const createDistrict = async (req, res) => {
       State,
       locations: locations ? JSON.parse(locations) : [],
       imageURL,
+      DistrictCode,
       description: description || "",
       subtitle: subtitle || "",
       points: points ? JSON.parse(points) : [],
@@ -67,12 +68,13 @@ export const createDistrict = async (req, res) => {
 // 🟢 Update district (name, image, coordinates, and new fields)
 export const updateDistrict = async (req, res) => {
   try {
-    const { name, State, coordinates, description, subtitle, points } = req.body;
+    const { name, State, coordinates, description, subtitle, points,DistrictCode } = req.body;
 
     const district = await District.findById(req.params.id);
     if (!district) return res.status(404).json({ message: "District not found" });
 
     if (name) district.name = name;
+    if(DistrictCode) district.DistrictCode=DistrictCode;
     if (State) district.State = State;
     if (description) district.description = description;
     if (subtitle) district.subtitle = subtitle;

@@ -533,20 +533,43 @@ export const getTopHotels = async (req, res) => {
 
 export const getGeoStats = async (req, res) => {
   try {
-    const visits = await PageVisit.find({
-      "geoLocation.coordinates": { $exists: true, $ne: null }
-    })
-      .populate("user", "username name") // fetch minimal user data
-      .lean();
+    const latestVisits = await PageVisit.aggregate([
+      {
+        $match: {
+          "geoLocation.coordinates": { $exists: true, $ne: null }
+        }
+      },
+      {
+        $sort: { visitedAt: -1 } // newest first
+      },
+      {
+        $group: {
+          _id: "$user", // group by user
+          user: { $first: "$user" },
+          location: { $first: "$location" },
+          district: { $first: "$district" },
+          timeSpent: { $first: "$timeSpent" },
+          exitReason: { $first: "$exitReason" },
+          visitedAt: { $first: "$visitedAt" },
+          geoLocation: { $first: "$geoLocation" }
+        }
+      }
+    ]);
 
-    const result = visits.map((v) => ({
+    // Populate the user info (username/name)
+    const populated = await PageVisit.populate(latestVisits, {
+      path: "user",
+      select: "username name"
+    });
+
+    const result = populated.map((v) => ({
       username: v.user?.username || v.user?.name || "Anonymous",
       location: v.location,
       district: v.district,
       timeSpent: v.timeSpent,
       exitReason: v.exitReason,
       visitedAt: v.visitedAt,
-      geoLocation: v.geoLocation, // contains { type: "Point", coordinates: [lng, lat] }
+      geoLocation: v.geoLocation,
     }));
 
     res.json({ success: true, data: result });

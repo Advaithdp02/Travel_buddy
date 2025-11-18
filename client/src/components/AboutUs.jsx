@@ -1,6 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
-// your tracking hook
+import {LocationIcon,ClimateIcon} from "./Icons"
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -27,37 +26,26 @@ export const AboutUs = () => {
       <div className="md:w-1/2 space-y-6 px-6 md:px-0">
         <h4 className="text-yellow-400 font-schoolbell text-2xl">About Us</h4>
         <h2 className="text-3xl md:text-4xl font-poppins font-bold">
-          Committed to Your Travel Adventure Experience
+          TravelBuddy – Your Travel Partner
         </h2>
         <p className="text-gray-200 text-sm md:text-base">
-          Lorem Ipsum is simply dummy text of the printing and typesetting
-          industry. Lorem Ipsum has been the industry's standard dummy text ever
-          since the 1500s...
-        </p>
+         TravelBuddy makes traveling easier by providing everything you need in one place. Whether you're planning a trip or already on the go, we help you navigate, explore, and find the best options.    </p>
 
         {/* Features */}
         <div className="flex flex-col md:flex-row gap-6 mt-6">
           <div className="flex items-start gap-4">
-            <img
-              src="./feature1.png"
-              alt="Feature 1"
-              className="w-16 h-16 border border-white rounded-full p-2"
-            />
+            <LocationIcon  className="icon-centered"/>
             <div>
-              <h5 className="font-semibold">Feature 1</h5>
-              <p className="text-gray-300 text-sm">Description of feature 1</p>
+              <h5 className="font-semibold">Must-Visit Places</h5>
+              <p className="text-gray-300 text-sm"> Explore top attractions and hidden gems near you.</p>
             </div>
           </div>
 
           <div className="flex items-start gap-4">
-            <img
-              src="./feature2.png"
-              alt="Feature 2"
-              className="w-16 h-16 border border-white rounded-full p-2"
-            />
+            <ClimateIcon />
             <div>
-              <h5 className="font-semibold">Feature 2</h5>
-              <p className="text-gray-300 text-sm">Description of feature 2</p>
+              <h5 className="font-semibold">Weather Updates</h5>
+              <p className="text-gray-300 text-sm">Stay informed about the latest climate conditions.</p>
             </div>
           </div>
         </div>

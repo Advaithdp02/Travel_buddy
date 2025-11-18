@@ -5,6 +5,7 @@ const districtSchema = new mongoose.Schema({
   imageURL: { type: String },
   locations: [{ type: mongoose.Schema.Types.ObjectId, ref: "Location" }],
   State: { type:String, required: true },
+  DistrictCode:{type:String ,required:true, unique: true},
   description: { type: String },
   subtitle: { type: String },
   points: [{ type: String }],

@@ -4,11 +4,32 @@ import {ClimateIcon,LocationIcon,PlacesIcon,HotelsIcon,TrafficIcon} from "./Icon
 
 export const Service = () => {
   const services = [
-    { icon: <ClimateIcon />, title: "Climate", subtitle: "Description about Climate" },
-    { icon: <LocationIcon />, title: "Location", subtitle: "Description about Location" },
-    { icon: <PlacesIcon />, title: "Places", subtitle: "Description about Places" },
-    { icon: <HotelsIcon />, title: "Hotels", subtitle: "Description about Hotels" },
-    { icon: <TrafficIcon />, title: "Traffic", subtitle: "Description about Traffic" },
+{
+  icon: <ClimateIcon />,
+  title: "Climate",
+  subtitle: "Get insights on seasonal weather patterns and temperature trends."
+},
+{
+  icon: <LocationIcon />,
+  title: "Location",
+  subtitle: "Understand the area's position, connectivity, and nearby essentials."
+},
+{
+  icon: <PlacesIcon />,
+  title: "Places",
+  subtitle: "Explore popular attractions, landmarks, and points of interest."
+},
+{
+  icon: <HotelsIcon />,
+  title: "Hotels",
+  subtitle: "Discover nearby stays with the best comfort, pricing, and amenities."
+},
+{
+  icon: <TrafficIcon />,
+  title: "Traffic",
+  subtitle: "Check real-time traffic flow, commute times, and road conditions."
+}
+
   ];
   const value={
     Happy_travellers:9867,
@@ -32,8 +53,8 @@ export const Service = () => {
 
         {/* Description */}
         <p className="text-gray-600 text-sm md:text-base leading-7 max-w-lg">
-          Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type...
-        </p>
+          We cover all locations, ensuring you have a smooth and enjoyable journey. No matter where you go, TravelBuddy is always by your side, helping you travel smart and stress-free. Let us guide you to the best experiences, making every trip memorable!
+          <br/>"Traveling is a lifelong evolution, where every journey shapes a new version of ourselves."  </p>
 
         {/* Background Image Rectangle */}
         <div className="relative mt-10">

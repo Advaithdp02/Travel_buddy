@@ -27,6 +27,7 @@ export default function AdminDistricts() {
     _id: null,
     name: "",
     State: "",
+    DistrictCode:"",
     image: null,
     existingImage: "",
   });
@@ -91,6 +92,7 @@ export default function AdminDistricts() {
       _id: district._id,
       name: district.name,
       State: district.State,
+      DistrictCode:district.DistrictCode || '',
       image: null,
       existingImage: district.imageURL || "",
     });
@@ -102,6 +104,7 @@ export default function AdminDistricts() {
       const data = new FormData();
       data.append("name", formData.name);
       data.append("State", formData.State);
+      data.append("DistrictCode",formData.DistrictCode);
       if (formData.image) data.append("image", formData.image);
 
       let res;
@@ -124,7 +127,7 @@ export default function AdminDistricts() {
       }
 
       setOpen(false);
-      setFormData({ _id: null, name: "", State: "", image: null, existingImage: "" });
+      setFormData({ _id: null, name: "", State: "",DistrictCode:"", image: null, existingImage: "" });
     } catch (err) {
       console.error("Submit failed:", err);
     }
@@ -211,6 +214,14 @@ export default function AdminDistricts() {
             fullWidth
             margin="dense"
             value={formData.name}
+            onChange={handleFormChange}
+          />
+          <TextField
+            label="DistrictCode"
+            name="DistrictCode"
+            fullWidth
+            margin="dense"
+            value={formData.DistrictCode}
             onChange={handleFormChange}
           />
 

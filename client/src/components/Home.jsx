@@ -27,9 +27,8 @@ export const Home = ({nearestLocation}) => {
 
         {/* Paragraph */}
         <p className="text-[#310a49] text-base md:text-lg mt-4 max-w-[600px]">
-          Lorem Ipsum is simply dummy text of the printing and typesetting
-          industry. Discover beautiful places, plan your next adventure, and
-          make memories that last forever.
+          Traveling is so much more than just reaching a destination—it’s about immersing yourself in new cultures,
+           savoring delicious local flavors, and uncovering hidden gems along the way. 
         </p>
 
         {/* Button */}
