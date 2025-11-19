@@ -33,15 +33,15 @@ app.get("/", (req, res) => {
 // --------------------
 // ROUTES
 // --------------------
-app.use("/api/users", userRoutes);
-app.use("/api/locations", locationRoutes);
-app.use("/api/districts", districtRoutes);
-app.use("/api/contributions", contributionRoutes);
-app.use("/api/comments", commentRoutes);
-app.use("/api/track", trackRoutes);
-app.use('/api/hotels', hotelRoutes);
-app.use('/api/blogs', blogRoutes);
-app.use("/api/contact", contactRoutes);
+app.use("/users", userRoutes);
+app.use("/locations", locationRoutes);
+app.use("/districts", districtRoutes);
+app.use("/contributions", contributionRoutes);
+app.use("/comments", commentRoutes);
+app.use("/track", trackRoutes);
+app.use('/hotels', hotelRoutes);
+app.use('/blogs', blogRoutes);
+app.use("/contact", contactRoutes);
 // --------------------
 // 404 HANDLER
 // --------------------
