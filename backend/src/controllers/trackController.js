@@ -1,14 +1,21 @@
 import PageVisit from "../models/PageVisit.js";
 import Location from "../models/Location.js";
-import User from "../models/User.js"
+import User from "../models/User.js";
+import District from "../models/District.js";
 import mongoose from "mongoose";
-
-
 
 // -------------------- POST /api/track --------------------
 export const trackVisit = async (req, res) => {
   try {
-    const { user, sessionId, path, timeSpent, isAnonymous, deviceInfo, geoLocation } = req.body;
+    const {
+      user,
+      sessionId,
+      path,
+      timeSpent,
+      isAnonymous,
+      deviceInfo,
+      geoLocation,
+    } = req.body;
 
     if (!sessionId || !path || timeSpent == null) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -16,13 +23,44 @@ export const trackVisit = async (req, res) => {
 
     let locationName = path;
     let districtName = "Unknown";
+    let locationDoc = null;
+    // ❌ Do not track admin pages
+    if (path.startsWith("/admin")) {
+      return res.status(204).end(); // no tracking, silent OK
+    }
 
+    // ------------------------------------------
+    // ⭐ 0️⃣ HANDLE SIMPLE PATHS FIRST
+    // ------------------------------------------
+    if (path === "/") {
+      locationName = "home";
+      districtName = "home";
+    } else {
+      // remove leading slash, split
+      const segments = path.replace(/^\/+/, "").split("/");
+
+      if (segments.length === 1) {
+        // /profile → profile
+        locationName = segments[0];
+        districtName = segments[0];
+      } else if (segments.length === 2) {
+        // /profile/Nitin → Nitin
+        locationName = segments[1];
+        districtName = segments[0]; // "profile"
+      }
+    }
+
+    // ------------------------------------------
+    // 1️⃣ LOCATION / DISTRICT ID RESOLUTION
+    // (Overrides the above only if ObjectId is detected)
+    // ------------------------------------------
     try {
       const segments = path.split("/");
       const possibleId = segments[segments.length - 1];
 
       if (mongoose.Types.ObjectId.isValid(possibleId)) {
-        const locationDoc = await Location.findById(possibleId)
+        // Try resolving as LOCATION
+        locationDoc = await Location.findById(possibleId)
           .populate("district", "name")
           .select("name district");
 
@@ -30,21 +68,37 @@ export const trackVisit = async (req, res) => {
           locationName = locationDoc.name;
           districtName = locationDoc.district?.name || "Unknown";
         }
+
+        // Try resolving as DISTRICT
+        if (!locationDoc) {
+          const districtDoc = await District.findById(possibleId).select(
+            "name"
+          );
+
+          if (districtDoc) {
+            locationName = districtDoc.name;
+            districtName = districtDoc.name;
+          }
+        }
       }
     } catch (err) {
-      console.warn("Failed to resolve location ID:", err);
+      console.warn("Failed to resolve location or district:", err);
     }
 
-    // --- Build GeoJSON safely ---
+    // ------------------------------------------
+    // 2️⃣ GEOJSON SAFE BUILD
+    // ------------------------------------------
     let geoJSON = null;
     if (geoLocation?.coordinates?.length === 2) {
       geoJSON = {
         type: "Point",
-        coordinates: geoLocation.coordinates, // [lng, lat]
+        coordinates: geoLocation.coordinates,
       };
     }
 
-    // Save page visit
+    // ------------------------------------------
+    // 3️⃣ SAVE VISIT
+    // ------------------------------------------
     const visit = await PageVisit.create({
       user: user || null,
       sessionId,
@@ -53,7 +107,7 @@ export const trackVisit = async (req, res) => {
       timeSpent,
       isAnonymous,
       deviceInfo: deviceInfo || {},
-      geoLocation: geoJSON
+      geoLocation: geoJSON,
     });
 
     res.status(201).json({ success: true, visit });
@@ -75,14 +129,17 @@ export const recordExit = async (req, res) => {
       isSiteExit,
       hotelId,
       destinationUrl,
-      geoLocation // <-- NEW
+      geoLocation,
     } = req.body;
 
     if (!sessionId || !location) {
-      return res.status(400).json({ success: false, message: "Missing sessionId or location" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing sessionId or location" });
     }
 
-    let locationName = typeof location === "string" ? location : location.name || "";
+    let locationName =
+      typeof location === "string" ? location : location.name || "";
     let districtName = "Unknown";
 
     try {
@@ -91,7 +148,8 @@ export const recordExit = async (req, res) => {
       else if (typeof location === "string") {
         const segments = location.split("/");
         const possibleId = segments[segments.length - 1];
-        if (mongoose.Types.ObjectId.isValid(possibleId)) locationId = possibleId;
+        if (mongoose.Types.ObjectId.isValid(possibleId))
+          locationId = possibleId;
       }
 
       if (locationId) {
@@ -112,7 +170,7 @@ export const recordExit = async (req, res) => {
     if (geoLocation?.coordinates?.length === 2) {
       geoJSON = {
         type: "Point",
-        coordinates: geoLocation.coordinates
+        coordinates: geoLocation.coordinates,
       };
     }
 
@@ -127,7 +185,7 @@ export const recordExit = async (req, res) => {
       isAnonymous: !userId,
       hotelId: hotelId || null,
       destinationUrl: destinationUrl || null,
-      geoLocation: geoJSON
+      geoLocation: geoJSON,
     });
 
     res.status(201).json({ success: true, visit });
@@ -152,7 +210,9 @@ export const getStats = async (req, res) => {
         },
       },
     ]);
-    const uniqueUsers = await PageVisit.distinct("user", { user: { $ne: null } });
+    const uniqueUsers = await PageVisit.distinct("user", {
+      user: { $ne: null },
+    });
 
     // Visits per location
     const byLocation = await PageVisit.aggregate([
@@ -234,34 +294,32 @@ export const getStats = async (req, res) => {
   }
 };
 
-
-
 // GET /api/track/user-stats
 
 export const getUserStats = async (req, res) => {
   try {
     const { from, to } = req.query;
 
-const matchStage = {};
-if (from && to) {
-  matchStage.visitedAt = {
-    $gte: new Date(from),
-    $lte: new Date(to),
-  };
-}
+    const matchStage = {};
+    if (from && to) {
+      matchStage.visitedAt = {
+        $gte: new Date(from),
+        $lte: new Date(to),
+      };
+    }
 
-const stats = await PageVisit.aggregate([
-  { $match: matchStage },
-  {
-    $group: {
-      _id: "$user",
-      totalVisits: { $sum: 1 },
-      totalTimeSpent: { $sum: "$timeSpent" },
-      uniqueLocations: { $addToSet: "$location" },
-      uniqueDistricts: { $addToSet: "$district" },
-    },
-  },
-]);
+    const stats = await PageVisit.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: "$user",
+          totalVisits: { $sum: 1 },
+          totalTimeSpent: { $sum: "$timeSpent" },
+          uniqueLocations: { $addToSet: "$location" },
+          uniqueDistricts: { $addToSet: "$district" },
+        },
+      },
+    ]);
 
     // --- populate usernames ---
     const populatedStats = await Promise.all(
@@ -286,7 +344,9 @@ const stats = await PageVisit.aggregate([
     res.json({ success: true, data: populatedStats });
   } catch (err) {
     console.error("Error fetching user stats:", err);
-    res.status(500).json({ success: false, message: "Failed to fetch user stats" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch user stats" });
   }
 };
 // GET /api/track/user-details/:userId
@@ -324,7 +384,9 @@ export const getUserDetails = async (req, res) => {
     res.json({ success: true, data: visits });
   } catch (err) {
     console.error("User details error:", err);
-    res.status(500).json({ success: false, message: "Failed to fetch user details" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch user details" });
   }
 };
 
@@ -332,20 +394,37 @@ export const getUserDetails = async (req, res) => {
 export const getLocationStats = async (req, res) => {
   try {
     const { from, to } = req.query;
-const matchStage = {};
-if (from && to) {
-  matchStage.visitedAt = {
-    $gte: new Date(from),
-    $lte: new Date(to),
-  };
-}
+    const matchStage = {};
+    if (from && to) {
+      matchStage.visitedAt = {
+        $gte: new Date(from),
+        $lte: new Date(to),
+      };
+    }
 
-const locationStats = await PageVisit.aggregate([
-  { $match: matchStage },
-  { $group: { _id: "$location", totalVisits: { $sum: 1 }, totalTimeSpent: { $sum: "$timeSpent" }, avgTimeSpent: { $avg: "$timeSpent" }, uniqueUsers: { $addToSet: "$user" } } },
-  { $project: { _id: 0, location: "$_id", totalVisits: 1, totalTimeSpent: 1, avgTimeSpent: 1, uniqueUsersCount: { $size: "$uniqueUsers" } } },
-  { $sort: { totalVisits: -1 } },
-]);
+    const locationStats = await PageVisit.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: "$location",
+          totalVisits: { $sum: 1 },
+          totalTimeSpent: { $sum: "$timeSpent" },
+          avgTimeSpent: { $avg: "$timeSpent" },
+          uniqueUsers: { $addToSet: "$user" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          location: "$_id",
+          totalVisits: 1,
+          totalTimeSpent: 1,
+          avgTimeSpent: 1,
+          uniqueUsersCount: { $size: "$uniqueUsers" },
+        },
+      },
+      { $sort: { totalVisits: -1 } },
+    ]);
     res.status(200).json({ success: true, data: locationStats });
   } catch (err) {
     console.error("Error fetching location stats:", err);
@@ -359,7 +438,9 @@ export const getLocationDetails = async (req, res) => {
     const { location } = req.params;
 
     if (!location) {
-      return res.status(400).json({ success: false, message: "Location parameter is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Location parameter is required" });
     }
 
     // Match visits for that specific location
@@ -394,7 +475,9 @@ export const getLocationDetails = async (req, res) => {
     res.json({ success: true, data: visits });
   } catch (err) {
     console.error("Error fetching location details:", err);
-    res.status(500).json({ success: false, message: "Failed to fetch location details" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch location details" });
   }
 };
 // GET /api/track/hotel-stats
@@ -449,7 +532,9 @@ export const getHotelDetails = async (req, res) => {
     const { hotelId } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(hotelId)) {
-      return res.status(400).json({ success: false, message: "Invalid hotelId" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid hotelId" });
     }
 
     const details = await PageVisit.aggregate([
@@ -458,7 +543,7 @@ export const getHotelDetails = async (req, res) => {
       // Join with User collection to get username
       {
         $lookup: {
-          from: "users",           // MongoDB collection name for users
+          from: "users", // MongoDB collection name for users
           localField: "user",
           foreignField: "_id",
           as: "userInfo",
@@ -469,7 +554,7 @@ export const getHotelDetails = async (req, res) => {
       // Group by user
       {
         $group: {
-          _id: "$user",                   // user ObjectId (null for anonymous)
+          _id: "$user", // user ObjectId (null for anonymous)
           username: { $first: "$userInfo.username" }, // now populated
           totalClicks: { $sum: 1 },
           locations: {
@@ -495,7 +580,6 @@ export const getHotelDetails = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 
 // GET /api/track/top-hotels
 export const getTopHotels = async (req, res) => {
@@ -526,21 +610,22 @@ export const getTopHotels = async (req, res) => {
     res.status(200).json({ success: true, data: topHotels });
   } catch (err) {
     console.error("Top hotels error:", err);
-    res.status(500).json({ success: false, message: "Failed to fetch top hotels" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch top hotels" });
   }
 };
-
 
 export const getGeoStats = async (req, res) => {
   try {
     const latestVisits = await PageVisit.aggregate([
       {
         $match: {
-          "geoLocation.coordinates": { $exists: true, $ne: null }
-        }
+          "geoLocation.coordinates": { $exists: true, $ne: null },
+        },
       },
       {
-        $sort: { visitedAt: -1 } // newest first
+        $sort: { visitedAt: -1 }, // newest first
       },
       {
         $group: {
@@ -551,15 +636,15 @@ export const getGeoStats = async (req, res) => {
           timeSpent: { $first: "$timeSpent" },
           exitReason: { $first: "$exitReason" },
           visitedAt: { $first: "$visitedAt" },
-          geoLocation: { $first: "$geoLocation" }
-        }
-      }
+          geoLocation: { $first: "$geoLocation" },
+        },
+      },
     ]);
 
     // Populate the user info (username/name)
     const populated = await PageVisit.populate(latestVisits, {
       path: "user",
-      select: "username name"
+      select: "username name",
     });
 
     const result = populated.map((v) => ({
@@ -575,6 +660,8 @@ export const getGeoStats = async (req, res) => {
     res.json({ success: true, data: result });
   } catch (err) {
     console.error("Geo Stats Error:", err);
-    res.status(500).json({ success: false, message: "Failed to load geo stats" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to load geo stats" });
   }
 };
