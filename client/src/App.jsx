@@ -110,30 +110,9 @@ function GlobalAuthCheck() {
 }
 
 function TrackingWrapper() {
-  useRequestLocation();   
+   
   useUserTracking();      
   return null;
 }
-function useRequestLocation() {
-  useEffect(() => {
-    // Don’t request again if already saved
-    if (localStorage.getItem("userCoords")) return;
 
-    // Request geolocation
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        localStorage.setItem(
-          "userCoords",
-          JSON.stringify({
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-          })
-        );
-      },
-      (err) => {
-        console.warn("Geolocation blocked or failed:", err);
-      }
-    );
-  }, []);
-}
 

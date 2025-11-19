@@ -620,33 +620,31 @@ export const getGeoStats = async (req, res) => {
   try {
     const latestVisits = await PageVisit.aggregate([
       {
-        $match: {
-          "geoLocation.coordinates": { $exists: true, $ne: null },
-        },
+        // Sort by newest visit first
+        $sort: { visitedAt: -1 }
       },
       {
-        $sort: { visitedAt: -1 }, // newest first
-      },
-      {
+        // Group by user – take the MOST RECENT visit (first after sorting)
         $group: {
-          _id: "$user", // group by user
+          _id: "$user",
           user: { $first: "$user" },
           location: { $first: "$location" },
           district: { $first: "$district" },
           timeSpent: { $first: "$timeSpent" },
           exitReason: { $first: "$exitReason" },
           visitedAt: { $first: "$visitedAt" },
-          geoLocation: { $first: "$geoLocation" },
-        },
-      },
+          geoLocation: { $first: "$geoLocation" } // KEEP AS-IS (even if null)
+        }
+      }
     ]);
 
-    // Populate the user info (username/name)
+    // Populate user info (username/name)
     const populated = await PageVisit.populate(latestVisits, {
       path: "user",
-      select: "username name",
+      select: "username name"
     });
 
+    // Final response format
     const result = populated.map((v) => ({
       username: v.user?.username || v.user?.name || "Anonymous",
       location: v.location,
@@ -654,14 +652,16 @@ export const getGeoStats = async (req, res) => {
       timeSpent: v.timeSpent,
       exitReason: v.exitReason,
       visitedAt: v.visitedAt,
-      geoLocation: v.geoLocation,
+      geoLocation: v.geoLocation
     }));
 
     res.json({ success: true, data: result });
   } catch (err) {
     console.error("Geo Stats Error:", err);
-    res
-      .status(500)
-      .json({ success: false, message: "Failed to load geo stats" });
+    res.status(500).json({
+      success: false,
+      message: "Failed to load geo stats"
+    });
   }
 };
+

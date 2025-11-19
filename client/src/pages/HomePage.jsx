@@ -1,3 +1,6 @@
+// =====================
+// HomePage.jsx (FIXED)
+// =====================
 import React, { useEffect, useState, useCallback } from "react";
 
 import { Home } from "../components/Home";
@@ -42,22 +45,17 @@ const LocationRequestModal = ({ open, onAllow, onClose }) => {
 };
 
 /* -----------------------------------------------------------
-   Custom Hook: useGeolocation
+   FIXED Custom Hook: useGeolocation
 ----------------------------------------------------------- */
-function useGeolocation({
-  enableFallback = true,
-  ipFallbackUrl = "https://ipapi.co/json/",
-  refreshInterval = 2 * 60 * 1000,
-  run = true,
-} = {}) {
+function useGeolocation({ enableFallback = false, run = false } = {}) {
   const [coords, setCoords] = useState(null);
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState(null);
 
-  const fallbackToIP = useCallback(async () => {
+  const getFallbackIP = useCallback(async () => {
     try {
       setStatus("fallback");
-      const res = await fetch(ipFallbackUrl);
+      const res = await fetch("https://ipapi.co/json/");
       const data = await res.json();
 
       const lat = data.latitude ?? data.lat;
@@ -69,19 +67,19 @@ function useGeolocation({
         localStorage.setItem("userCoords", JSON.stringify(parsed));
         setStatus("success");
       } else {
-        throw new Error("IP fallback returned no coordinates");
+        throw new Error("No IP coords found");
       }
     } catch (e) {
-      setError(e);
       setStatus("error");
+      setError(e);
     }
-  }, [ipFallbackUrl]);
+  }, []);
 
-  const requestGeolocation = useCallback(() => {
+  const requestGeo = useCallback(() => {
     if (!("geolocation" in navigator)) {
       setStatus("error");
-      setError(new Error("Browser does not support location"));
-      if (enableFallback) fallbackToIP();
+      setError(new Error("Geolocation not supported"));
+      if (enableFallback) getFallbackIP();
       return;
     }
 
@@ -101,40 +99,36 @@ function useGeolocation({
       (err) => {
         setError(err);
         setStatus(err.code === err.PERMISSION_DENIED ? "denied" : "error");
-        if (enableFallback) fallbackToIP();
+
+        if (enableFallback) getFallbackIP();
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
-  }, [enableFallback, fallbackToIP]);
+  }, [enableFallback, getFallbackIP]);
 
   useEffect(() => {
-    if (!run) return; // DO NOT request geolocation until user clicks Allow
-
-    requestGeolocation();
-    const interval = setInterval(requestGeolocation, refreshInterval);
-
-    return () => clearInterval(interval);
-  }, [run, requestGeolocation, refreshInterval]);
+    if (!run) return; // only run when user clicks Allow
+    requestGeo();
+  }, [run, requestGeo]);
 
   return { coords, status, error };
 }
 
 /* -----------------------------------------------------------
-   HomePage Component
+   HomePage Component (Fixed)
 ----------------------------------------------------------- */
 export const HomePage = () => {
-  // 🔥 Check if user already granted permission
   const [locationAllowed, setLocationAllowed] = useState(
     localStorage.getItem("locationPermission") === "granted"
   );
 
-  const [showLocationPopup, setShowLocationPopup] = useState(
+  const [showPopup, setShowPopup] = useState(
     localStorage.getItem("locationPermission") !== "granted"
   );
 
   const { coords } = useGeolocation({
-    enableFallback: true,
-    run: locationAllowed, // ⭐ Only run after user allows
+    enableFallback: locationAllowed, // fallback ONLY after Allow
+    run: locationAllowed,            // run ONLY after Allow
   });
 
   const [nearestLocation, setNearestLocation] = useState(null);
@@ -161,18 +155,23 @@ export const HomePage = () => {
   return (
     <div className="app-container">
 
-      {/* ---------- LOCATION POPUP ---------- */}
+      {/* POPUP */}
       <LocationRequestModal
-        open={showLocationPopup}
+        open={showPopup}
         onAllow={() => {
-          localStorage.setItem("locationPermission", "granted"); // ⭐ Save
-          setLocationAllowed(true); 
-          setShowLocationPopup(false);
+          localStorage.setItem("locationPermission", "granted");
+          setLocationAllowed(true);
+          setShowPopup(false);
         }}
-        onClose={() => setShowLocationPopup(false)}
+        onClose={() => {
+          // User said NO — do NOT fallback, do NOT request location
+          localStorage.setItem("locationPermission", "denied");
+          setLocationAllowed(false);
+          setShowPopup(false);
+        }}
       />
 
-      {/* ---------- MAIN CONTENT ---------- */}
+      {/* MAIN CONTENT */}
       <Home nearestLocation={nearestLocation} />
       <AboutUs />
       <Service />

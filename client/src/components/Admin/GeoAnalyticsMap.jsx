@@ -53,7 +53,12 @@ export default function GeoAnalyticsMap() {
       {geoData.map((v, i) => {
         if (!v.geoLocation || !v.geoLocation.coordinates) return null;
 
-        const [lng, lat] = v.geoLocation.coordinates;
+        let [lng0, lat0] = v.geoLocation.coordinates;
+
+        // ⭐ OFFSET TO PREVENT OVERLAP (IMPORTANT)
+        const offset = 0.0005; // small value = 50 meters approx
+        const lat = lat0 + (Math.random() - 0.5) * offset;
+        const lng = lng0 + (Math.random() - 0.5) * offset;
 
         return (
           <Marker key={i} position={[lat, lng]} icon={userIcon}>
