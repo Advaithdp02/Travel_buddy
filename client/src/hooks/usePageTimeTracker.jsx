@@ -115,6 +115,7 @@ const usePageTimeTracker = () => {
     return "unknown";
   };
 
+
   // -------------------------------
   // ⭐ Send + Reset Timer
   // -------------------------------
@@ -183,3 +184,4 @@ const usePageTimeTracker = () => {
 };
 
 export default usePageTimeTracker;
+  // -------------------------------
