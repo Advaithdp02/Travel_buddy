@@ -1,5 +1,5 @@
 // =====================
-// HomePage.jsx (FIXED)
+// HomePage.jsx (Mobile FIXED – FINAL)
 // =====================
 import React, { useEffect, useState, useCallback } from "react";
 
@@ -32,6 +32,7 @@ const LocationRequestModal = ({ open, onAllow, onClose }) => {
           >
             Not Now
           </button>
+
           <button
             onClick={onAllow}
             className="px-4 py-2 rounded-lg bg-[#9156F1] text-white hover:bg-[#7b3cdc]"
@@ -45,12 +46,21 @@ const LocationRequestModal = ({ open, onAllow, onClose }) => {
 };
 
 /* -----------------------------------------------------------
-   FIXED Custom Hook: useGeolocation
+   MOBILE-SAFE useGeolocation HOOK
 ----------------------------------------------------------- */
-function useGeolocation({ enableFallback = false, run = false } = {}) {
+function useGeolocation({ enableFallback = false } = {}) {
   const [coords, setCoords] = useState(null);
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState(null);
+
+  // Load saved coords first (mobile fix)
+  useEffect(() => {
+    const saved = localStorage.getItem("userCoords");
+    if (saved) {
+      setCoords(JSON.parse(saved));
+      setStatus("success");
+    }
+  }, []);
 
   const getFallbackIP = useCallback(async () => {
     try {
@@ -58,64 +68,25 @@ function useGeolocation({ enableFallback = false, run = false } = {}) {
       const res = await fetch("https://ipapi.co/json/");
       const data = await res.json();
 
-      const lat = data.latitude ?? data.lat;
-      const lon = data.longitude ?? data.lon;
+      const parsed = {
+        latitude: parseFloat(data.latitude),
+        longitude: parseFloat(data.longitude),
+      };
 
-      if (lat && lon) {
-        const parsed = { latitude: parseFloat(lat), longitude: parseFloat(lon) };
-        setCoords(parsed);
-        localStorage.setItem("userCoords", JSON.stringify(parsed));
-        setStatus("success");
-      } else {
-        throw new Error("No IP coords found");
-      }
+      setCoords(parsed);
+      localStorage.setItem("userCoords", JSON.stringify(parsed));
+      setStatus("success");
     } catch (e) {
       setStatus("error");
       setError(e);
     }
   }, []);
 
-  const requestGeo = useCallback(() => {
-    if (!("geolocation" in navigator)) {
-      setStatus("error");
-      setError(new Error("Geolocation not supported"));
-      if (enableFallback) getFallbackIP();
-      return;
-    }
-
-    setStatus("requesting");
-    setError(null);
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const parsed = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        };
-        setCoords(parsed);
-        localStorage.setItem("userCoords", JSON.stringify(parsed));
-        setStatus("success");
-      },
-      (err) => {
-        setError(err);
-        setStatus(err.code === err.PERMISSION_DENIED ? "denied" : "error");
-
-        if (enableFallback) getFallbackIP();
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-  }, [enableFallback, getFallbackIP]);
-
-  useEffect(() => {
-    if (!run) return; // only run when user clicks Allow
-    requestGeo();
-  }, [run, requestGeo]);
-
   return { coords, status, error };
 }
 
 /* -----------------------------------------------------------
-   HomePage Component (Fixed)
+   HomePage Component (FINAL + MOBILE FIX)
 ----------------------------------------------------------- */
 export const HomePage = () => {
   const [locationAllowed, setLocationAllowed] = useState(
@@ -127,12 +98,12 @@ export const HomePage = () => {
   );
 
   const { coords } = useGeolocation({
-    enableFallback: locationAllowed, // fallback ONLY after Allow
-    run: locationAllowed,            // run ONLY after Allow
+    enableFallback: locationAllowed,
   });
 
   const [nearestLocation, setNearestLocation] = useState(null);
 
+  // Fetch nearest destination
   useEffect(() => {
     const fetchNearest = async () => {
       if (!coords) return;
@@ -159,14 +130,36 @@ export const HomePage = () => {
       <LocationRequestModal
         open={showPopup}
         onAllow={() => {
+          // Mark permission
           localStorage.setItem("locationPermission", "granted");
           setLocationAllowed(true);
           setShowPopup(false);
+
+          // 🔥 MOBILE FIX –
+          // Request location DIRECTLY inside the user gesture.
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                const parsed = {
+                  latitude: pos.coords.latitude,
+                  longitude: pos.coords.longitude,
+                };
+
+                // Save for next reload
+                localStorage.setItem("userCoords", JSON.stringify(parsed));
+
+                // Reload to let hooks pick it up
+                window.location.reload();
+              },
+              (err) => {
+                console.log("Geo error:", err);
+              },
+              { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+          }
         }}
         onClose={() => {
-          // User said NO — do NOT fallback, do NOT request location
           localStorage.setItem("locationPermission", "denied");
-          setLocationAllowed(false);
           setShowPopup(false);
         }}
       />
