@@ -11,7 +11,9 @@ const usePageTimeTracker = () => {
   const prevPathRef = useRef(location.pathname);
   const idleTimerRef = useRef(null);
 
-  // Ensure sessionId exists
+  // -------------------------------
+  // ⭐ Ensure sessionId exists
+  // -------------------------------
   let sessionId = localStorage.getItem("sessionId");
   if (!sessionId) {
     sessionId = uuidv4();
@@ -20,7 +22,49 @@ const usePageTimeTracker = () => {
 
   const getUserId = () => localStorage.getItem("userId") || null;
 
-  // ⭐ Add geolocation reader
+  // -------------------------------
+  // ⭐ ACCURATE GPS LOCKING (NEW)
+  // -------------------------------
+  const getAccurateLocation = () => {
+    return new Promise((resolve) => {
+      let watchId = null;
+      let locked = false;
+
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const { latitude, longitude, accuracy } = pos.coords;
+
+          console.log("GPS update:", latitude, longitude, "Accuracy:", accuracy);
+
+          // Only lock when accuracy is GOOD
+          if (!locked && accuracy < 50) {
+            locked = true;
+
+            const coords = { latitude, longitude };
+
+            // Save once — never overwrite with bad readings
+            localStorage.setItem("userCoords", JSON.stringify(coords));
+
+            navigator.geolocation.clearWatch(watchId);
+            resolve(coords);
+          }
+        },
+        (err) => {
+          console.warn("GPS error:", err);
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        }
+      );
+    });
+  };
+
+  // -------------------------------
+  // ⭐ GeoJSON formatting
+  // -------------------------------
   const getUserCoords = () => {
     const coords = localStorage.getItem("userCoords");
     if (!coords) return null;
@@ -31,13 +75,16 @@ const usePageTimeTracker = () => {
 
       return {
         type: "Point",
-        coordinates: [longitude, latitude], // GeoJSON format
+        coordinates: [longitude, latitude], // GeoJSON
       };
-    } catch (err) {
+    } catch {
       return null;
     }
   };
 
+  // -------------------------------
+  // ⭐ Tracking Sender
+  // -------------------------------
   const sendTrackingData = async (path, timeSpent, reason = "unknown", isSiteExit = false) => {
     try {
       await fetch(`${BACKEND_URL}/track`, {
@@ -51,7 +98,7 @@ const usePageTimeTracker = () => {
           exitReason: reason,
           isSiteExit,
           isAnonymous: !getUserId(),
-          geoLocation: getUserCoords(), // ⭐ NEW
+          geoLocation: getUserCoords(),
         }),
         keepalive: true,
       });
@@ -60,13 +107,17 @@ const usePageTimeTracker = () => {
     }
   };
 
-  // Exit reason detection
+  // -------------------------------
+  // ⭐ Exit Reason
+  // -------------------------------
   const detectExitReason = (eventType = "unknown") => {
     if (eventType === "beforeunload") return "tab_closed_or_reload";
     return "unknown";
   };
 
-  // Send + reset timer
+  // -------------------------------
+  // ⭐ Send + Reset Timer
+  // -------------------------------
   const handleSendAndReset = (path, reason, isSiteExit) => {
     const now = Date.now();
     const timeSpent = Math.floor((now - startTimeRef.current) / 1000);
@@ -75,6 +126,9 @@ const usePageTimeTracker = () => {
     startTimeRef.current = now;
   };
 
+  // -------------------------------
+  // ⭐ Idle Timer Reset
+  // -------------------------------
   const resetIdleTimer = () => {
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     idleTimerRef.current = setTimeout(() => {
@@ -82,8 +136,14 @@ const usePageTimeTracker = () => {
     }, IDLE_TIMEOUT);
   };
 
+  // -------------------------------
+  // ⭐ Main Effect
+  // -------------------------------
   useEffect(() => {
-    // SPA navigation tracking
+    // Lock accurate GPS once per session
+    getAccurateLocation();
+
+    // SPA page navigation tracking
     if (prevPathRef.current !== location.pathname) {
       handleSendAndReset(prevPathRef.current, "internal_navigation", false);
       prevPathRef.current = location.pathname;
