@@ -445,10 +445,10 @@ useEffect(() => {
 
     checkWishlist();
 
-    fetchLocationData();
+    fetchLocationData(); 
   }, [locationId]);
   useEffect(() => {
-    console.log("UPDATED MAPINFO:", mapInfo);
+    
   }, [mapInfo]);
 
   useEffect(() => {

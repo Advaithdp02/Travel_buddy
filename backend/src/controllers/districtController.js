@@ -134,7 +134,7 @@ export const getNearestDistrict = async (req, res) => {
       return res.status(400).json({ message: "Latitude and longitude are required" });
     }
 
-    // Step 1: find nearest
+    // Step 1: Nearest district
     const nearest = await District.findOne({
       coordinates: {
         $near: {
@@ -144,30 +144,46 @@ export const getNearestDistrict = async (req, res) => {
           }
         }
       }
-    }).populate("locations");
+    });
 
     if (!nearest) {
-      return res.status(404).json({ message: "No nearby districts found" });
+      return res.status(404).json({ message: "No district found nearby" });
     }
 
-    // Step 2: get same state districts
+    // Step 2: All districts in same state
     const sameStateDistricts = await District.find({
       State: nearest.State
     });
 
-    // Step 3: merge into ONE JSON object
-    const finalResponse = {
-      ...nearest.toObject(),       // flatten nearest district fields
-      relatedDistricts: sameStateDistricts // add rest of districts in same state
-    };
+    // Step 3: UNIVERSAL SORT KL01, KA02, TN03, etc.
+    const orderedDistricts = sameStateDistricts.sort((a, b) => {
+      const prefixA = a.DistrictCode.match(/^[A-Za-z]+/)[0];
+      const prefixB = b.DistrictCode.match(/^[A-Za-z]+/)[0];
 
-    res.json(finalResponse);
+      // First compare alphabetic prefixes (KA, KL, TN, MH, etc.)
+      if (prefixA !== prefixB) {
+        return prefixA.localeCompare(prefixB);
+      }
+
+      // Then compare numerical parts
+      const numA = parseInt(a.DistrictCode.replace(prefixA, ""));
+      const numB = parseInt(b.DistrictCode.replace(prefixB, ""));
+
+      return numA - numB;
+    });
+
+    // Step 4: Return nearest + sorted list
+    res.json({
+      nearestDistrict: nearest,
+      orderedDistricts
+    });
 
   } catch (err) {
     console.error("Get Nearest District Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
 // 🟢 Get districts by State

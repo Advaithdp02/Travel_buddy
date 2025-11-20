@@ -34,7 +34,7 @@ const usePageTimeTracker = () => {
         (pos) => {
           const { latitude, longitude, accuracy } = pos.coords;
 
-          console.log("GPS update:", latitude, longitude, "Accuracy:", accuracy);
+          
 
           // Only lock when accuracy is GOOD
           if (!locked && accuracy < 50) {

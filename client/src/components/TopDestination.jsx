@@ -11,55 +11,96 @@ const ArrowButton = ({ direction = "right", onClick }) => {
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      className="w-[35px] h-[35px] rounded-full bg-blackflex items-center justify-center transition-colors"
+      className="w-[35px] h-[35px] rounded-full bg-black flex items-center justify-center transition-colors"
     >
       <Icon hover={hover} />
     </button>
   );
 };
+
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-
-
 
 export const TopDestinations = ({ userCoords }) => {
   const [destinations, setDestinations] = useState([]);
+  const [nearestCode, setNearestCode] = useState(null);
   const scrollContainerRef = useRef(null);
   const bgImage = "/TopDestinationBG.png";
 
+  // ===========================
+  // 1) Fetch Data
+  // ===========================
   useEffect(() => {
-  const fetchDestinations = async () => {
-    try {
-      if (!userCoords) return;
+    const fetchDestinations = async () => {
+      try {
+        if (!userCoords) return;
+        
+        const { latitude, longitude } = userCoords
 
-      const { latitude, longitude } = userCoords;
+        const res = await fetch(
+          `${BACKEND_URL}/districts/nearest/${latitude}/${longitude}`
+        );
 
-      const res = await fetch(
-        `${BACKEND_URL}/districts/nearest/${latitude}/${longitude}`
-      );
+        const data = await res.json();
 
-      const districtData = await res.json();
+        // Backend returns:
+        // { nearestDistrict: {...}, orderedDistricts: [...] }
 
-      // the API returns ONE merged object like:
-      // { ...district, relatedDistricts: [...] }
-
-      // If the frontend expects a list → send relatedDistricts
-      if (districtData?.relatedDistricts) {
-        setDestinations(districtData.relatedDistricts);
-      } 
-      else {
-        // fallback → just nearest district
-        setDestinations([districtData]);
+        if (data?.orderedDistricts) {
+          setDestinations(data.orderedDistricts);
+          setNearestCode(data.nearestDistrict?.DistrictCode);
+        } else {
+          setDestinations([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch nearest destinations:", err);
       }
-      
-    } catch (err) {
-      console.error("Failed to fetch nearest destinations:", err);
+    };
+
+    fetchDestinations();
+  }, [userCoords]);
+
+  // ===========================
+  // 2) Auto Scroll to nearest district
+  // ===========================
+ useEffect(() => {
+  if (!nearestCode || destinations.length === 0 || !scrollContainerRef.current) return;
+
+  const index = destinations.findIndex(
+    (d) => d.DistrictCode === nearestCode
+  );
+
+  if (index !== -1) {
+    const CARD_WIDTH = 320;
+    const OFFSET = 150; // adjust this
+
+    let scrollAmount;
+
+    if (index === 0) {
+      // First element → no offset
+      scrollAmount = 0;
+    } else {
+      // Shift slightly
+      scrollAmount = index * CARD_WIDTH - OFFSET;
+
+      // Prevent showing previous card
+      const minAllowed = index * CARD_WIDTH;
+
+      if (scrollAmount < minAllowed) {
+        scrollAmount = minAllowed;
+      }
     }
-  };
 
-  fetchDestinations();
-}, [userCoords]);
+    scrollContainerRef.current.scrollTo({
+      left: scrollAmount,
+      behavior: "smooth",
+    });
+  }
+}, [nearestCode, destinations]);
 
 
+  // ===========================
+  // 3) Manual Scroll Buttons
+  // ===========================
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
       const scrollAmount = 320;
@@ -72,10 +113,11 @@ export const TopDestinations = ({ userCoords }) => {
 
   return (
     <section
-      className=" flex flex-col md:-ml-[60px] md:flex-row items-start justify-between bg-cover bg-center text-white py-16 overflow-visible"
-      style={{ backgroundImage: `url(${bgImage})`}}
+      className="flex flex-col md:-ml-[60px] md:flex-row items-start justify-between bg-cover bg-center text-white py-16 overflow-visible"
+      style={{ backgroundImage: `url(${bgImage})` }}
     >
       <div className="relative z-10 overflow-hidden w-full max-w-7xl mx-auto px-6">
+        
         {/* Heading + Buttons */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
           <div>
@@ -96,12 +138,15 @@ export const TopDestinations = ({ userCoords }) => {
         {/* Cards */}
         <div
           ref={scrollContainerRef}
-          className="flex flex-row gap-6 overflow-x-scroll hide-scrollbar  flex-nowrap"
+          className="flex flex-row gap-6 overflow-x-scroll hide-scrollbar flex-nowrap"
         >
           {destinations.length > 0 ? (
             destinations.map((dest) => (
               <div key={dest._id} className="flex-shrink-0">
-                <DestinationCard destination={dest} />
+                <DestinationCard 
+                  destination={dest}
+                  isNearest={dest.DistrictCode === nearestCode} 
+                />
               </div>
             ))
           ) : (

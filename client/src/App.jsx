@@ -24,6 +24,7 @@ import ForgotPassword from "./components/ForgotPassword";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
+
 export default function App() {
   return (
     <Router>
