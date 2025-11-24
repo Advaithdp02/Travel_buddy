@@ -343,14 +343,40 @@ export const trackLocationVisit = async (req, res) => {
 // -------------------- ADMIN: GET ALL USERS --------------------
 export const getAllUsers = async (req, res) => {
   try {
-   
+    let { page = 1, limit = 10, search = "" } = req.query;
 
-    const users = await User.find().select("-password"); // hide passwords
-    res.json(users);
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    const filter = {};
+
+    // 👇 Search by name or email
+    if (search.trim() !== "") {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const total = await User.countDocuments(filter);
+
+    const users = await User.find(filter)
+      .select("-password")
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .sort({ createdAt: -1 }); // newest first
+
+    res.json({
+      users,
+      page,
+      totalPages: Math.ceil(total / limit),
+      total,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // -------------------- ADMIN: UPDATE USER ROLE --------------------
 export const updateUserRole = async (req, res) => {

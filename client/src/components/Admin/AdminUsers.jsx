@@ -19,27 +19,49 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]); // 👈 filtered list
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState(""); // 👈 search term
+
+  // Search
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
 
   const token = localStorage.getItem("token");
 
-  // ---------------- Fetch Users ----------------
+  // ---------------- Debounce Search ----------------
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300); // wait 300ms before applying search
+
+    return () => clearTimeout(timeout);
+  }, [searchTerm]);
+
+  // ---------------- Fetch Users (pagination + backend search) ----------------
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`${BACKEND_URL}/users/admin/users`, {
-          headers: { Authorization: `Bearer ${token}` },
+
+        const params = new URLSearchParams({
+          page,
+          limit,
+          search: debouncedSearch || "",
         });
 
-        const usersArray = Array.isArray(res.data)
-          ? res.data
-          : res.data.users || [];
-        setUsers(usersArray);
-        setFilteredUsers(usersArray); // initialize filtered list
+        const res = await axios.get(
+          `${BACKEND_URL}/users/admin/users?${params.toString()}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        setUsers(res.data.users || []);
+        setTotalPages(res.data.totalPages || 1);
       } catch (err) {
         console.error("Failed to fetch users:", err);
         setError("Failed to fetch users. Please try again later.");
@@ -49,34 +71,22 @@ export default function AdminUsers() {
     };
 
     fetchUsers();
-  }, [token]);
-
-  // ---------------- Search Filter ----------------
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredUsers(users);
-      return;
-    }
-
-    const lowerSearch = searchTerm.toLowerCase();
-    const filtered = users.filter(
-      (u) =>
-        u.name?.toLowerCase().includes(lowerSearch) ||
-        u.email?.toLowerCase().includes(lowerSearch)
-    );
-    setFilteredUsers(filtered);
-  }, [searchTerm, users]);
+  }, [token, page, limit, debouncedSearch]);
 
   // ---------------- Delete User ----------------
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
+
     try {
       await axios.delete(`${BACKEND_URL}/users/admin/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const updatedUsers = users.filter((u) => u._id !== id);
-      setUsers(updatedUsers);
-      setFilteredUsers(updatedUsers);
+
+      setUsers((prev) => prev.filter((u) => u._id !== id));
+
+      if (users.length === 1 && page > 1) {
+        setPage(page - 1);
+      }
     } catch (err) {
       console.error("Delete failed:", err);
       alert("Failed to delete user. Try again.");
@@ -89,15 +99,10 @@ export default function AdminUsers() {
       const res = await axios.put(
         `${BACKEND_URL}/users/admin/users/${id}/role`,
         { role: newRole },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setUsers((prev) =>
-        prev.map((u) => (u._id === id ? res.data.user || u : u))
-      );
-      setFilteredUsers((prev) =>
         prev.map((u) => (u._id === id ? res.data.user || u : u))
       );
     } catch (err) {
@@ -133,7 +138,10 @@ export default function AdminUsers() {
           size="small"
           placeholder="Search by name or email..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setPage(1); // reset to page 1 on search
+          }}
           sx={{ width: 300 }}
           InputProps={{
             startAdornment: (
@@ -145,11 +153,12 @@ export default function AdminUsers() {
         />
       </Box>
 
-      {filteredUsers.length === 0 ? (
+      {/* USERS LIST */}
+      {users.length === 0 ? (
         <Typography>No users found.</Typography>
       ) : (
         <div className="grid gap-4">
-          {filteredUsers.map((user) => (
+          {users.map((user) => (
             <Card key={user._id} className="shadow-md rounded-xl bg-white">
               <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <Box>
@@ -186,6 +195,29 @@ export default function AdminUsers() {
           ))}
         </div>
       )}
+
+      {/* ---------------- Pagination ---------------- */}
+      <Box className="flex justify-center items-center gap-4 mt-6">
+        <Button
+          variant="outlined"
+          disabled={page === 1}
+          onClick={() => setPage(page - 1)}
+        >
+          Previous
+        </Button>
+
+        <Typography>
+          Page {page} of {totalPages}
+        </Typography>
+
+        <Button
+          variant="outlined"
+          disabled={page === totalPages}
+          onClick={() => setPage(page + 1)}
+        >
+          Next
+        </Button>
+      </Box>
     </Box>
   );
 }

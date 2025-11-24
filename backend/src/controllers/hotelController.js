@@ -7,26 +7,45 @@ import mongoose from "mongoose";
 // ------------------ Get all hotels ------------------
 export const getAllHotels = async (req, res) => {
   try {
-    const hotels = await Hotel.find()
-      .populate("district", "name") // get district name
+    let { page = 1, limit = 9, districtId, state } = req.query;
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    const filter = {};
+
+    if (districtId) filter.district = districtId;
+    if (state) filter.State = state;
+
+    const total = await Hotel.countDocuments(filter);
+
+    const hotels = await Hotel.find(filter)
+      .populate("district", "name State")
       .populate({
         path: "locationId",
-        select: "name", // only include human-readable name
-        strictPopulate: false, // bypass Mongoose strict populate
-      });
+        select: "name",
+        strictPopulate: false,
+      })
+      .skip((page - 1) * limit)
+      .limit(limit);
 
-    // Map to make human-readable location easily accessible
     const hotelsFormatted = hotels.map((h) => ({
       ...h.toObject(),
       locationName: h.locationId?.name || h.location,
     }));
 
-    res.status(200).json(hotelsFormatted);
+    res.status(200).json({
+      hotels: hotelsFormatted,
+      page,
+      totalPages: Math.ceil(total / limit),
+      total,
+    });
   } catch (err) {
     console.error("Fetch Hotels Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
 // ------------------ Get single hotel by ID ------------------

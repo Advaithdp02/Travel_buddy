@@ -134,43 +134,40 @@ export const getCommentsByLocation = async (req, res) => {
 };
 
 
-// Get all comments (with optional filters: district, location)
+// GET /comments?districtId=&locationId=&page=&limit=
 export const getAllComments = async (req, res) => {
   try {
-    const { districtId, locationId } = req.query;
+    let { districtId, locationId, page = 1, limit = 10 } = req.query;
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+
     const filter = {};
 
-    // 🔹 If specific location selected, only show that
-    if (locationId) {
-      filter.location = locationId;
-    }
+    if (districtId) filter.district = districtId;
+    if (locationId) filter.location = locationId;
 
-    // 🔹 Else if district selected, get all locations under that district
-    else if (districtId) {
-      const locations = await Location.find({ district: districtId }).select("_id");
-      if (!locations.length) {
-        return res.status(200).json([]); // no locations found
-      }
-      filter.location = { $in: locations.map((l) => l._id) };
-    }
+    const total = await Comment.countDocuments(filter);
 
-    // 🔹 Build query
     const comments = await Comment.find(filter)
-      .populate("user", "name username profilePic")
-      .populate("replies.user", "name username profilePic")
-      .populate({
-        path: "location",
-        select: "name district",
-        populate: { path: "district", select: "name" },
-      })
-      .sort({ createdAt: -1 });
+      .populate("user", "name")
+      .populate("location", "name")
+      .populate("replies.user", "name")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
 
-    res.status(200).json(comments);
+    res.json({
+      comments,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (err) {
-    console.error("Error fetching comments:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: err.message });
   }
 };
+
 
 
 // Toggle like/unlike
