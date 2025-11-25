@@ -5,7 +5,7 @@ import { IconArrowRight, IconArrowLeft } from "./Icons";
 const ArrowButton = ({ direction = "right", onClick }) => {
   const Icon = direction === "right" ? IconArrowLeft : IconArrowRight;
   const [hover, setHover] = useState(false);
-  
+
   return (
     <button
       onClick={onClick}
@@ -23,36 +23,32 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 export const TopDestinations = ({ userCoords }) => {
   const [destinations, setDestinations] = useState([]);
   const [nearestCode, setNearestCode] = useState(null);
-  const scrollContainerRef = useRef(null);
-  const bgImage = "/TopDestinationBG.png";
+
+  const scrollRef = useRef(null);
+  const CARD_WIDTH = 320;
+  const GAP = 24; 
 
   // ===========================
-  // 1) Fetch Data
+  // 1) Fetch Data from Backend
   // ===========================
   useEffect(() => {
     const fetchDestinations = async () => {
+      if (!userCoords) return;
+
       try {
-        if (!userCoords) return;
-        
-        const { latitude, longitude } = userCoords
+        const { latitude, longitude } = userCoords;
 
         const res = await fetch(
           `${BACKEND_URL}/districts/nearest/${latitude}/${longitude}`
         );
-
         const data = await res.json();
-
-        // Backend returns:
-        // { nearestDistrict: {...}, orderedDistricts: [...] }
 
         if (data?.orderedDistricts) {
           setDestinations(data.orderedDistricts);
           setNearestCode(data.nearestDistrict?.DistrictCode);
-        } else {
-          setDestinations([]);
         }
       } catch (err) {
-        console.error("Failed to fetch nearest destinations:", err);
+        console.error(err);
       }
     };
 
@@ -60,65 +56,61 @@ export const TopDestinations = ({ userCoords }) => {
   }, [userCoords]);
 
   // ===========================
-  // 2) Auto Scroll to nearest district
+  // Infinite Scroll Setup
   // ===========================
- useEffect(() => {
-  if (!nearestCode || destinations.length === 0 || !scrollContainerRef.current) return;
+  const fullList = [...destinations, ...destinations, ...destinations];
+  const middleIndex = destinations.length; 
 
-  const index = destinations.findIndex(
-    (d) => d.DistrictCode === nearestCode
-  );
+  useEffect(() => {
+    if (!scrollRef.current || destinations.length === 0) return;
 
-  if (index !== -1) {
-    const CARD_WIDTH = 320;
-    const OFFSET = 150; // adjust this
+    const startScroll =
+      middleIndex * (CARD_WIDTH + GAP)-40; 
 
-    let scrollAmount;
+    scrollRef.current.scrollLeft = startScroll;
+  }, [destinations]);
 
-    if (index === 0) {
-      // First element → no offset
-      scrollAmount = 0;
-    } else {
-      // Shift slightly
-      scrollAmount = index * CARD_WIDTH - OFFSET;
+  // ===========================
+  // Auto Recenter to Middle
+  // ===========================
+  const handleInfiniteScroll = () => {
+    if (!scrollRef.current || destinations.length === 0) return;
 
-      // Prevent showing previous card
-      const minAllowed = index * CARD_WIDTH;
+    const totalWidth = fullList.length * (CARD_WIDTH + GAP);
+    const oneBatchWidth = destinations.length * (CARD_WIDTH + GAP);
 
-      if (scrollAmount < minAllowed) {
-        scrollAmount = minAllowed;
-      }
+    const current = scrollRef.current.scrollLeft;
+
+    if (current <= oneBatchWidth * 0.3) {
+      scrollRef.current.scrollLeft = current + oneBatchWidth;
     }
 
-    scrollContainerRef.current.scrollTo({
-      left: scrollAmount,
-      behavior: "smooth",
-    });
-  }
-}, [nearestCode, destinations]);
-
+    if (current >= oneBatchWidth * 2.7) {
+      scrollRef.current.scrollLeft = current - oneBatchWidth;
+    }
+  };
 
   // ===========================
-  // 3) Manual Scroll Buttons
+  // Manual Scroll Buttons
   // ===========================
   const scroll = (direction) => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = 320;
-      scrollContainerRef.current.scrollBy({
-        left: direction === "right" ? scrollAmount : -scrollAmount,
-        behavior: "smooth",
-      });
-    }
+    if (!scrollRef.current) return;
+
+    const amount = CARD_WIDTH + GAP;
+
+    scrollRef.current.scrollBy({
+      left: direction === "right" ? amount : -amount,
+      behavior: "smooth",
+    });
   };
 
   return (
     <section
       className="flex flex-col md:-ml-[60px] md:flex-row items-start justify-between bg-cover bg-center text-white py-16 overflow-visible"
-      style={{ backgroundImage: `url(${bgImage})` }}
+      style={{ backgroundImage: `url(/TopDestinationBG.png)` }}
     >
       <div className="relative z-10 overflow-hidden w-full max-w-7xl mx-auto px-6">
-        
-        {/* Heading + Buttons */}
+        {/* Heading */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
           <div>
             <h2 className="font-schoolbell text-[#F2B024] text-3xl md:text-4xl">
@@ -135,23 +127,20 @@ export const TopDestinations = ({ userCoords }) => {
           </div>
         </div>
 
-        {/* Cards */}
+        {/* Infinite Scroll Cards */}
         <div
-          ref={scrollContainerRef}
+          ref={scrollRef}
+          onScroll={handleInfiniteScroll}
           className="flex flex-row gap-6 overflow-x-scroll hide-scrollbar flex-nowrap"
         >
-          {destinations.length > 0 ? (
-            destinations.map((dest) => (
-              <div key={dest._id} className="flex-shrink-0">
-                <DestinationCard 
-                  destination={dest}
-                  isNearest={dest.DistrictCode === nearestCode} 
-                />
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-300">Loading destinations...</p>
-          )}
+          {fullList.map((dest, i) => (
+            <div key={i} className="flex-shrink-0">
+              <DestinationCard
+                destination={dest}
+                isNearest={dest.DistrictCode === nearestCode}
+              />
+            </div>
+          ))}
         </div>
       </div>
     </section>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState,useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 
 import {
   StarIcon,
@@ -129,29 +129,29 @@ export const DestinationPage = ({}) => {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c; // distance in km
   };
-  
 
-const fetchComments = useCallback(async () => {
-  if (!locationId?.id) return;
+  const fetchComments = useCallback(async () => {
+    if (!locationId?.id) return;
 
-  const res = await fetch(`${Backend_URL}/comments/location/${locationId.id}`);
-  const data = await res.json();
+    const res = await fetch(
+      `${Backend_URL}/comments/location/${locationId.id}`
+    );
+    const data = await res.json();
 
-  setComments(data.comments || []);
-}, [locationId.id]);
+    setComments(data.comments || []);
+  }, [locationId.id]);
 
-useEffect(() => {
-  if (isModalOpen) {
-    fetchComments(); // refresh when modal opens
-  }
-}, [isModalOpen]);
+  useEffect(() => {
+    if (isModalOpen) {
+      fetchComments(); // refresh when modal opens
+    }
+  }, [isModalOpen]);
 
-useEffect(() => {
-  if (!isModalOpen) {
-    fetchComments(); // refresh when modal closes
-  }
-}, [isModalOpen]);
-
+  useEffect(() => {
+    if (!isModalOpen) {
+      fetchComments(); // refresh when modal closes
+    }
+  }, [isModalOpen]);
 
   // Travel time
   const calculateTime = (distanceKm, speedKmph = 60) => {
@@ -214,12 +214,12 @@ useEffect(() => {
       console.error("Error fetching hotels:", err);
     }
   };
-  
 
   const fetchhLocationDistrict = async (district, terrain) => {
     try {
       // 🧩 Build the correct URL based on available filters
       let url = "";
+      if (terrain === "none") terrain = "";
 
       if (district) {
         // Base: /district/:district
@@ -280,7 +280,6 @@ useEffect(() => {
       console.error("❌ Error fetching locations:", err);
     }
   };
-
 
   useEffect(() => {
     fetchhLocationDistrict(filters.district, filters.terrain);
@@ -367,7 +366,7 @@ useEffect(() => {
           userCoordinates: [userCoords.longitude, userCoords.latitude],
           destinationCoords: [maplat, maplon],
         }));
-        
+
         setMapKey((prev) => prev + 1);
 
         // Latitude & Longitude for weather
@@ -445,11 +444,9 @@ useEffect(() => {
 
     checkWishlist();
 
-    fetchLocationData(); 
+    fetchLocationData();
   }, [locationId]);
-  useEffect(() => {
-    
-  }, [mapInfo]);
+  useEffect(() => {}, [mapInfo]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -467,7 +464,7 @@ useEffect(() => {
 
   const handleWishlist = async () => {
     try {
-      const location_id = locationId.id; // assuming locationId is an object like { id: "123" }
+      const location_id = locationId.id;
       const token = localStorage.getItem("token");
 
       if (!token) {
@@ -476,7 +473,7 @@ useEffect(() => {
       }
 
       const response = await axios.put(
-        `${Backend_URL}/users/wishlist/add/${location_id}`, // adjust your backend URL
+        `${Backend_URL}/users/wishlist/add/${location_id}`,
         {},
         {
           headers: {
@@ -767,11 +764,11 @@ useEffect(() => {
       </section>
 
       <CommunityModal
-  isOpen={isModalOpen}
-   onClose={() => setIsModalOpen(false)}
-  comments={comments}
-  refreshComments={fetchComments}
-/>
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        comments={comments}
+        refreshComments={fetchComments}
+      />
 
       {/* Filter & Places Section */}
       {/* 🌍 Filter Section */}
@@ -859,7 +856,7 @@ useEffect(() => {
                   setFilters({ ...filters, terrain: e.target.value })
                 }
               >
-                <option value="">Select Terrain</option>
+                <option value="none">Select Terrain</option>
                 <option value="Mountain">Mountains</option>
                 <option value="Beach">Beaches</option>
                 <option value="Forest">Forests</option>

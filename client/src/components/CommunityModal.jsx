@@ -43,12 +43,22 @@ export const CommunityModal = ({
     if (!isOpen) return;
 
     const scrollY = window.scrollY;
+
+    // Calculate scrollbar width
+    const scrollbarWidth = window.innerWidth - document.body.clientWidth;
+
+    // Apply scroll lock WITHOUT shifting layout
     document.body.style.position = "fixed";
     document.body.style.top = `-${scrollY}px`;
+    document.body.style.paddingRight = `${scrollbarWidth}px`;
 
     return () => {
       const storedY = document.body.style.top;
+
       document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.paddingRight = "";
+
       window.scrollTo(0, parseInt(storedY || "0") * -1);
     };
   }, [isOpen]);
@@ -317,24 +327,44 @@ export const CommunityModal = ({
                       const replyTrim = trimText(r.text, 150);
                       const isReplyExpanded = expandedReplies[r._id];
 
-                      const replyUsername =
-                        r.user?.username || r.user?.name;
+                      const replyUsername = r.user?.username || r.user?.name;
 
                       return (
                         <div
                           key={r._id}
                           className="bg-[#fbebff]/60 p-3 rounded-lg text-sm shadow-md break-words"
                         >
-                          {/* Reply User */}
-                          <p
-                            className="font-semibold cursor-pointer hover:text-[#9156F1]"
-                            onClick={() => {
-                              onClose();
-                              navigate(`/profile/${replyUsername}`);
-                            }}
-                          >
-                            {r.user?.name}
-                          </p>
+                          {/* Reply User + Follow */}
+                          <div className="flex items-center gap-2">
+                            <p
+                              className="font-semibold cursor-pointer hover:text-[#9156F1]"
+                              onClick={() => {
+                                onClose();
+                                navigate(`/profile/${replyUsername}`);
+                              }}
+                            >
+                              {r.user?.name}
+                            </p>
+
+                            {/* FOLLOW BUTTON FOR REPLIES */}
+                            {userId !== r.user?._id && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleFollow(replyUsername);
+                                }}
+                                className={`ml-1 text-xs px-2 py-1 rounded-full ${
+                                  followed[replyUsername]
+                                    ? "bg-gray-300 text-gray-700"
+                                    : "bg-[#9156F1] text-white"
+                                }`}
+                              >
+                                {followed[replyUsername]
+                                  ? "Following"
+                                  : "Follow"}
+                              </button>
+                            )}
+                          </div>
 
                           {/* REPLY TEXT */}
                           <div className="mt-1 break-words whitespace-pre-wrap">
@@ -348,9 +378,7 @@ export const CommunityModal = ({
                                   onClick={() => toggleExpandReply(r._id)}
                                   className="text-[#9156F1] ml-1 text-xs font-semibold"
                                 >
-                                  {isReplyExpanded
-                                    ? "View less"
-                                    : "View more"}
+                                  {isReplyExpanded ? "View less" : "View more"}
                                 </button>
                               )}
                             </p>
@@ -360,9 +388,7 @@ export const CommunityModal = ({
                           {isOwnReply && (
                             <button
                               className="text-red-500 hover:text-red-700 text-xs flex items-center gap-1 mt-2"
-                              onClick={() =>
-                                handleDeleteReply(c._id, r._id)
-                              }
+                              onClick={() => handleDeleteReply(c._id, r._id)}
                             >
                               <Trash2 className="w-3 h-3" /> Delete
                             </button>
@@ -385,9 +411,7 @@ export const CommunityModal = ({
                         placeholder="Write a reply..."
                         value={replyText}
                         onChange={(e) =>
-                          setReplyText(
-                            e.target.value.slice(0, MAX_CHAR)
-                          )
+                          setReplyText(e.target.value.slice(0, MAX_CHAR))
                         }
                         className="w-full border rounded-lg p-2 pr-14 text-sm focus:ring-2 focus:ring-[#9156F1]"
                       />
