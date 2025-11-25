@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+ import { useEffect, useState } from "react";
 import axios from "axios";
 import {
   Box,
@@ -18,41 +18,66 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import GeoAnalyticsMap from "./GeoAnalyticsMap";
 
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+/* ------------------------------------------------------------
+   UNIVERSAL EXCEL EXPORT
+------------------------------------------------------------ */
+const exportToExcel = (data, fileName) => {
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  });
+
+  const blob = new Blob([excelBuffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+
+  saveAs(blob, `${fileName}.xlsx`);
+};
 
 export default function AdminAnalysis() {
   const token = localStorage.getItem("token");
 
-  // State
+  // Summary table data
   const [rows, setRows] = useState([]);
+  const [locationStats, setLocationStats] = useState([]);
+  const [hotelStats, setHotelStats] = useState([]);
+  const [geoRows, setGeoRows] = useState([]);
+
+  // Loading states
   const [loading, setLoading] = useState(true);
+  const [locLoading, setLocLoading] = useState(false);
+  const [hotelLoading, setHotelLoading] = useState(false);
+
+  // UI states
   const [tabValue, setTabValue] = useState(0);
 
-  const [locationStats, setLocationStats] = useState([]);
-  const [locLoading, setLocLoading] = useState(false);
-
+  // Date filters
   const [fromDate, setFromDate] = useState(dayjs().subtract(1, "month"));
   const [toDate, setToDate] = useState(dayjs());
   const [preset, setPreset] = useState("1m");
 
-  // User modal
+  // User details modal
   const [openModal, setOpenModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userDetails, setUserDetails] = useState([]);
   const [userLoading, setUserLoading] = useState(false);
 
-  // Location modal
+  // Location details modal
   const [openLocationModal, setOpenLocationModal] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [locationDetails, setLocationDetails] = useState([]);
   const [locationLoading, setLocationLoading] = useState(false);
 
-  // Hotel stats
-  const [hotelStats, setHotelStats] = useState([]);
-  const [hotelLoading, setHotelLoading] = useState(false);
-
-  // Hotel modal
+  // Hotel details modal
   const [openHotelModal, setOpenHotelModal] = useState(false);
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [hotelDetails, setHotelDetails] = useState([]);
@@ -66,9 +91,9 @@ export default function AdminAnalysis() {
 
   const handleTabChange = (e, v) => setTabValue(v);
 
-  /* ---------------------------------------------------------
-      FETCH DATA
-  --------------------------------------------------------- */
+  /* ------------------------------------------------------------
+      FETCH MAIN TABLE DATA
+  ------------------------------------------------------------ */
   const fetchData = async () => {
     const from = fromDate.startOf("day").toISOString();
     const to = toDate.endOf("day").toISOString();
@@ -76,9 +101,10 @@ export default function AdminAnalysis() {
     try {
       if (tabValue === 0) {
         setLoading(true);
-        const res = await axios.get(`${BACKEND_URL}/track/user-stats?from=${from}&to=${to}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `${BACKEND_URL}/track/user-stats?from=${from}&to=${to}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
         if (res.data.success) {
           setRows(
@@ -97,9 +123,10 @@ export default function AdminAnalysis() {
 
       if (tabValue === 1) {
         setLocLoading(true);
-        const res = await axios.get(`${BACKEND_URL}/track/location-stats?from=${from}&to=${to}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `${BACKEND_URL}/track/location-stats?from=${from}&to=${to}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
         if (res.data.success) {
           setLocationStats(
@@ -117,9 +144,10 @@ export default function AdminAnalysis() {
 
       if (tabValue === 2) {
         setHotelLoading(true);
-        const res = await axios.get(`${BACKEND_URL}/track/hotel-stats?from=${from}&to=${to}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `${BACKEND_URL}/track/hotel-stats?from=${from}&to=${to}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
         if (res.data.success) {
           setHotelStats(
@@ -135,6 +163,14 @@ export default function AdminAnalysis() {
           );
         }
       }
+
+      if (tabValue === 3) {
+        const res = await axios.get(`${BACKEND_URL}/track/geo-stats/users`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.data.success) setGeoRows(res.data.data);
+      }
     } catch (err) {
       console.error("Fetch error:", err);
     } finally {
@@ -148,22 +184,20 @@ export default function AdminAnalysis() {
     fetchData();
   }, [tabValue, fromDate, toDate]);
 
-  /* ---------------------------------------------------------
-      USER DETAILS MODAL
-  --------------------------------------------------------- */
+  /* ------------------------------------------------------------
+      FETCH USER DETAILS
+  ------------------------------------------------------------ */
   const handleViewDetails = async (user) => {
     setSelectedUser(user);
     setOpenModal(true);
     setUserLoading(true);
 
     try {
-      const res = await axios.get(`${BACKEND_URL}/track/user-details/${user.userId || "anonymous"}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.data.success) {
-        setUserDetails(res.data.data);
-      }
+      const res = await axios.get(
+        `${BACKEND_URL}/track/user-details/${user.userId || "anonymous"}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) setUserDetails(res.data.data);
     } catch (err) {
       console.error("User details error:", err);
     } finally {
@@ -176,19 +210,19 @@ export default function AdminAnalysis() {
     setSelectedUser(null);
   };
 
-  /* ---------------------------------------------------------
-      LOCATION DETAILS MODAL
-  --------------------------------------------------------- */
+  /* ------------------------------------------------------------
+      FETCH LOCATION DETAILS
+  ------------------------------------------------------------ */
   const handleOpenLocationModal = async (location) => {
     setSelectedLocation(location);
     setOpenLocationModal(true);
     setLocationLoading(true);
 
     try {
-      const res = await axios.get(`${BACKEND_URL}/track/location-details/${location}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      const res = await axios.get(
+        `${BACKEND_URL}/track/location-details/${location}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       if (res.data.success) setLocationDetails(res.data.data);
     } catch (err) {
       console.error("Location details error:", err);
@@ -202,19 +236,19 @@ export default function AdminAnalysis() {
     setSelectedLocation(null);
   };
 
-  /* ---------------------------------------------------------
-      HOTEL DETAILS MODAL
-  --------------------------------------------------------- */
+ /* ------------------------------------------------------------
+      FETCH HOTEL DETAILS
+  ------------------------------------------------------------ */
   const handleOpenHotelModal = async (hotel) => {
     setSelectedHotel(hotel);
     setOpenHotelModal(true);
     setHotelDetailsLoading(true);
 
     try {
-      const res = await axios.get(`${BACKEND_URL}/track/hotel-details/${hotel.hotelId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      const res = await axios.get(
+        `${BACKEND_URL}/track/hotel-details/${hotel.hotelId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       if (res.data.success) setHotelDetails(res.data.data);
     } catch (err) {
       console.error("Hotel details error:", err);
@@ -223,25 +257,28 @@ export default function AdminAnalysis() {
     }
   };
 
-  /* ---------------------------------------------------------
-      RENDER
-  --------------------------------------------------------- */
+  /* ------------------------------------------------------------
+      RENDER UI
+  ------------------------------------------------------------ */
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box className="p-6 bg-gray-100 min-h-screen space-y-8">
+        
         <Typography variant="h4" className="font-bold mb-4">
           Analytics Dashboard
         </Typography>
 
         {/* DATE FILTERS */}
         <Paper sx={{ p: 3, mb: 2 }}>
-          <Typography variant="h6" className="mb-3">Filter by Date</Typography>
+          <Typography variant="h6">Filter by Date</Typography>
 
-          <Stack direction="row" spacing={2} alignItems="center">
-            <DatePicker label="From" value={fromDate} onChange={(v) => setFromDate(v)} />
-            <DatePicker label="To" value={toDate} onChange={(v) => setToDate(v)} />
+          <Stack direction="row" spacing={2}>
+            <DatePicker label="From" value={fromDate} onChange={setFromDate} />
+            <DatePicker label="To" value={toDate} onChange={setToDate} />
 
-            <Button variant="contained" onClick={fetchData}>Apply</Button>
+            <Button variant="contained" onClick={fetchData}>
+              Apply
+            </Button>
 
             {[1, 3, 6].map((m) => (
               <Button
@@ -261,15 +298,24 @@ export default function AdminAnalysis() {
           <Tab label="Location Analytics" />
           <Tab label="Hotel Analytics" />
           <Tab label="Geo Map Analytics" />
-
         </Tabs>
 
-        {/* USER TABLE */}
+        {/* ------------------------------------------------------
+            USER ANALYTICS TABLE
+        ------------------------------------------------------ */}
         {tabValue === 0 && (
           loading ? (
             <CircularProgress />
           ) : (
             <Paper sx={{ height: 650, p: 2 }}>
+              <Button
+                variant="contained"
+                sx={{ mb: 2 }}
+                onClick={() => exportToExcel(rows, "User_Analytics")}
+              >
+                Export Users
+              </Button>
+
               <DataGrid
                 rows={rows}
                 columns={[
@@ -296,12 +342,24 @@ export default function AdminAnalysis() {
           )
         )}
 
-        {/* LOCATION TABLE */}
+        {/* ------------------------------------------------------
+            LOCATION ANALYTICS TABLE
+        ------------------------------------------------------ */}
         {tabValue === 1 && (
           locLoading ? (
             <CircularProgress />
           ) : (
             <Paper sx={{ height: 650, p: 2 }}>
+              <Button
+                variant="contained"
+                sx={{ mb: 2 }}
+                onClick={() =>
+                  exportToExcel(locationStats, "Location_Analytics")
+                }
+              >
+                Export Locations
+              </Button>
+
               <DataGrid
                 rows={locationStats}
                 columns={[
@@ -315,7 +373,11 @@ export default function AdminAnalysis() {
                     headerName: "Actions",
                     flex: 1,
                     renderCell: (params) => (
-                      <Button onClick={() => handleOpenLocationModal(params.row.location)}>
+                      <Button
+                        onClick={() =>
+                          handleOpenLocationModal(params.row.location)
+                        }
+                      >
                         View Details
                       </Button>
                     ),
@@ -328,12 +390,23 @@ export default function AdminAnalysis() {
           )
         )}
 
-        {/* HOTEL TABLE */}
+        {/* ------------------------------------------------------
+            HOTEL ANALYTICS TABLE
+        ------------------------------------------------------ */}
         {tabValue === 2 && (
           hotelLoading ? (
             <CircularProgress />
           ) : (
             <Paper sx={{ height: 650, p: 2 }}>
+              
+              <Button
+                variant="contained"
+                sx={{ mb: 2 }}
+                onClick={() => exportToExcel(hotelStats, "Hotel_Analytics")}
+              >
+                Export Hotels
+              </Button>
+
               <DataGrid
                 rows={hotelStats}
                 columns={[
@@ -359,19 +432,46 @@ export default function AdminAnalysis() {
             </Paper>
           )
         )}
+
+        {/* ------------------------------------------------------
+            GEO MAP ANALYTICS
+        ------------------------------------------------------ */}
         {tabValue === 3 && (
-  <Paper sx={{ height: 650, width: "100%", p: 2 }}>
-    <GeoAnalyticsMap />
-  </Paper>
-)}
+          <Paper sx={{ height: 650, p: 2 }}>
+            <Button
+              variant="contained"
+              sx={{ mb: 2 }}
+              onClick={() => exportToExcel(geoRows, "Geo_Map_Analytics")}
+            >
+              Export Geo Data
+            </Button>
 
+            <GeoAnalyticsMap />
+          </Paper>
+        )}
 
-        {/* USER MODAL */}
+        {/* ------------------------------------------------------
+            USER DETAILS MODAL
+        ------------------------------------------------------ */}
         <Modal open={openModal} onClose={handleCloseModal}>
           <Box sx={modalStyle}>
             <Typography variant="h6">
-              User Details - {selectedUser?.username}
+              User Details — {selectedUser?.username}
             </Typography>
+
+            {/* EXPORT DETAILS */}
+            <Button
+              variant="contained"
+              sx={{ my: 2 }}
+              onClick={() =>
+                exportToExcel(
+                  userDetails,
+                  `User_Details_${selectedUser?.username}`
+                )
+              }
+            >
+              Export This User's Full History
+            </Button>
 
             {userLoading ? (
               <CircularProgress />
@@ -383,7 +483,6 @@ export default function AdminAnalysis() {
                   <Typography><b>Time:</b> {v.timeSpent}s</Typography>
                   <Typography><b>Exit:</b> {v.exitReason}</Typography>
 
-                  {/* GEOLOCATION */}
                   {v.geoLocation?.coordinates && (
                     <>
                       <Typography><b>Latitude:</b> {v.geoLocation.coordinates[1]}</Typography>
@@ -398,10 +497,28 @@ export default function AdminAnalysis() {
           </Box>
         </Modal>
 
-        {/* LOCATION MODAL */}
+        {/* ------------------------------------------------------
+            LOCATION DETAILS MODAL
+        ------------------------------------------------------ */}
         <Modal open={openLocationModal} onClose={handleCloseLocationModal}>
           <Box sx={modalStyle}>
-            <Typography variant="h6">Location Details - {selectedLocation}</Typography>
+            <Typography variant="h6">
+              Location Details — {selectedLocation}
+            </Typography>
+
+            {/* EXPORT DETAILS */}
+            <Button
+              variant="contained"
+              sx={{ my: 2 }}
+              onClick={() =>
+                exportToExcel(
+                  locationDetails,
+                  `Location_Details_${selectedLocation}`
+                )
+              }
+            >
+              Export Full Visit History for This Location
+            </Button>
 
             {locationLoading ? (
               <CircularProgress />
@@ -426,12 +543,28 @@ export default function AdminAnalysis() {
           </Box>
         </Modal>
 
-        {/* HOTEL MODAL */}
+        {/* ------------------------------------------------------
+            HOTEL DETAILS MODAL
+        ------------------------------------------------------ */}
         <Modal open={openHotelModal} onClose={() => setOpenHotelModal(false)}>
           <Box sx={modalStyle}>
             <Typography variant="h6">
-              Hotel Details - {selectedHotel?.hotelName}
+              Hotel Details — {selectedHotel?.hotelName}
             </Typography>
+
+            {/* EXPORT DETAILS */}
+            <Button
+              variant="contained"
+              sx={{ my: 2 }}
+              onClick={() =>
+                exportToExcel(
+                  hotelDetails,
+                  `Hotel_Details_${selectedHotel?.hotelName}`
+                )
+              }
+            >
+              Export Full Hotel Click History
+            </Button>
 
             {hotelDetailsLoading ? (
               <CircularProgress />
@@ -460,19 +593,20 @@ export default function AdminAnalysis() {
               ))
             )}
 
-            <Button
-              variant="contained"
-              onClick={() => setOpenHotelModal(false)}
-            >
+            <Button variant="contained" onClick={() => setOpenHotelModal(false)}>
               Close
             </Button>
           </Box>
         </Modal>
+
       </Box>
     </LocalizationProvider>
   );
 }
 
+/* ------------------------------------------------------------
+      STYLES
+------------------------------------------------------------ */
 const modalStyle = {
   position: "absolute",
   top: "50%",

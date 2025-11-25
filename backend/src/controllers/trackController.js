@@ -665,3 +665,36 @@ export const getGeoStats = async (req, res) => {
   }
 };
 
+export const getAllLocationGeoStats = async (req, res) => {
+  try {
+    const locations = await Location.find({})
+      .populate("district", "name districtCode");
+
+    const result = locations.map((loc) => ({
+      name: loc.name,
+      subtitle: loc.subtitle,
+      description: loc.description,
+      district: loc.district?.name || "Unknown",
+      districtCode: loc.district?.districtCode || null,
+      terrain: loc.terrain,
+      coordinates: loc.coordinates, // GeoJSON
+      images: loc.images,
+      review: loc.review,
+      reviewLength: loc.reviewLength,
+      points: loc.points,
+      policeStation: loc.policeStation,
+      ambulance: loc.ambulance,
+      localSupport: loc.localSupport,
+      roadSideAssistant: loc.roadSideAssistant,
+      createdAt: loc.createdAt,
+    }));
+
+    res.json({ success: true, data: result });
+  } catch (err) {
+    console.error("Location Geo Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to load all locations"
+    });
+  }
+};
