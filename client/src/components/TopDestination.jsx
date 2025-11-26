@@ -25,7 +25,7 @@ export const TopDestinations = ({ userCoords }) => {
   const [nearestCode, setNearestCode] = useState(null);
 
   const scrollRef = useRef(null);
-  const CARD_WIDTH = 320;
+  const CARD_WIDTH = 285;
   const GAP = 24; 
 
   // ===========================

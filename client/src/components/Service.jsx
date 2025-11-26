@@ -1,5 +1,6 @@
 import React from "react";
 import {ClimateIcon,LocationIcon,PlacesIcon,HotelsIcon,TrafficIcon} from "./Icons";
+import Counter from "./Counter";
 
 
 export const Service = () => {
@@ -98,39 +99,45 @@ export const Service = () => {
     >
       <div className="flex flex-col md:flex-row justify-between items-center text-center gap-8 md:gap-0 text-white">
 
-        {/* Card 1 */}
-        <div>
-          <h2 className="text-whotefont-poppins text-[60px] leading-[50px]">{value.Tourist_places}</h2>
-          <p className="text-[20px] font-poppins mt-2">Tourist Places</p>
-        </div>
+  {/* Card 1 */}
+  <div>
+    <h2 className="text-white font-poppins text-[55px] leading-[50px]">
+      <Counter value={value.Tourist_places} duration={2000} />
+    </h2>
+    <p className="text-[20px] font-poppins mt-2">Tourist Places</p>
+  </div>
 
-        {/* Divider */}
-        <div className="hidden md:block w-px h-[70px] bg-[#6F6FC1]"></div>
+  <div className="hidden md:block w-px h-[70px] bg-[#6F6FC1]"></div>
 
-        {/* Card 2 */}
-        <div>
-          <h2 className="text-whotefont-poppins text-[60px] leading-[50px]">{value.Number_of_resorts}</h2>
-          <p className="text-[20px] font-poppins mt-2">Number of Resorts</p>
-        </div>
+  {/* Card 2 */}
+  <div>
+    <h2 className="text-white font-poppins text-[55px] leading-[50px]">
+      <Counter value={value.Number_of_resorts} duration={2000} />
+    </h2>
+    <p className="text-[20px] font-poppins mt-2">Number of Resorts</p>
+  </div>
 
-        {/* Divider */}
-        <div className="hidden md:block w-px h-[70px] bg-[#6F6FC1]"></div>
+  <div className="hidden md:block w-px h-[70px] bg-[#6F6FC1]"></div>
 
-        {/* Card 3 */}
-        <div>
-          <h2 className="text-whotefont-poppins text-[60px] leading-[50px]">{value.Happy_travellers}</h2>
-          <p className="text-[20px] font-poppins mt-2">Happy Travelers</p>
-        </div>
+  {/* Card 3 */}
+  <div>
+    <h2 className="text-white font-poppins text-[55px] leading-[50px]">
+      <Counter value={value.Happy_travellers} duration={2000} />
+    </h2>
+    <p className="text-[20px] font-poppins mt-2">Happy Travelers</p>
+  </div>
 
-        {/* Divider */}
-        <div className="hidden md:block w-px h-[70px] bg-[#6F6FC1]"></div>
+  <div className="hidden md:block w-px h-[70px] bg-[#6F6FC1]"></div>
 
-        {/* Card 4 */}
-        <div>
-          <h2 className="text-whotefont-poppins text-[60px] leading-[50px]">{value.Fun_experiences}</h2>
-          <p className="text-[20px] font-poppins mt-2">Fun Experiences</p>
-        </div>
-      </div>
+  {/* Card 4 */}
+  <div>
+    <h2 className="text-white font-poppins text-[55px] leading-[50px]">
+      <Counter value={value.Fun_experiences} duration={2000} />
+    </h2>
+    <p className="text-[20px] font-poppins mt-2">Fun Experiences</p>
+  </div>
+
+</div>
     </section>
     </>
   );

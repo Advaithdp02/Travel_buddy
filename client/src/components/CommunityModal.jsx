@@ -29,7 +29,9 @@ export const CommunityModal = ({
   const [replyText, setReplyText] = useState("");
   const [expandedComments, setExpandedComments] = useState({});
   const [expandedReplies, setExpandedReplies] = useState({});
-  const [followed, setFollowed] = useState({});
+
+  const [following, setFollowing] = useState([]); // raw array of followed users
+  const [followed, setFollowed] = useState({}); // map for fast lookup
 
   const navigate = useNavigate();
 
@@ -38,16 +40,76 @@ export const CommunityModal = ({
 
   const replyInputRefs = useRef({});
 
-  // Prevent scroll behind modal
+  /* -----------------------------------------------------------
+     FETCH USER FOLLOWING LIST (BY USERNAME)
+  ----------------------------------------------------------- */
+  useEffect(() => {
+    if (!isOpen || !token) return;
+
+    const loadFollowing = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/users/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await res.json();
+        const user = data.user ?? data;
+
+        // backend sends following as list of users
+        setFollowing(user.following || []);
+      } catch (err) {
+        console.error("failed to load following:", err);
+      }
+    };
+
+    loadFollowing();
+  }, [isOpen]);
+
+  /* -----------------------------------------------------------
+     CONVERT following[] → { username: true }
+  ----------------------------------------------------------- */
+  useEffect(() => {
+    const map = {};
+
+    following.forEach((f) => {
+      const uname = f.username || f.name;
+      if (uname) map[uname] = true;
+    });
+
+    setFollowed(map);
+  }, [following]);
+
+  /* -----------------------------------------------------------
+     FOLLOW / UNFOLLOW USING USERNAME
+  ----------------------------------------------------------- */
+  const handleToggleFollow = async (username) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/users/follow/${username}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error("Follow failed");
+
+      setFollowed((prev) => ({
+        ...prev,
+        [username]: !prev[username],
+      }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  /* -----------------------------------------------------------
+     OTHER EXISTING LOGIC
+  ----------------------------------------------------------- */
+
   useEffect(() => {
     if (!isOpen) return;
 
     const scrollY = window.scrollY;
-
-    // Calculate scrollbar width
     const scrollbarWidth = window.innerWidth - document.body.clientWidth;
 
-    // Apply scroll lock WITHOUT shifting layout
     document.body.style.position = "fixed";
     document.body.style.top = `-${scrollY}px`;
     document.body.style.paddingRight = `${scrollbarWidth}px`;
@@ -99,7 +161,6 @@ export const CommunityModal = ({
       });
 
       if (!res.ok) throw new Error("Failed to reply");
-
       refreshComments();
     } catch (err) {
       console.error(err);
@@ -149,7 +210,6 @@ export const CommunityModal = ({
       );
 
       if (!res.ok) return;
-
       refreshComments();
     } catch (err) {
       console.error(err);
@@ -183,55 +243,41 @@ export const CommunityModal = ({
     }
   };
 
-  const handleToggleFollow = async (username) => {
-    try {
-      const res = await fetch(`${BACKEND_URL}/users/follow/${username}`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error("Failed to follow/unfollow");
-
-      setFollowed((prev) => ({
-        ...prev,
-        [username]: !prev[username],
-      }));
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  /* -----------------------------------------------------------
+     RENDER UI
+  ----------------------------------------------------------- */
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-[#fbebff] w-11/12 md:w-4/5 lg:w-3/4 max-h-[90vh] p-0 rounded-xl shadow-2xl overflow-y-auto relative">
+
+      {/* FULL CONTAINER AS FLEX COLUMN */}
+      <div className="bg-[#fbebff] w-11/12 md:w-4/5 lg:w-3/4 h-[90vh] p-0 rounded-xl shadow-2xl flex flex-col">
+
         {/* HEADER */}
-        <div className="flex justify-between items-center p-4 border-b bg-[#fbebff] sticky top-0 z-50">
+        <div className="flex justify-between items-center p-4 border-b bg-[#fbebff]">
           <h3 className="text-3xl font-bold text-[#310a49]">Comments</h3>
           <button onClick={onClose}>
             <X className="w-10 h-10 text-[#fbebff] bg-[#37377B] rounded-full p-1 hover:bg-blue-700" />
           </button>
         </div>
 
-        <div className="p-4 space-y-4">
+        {/* 🌟 MIDDLE SCROLLABLE COMMENT LIST */}
+        <div className="p-4 space-y-4 overflow-y-auto flex-grow">
           {comments.map((c) => {
+            const username = c.user?.username || c.user?.name;
             const hasLiked = c.likes.includes(userId);
-            const isOwnComment = c.user?._id === userId;
 
             const commentTrim = trimText(c.text, 200);
             const isCommentExpanded = expandedComments[c._id];
-
-            const username = c.user?.username || c.user?.name;
+            const isOwnComment = c.user?._id === userId;
 
             return (
-              <div
-                key={c._id}
-                className="bg-white border rounded-2xl p-4 shadow-md"
-              >
+              <div key={c._id} className="bg-white border rounded-2xl p-4 shadow-md">
+
                 {/* USER ROW */}
                 <div className="flex items-center gap-2">
-                  {/* Profile Picture */}
                   {c.user?.profilePic && (
                     <img
                       src={c.user.profilePic}
@@ -243,7 +289,6 @@ export const CommunityModal = ({
                     />
                   )}
 
-                  {/* Username */}
                   <p
                     className="font-semibold cursor-pointer hover:text-[#9156F1]"
                     onClick={() => {
@@ -273,37 +318,36 @@ export const CommunityModal = ({
                 </div>
 
                 {/* COMMENT TEXT */}
-                <div className="text-gray-700 mt-2 mb-2 break-words whitespace-pre-wrap">
-                  <p>
-                    {isCommentExpanded ? commentTrim.full : commentTrim.short}
+                <p className="text-gray-700 mt-2 mb-2 whitespace-pre-wrap">
+                  {isCommentExpanded ? commentTrim.full : commentTrim.short}
+                  {commentTrim.trimmed && (
+                    <button
+                      onClick={() =>
+                        setExpandedComments((p) => ({ ...p, [c._id]: !p[c._id] }))
+                      }
+                      className="text-[#9156F1] ml-2 text-sm font-semibold"
+                    >
+                      {isCommentExpanded ? "View less" : "View more"}
+                    </button>
+                  )}
+                </p>
 
-                    {commentTrim.trimmed && (
-                      <button
-                        onClick={() => toggleExpandComment(c._id)}
-                        className="text-[#9156F1] ml-2 text-sm font-semibold"
-                      >
-                        {isCommentExpanded ? "View less" : "View more"}
-                      </button>
-                    )}
-                  </p>
-                </div>
-
-                {/* BUTTONS */}
+                {/* ACTIONS */}
                 <div className="flex items-center gap-5 text-sm mb-2">
                   <button
+                    onClick={() => handleLikeComment(c._id)}
                     className={`flex items-center gap-1 px-2 py-1 rounded-full ${
                       hasLiked
                         ? "bg-[#9156F1] text-white"
                         : "bg-gray-100 text-gray-500"
                     }`}
-                    onClick={() => handleLikeComment(c._id)}
                   >
                     <ThumbsUp className="w-4 h-4" /> {c.likes.length}
                   </button>
 
                   <button
                     className="text-gray-500 hover:text-blue-600"
-                    onClick={() => toggleReplyInput(c._id)}
+                    onClick={() => setReplyingTo(c._id)}
                   >
                     Reply
                   </button>
@@ -322,19 +366,15 @@ export const CommunityModal = ({
                 {c.replies?.length > 0 && (
                   <div className="ml-6 mt-3 space-y-2">
                     {c.replies.map((r) => {
+                      const replyUsername = r.user?.username || r.user?.name;
                       const isOwnReply = r.user?._id === userId;
 
                       const replyTrim = trimText(r.text, 150);
                       const isReplyExpanded = expandedReplies[r._id];
 
-                      const replyUsername = r.user?.username || r.user?.name;
-
                       return (
-                        <div
-                          key={r._id}
-                          className="bg-[#fbebff]/60 p-3 rounded-lg text-sm shadow-md break-words"
-                        >
-                          {/* Reply User + Follow */}
+                        <div key={r._id} className="bg-[#fbebff]/60 p-3 rounded-lg text-sm shadow-md">
+
                           <div className="flex items-center gap-2">
                             <p
                               className="font-semibold cursor-pointer hover:text-[#9156F1]"
@@ -346,7 +386,6 @@ export const CommunityModal = ({
                               {r.user?.name}
                             </p>
 
-                            {/* FOLLOW BUTTON FOR REPLIES */}
                             {userId !== r.user?._id && (
                               <button
                                 onClick={(e) => {
@@ -366,29 +405,27 @@ export const CommunityModal = ({
                             )}
                           </div>
 
-                          {/* REPLY TEXT */}
-                          <div className="mt-1 break-words whitespace-pre-wrap">
-                            <p>
-                              {isReplyExpanded
-                                ? replyTrim.full
-                                : replyTrim.short}
+                          <p className="mt-1 whitespace-pre-wrap">
+                            {isReplyExpanded ? replyTrim.full : replyTrim.short}
+                            {replyTrim.trimmed && (
+                              <button
+                                onClick={() =>
+                                  setExpandedReplies((p) => ({
+                                    ...p,
+                                    [r._id]: !p[r._id],
+                                  }))
+                                }
+                                className="text-[#9156F1] ml-1 text-xs font-semibold"
+                              >
+                                {isReplyExpanded ? "View less" : "View more"}
+                              </button>
+                            )}
+                          </p>
 
-                              {replyTrim.trimmed && (
-                                <button
-                                  onClick={() => toggleExpandReply(r._id)}
-                                  className="text-[#9156F1] ml-1 text-xs font-semibold"
-                                >
-                                  {isReplyExpanded ? "View less" : "View more"}
-                                </button>
-                              )}
-                            </p>
-                          </div>
-
-                          {/* DELETE REPLY */}
                           {isOwnReply && (
                             <button
-                              className="text-red-500 hover:text-red-700 text-xs flex items-center gap-1 mt-2"
                               onClick={() => handleDeleteReply(c._id, r._id)}
+                              className="text-red-500 hover:text-red-700 text-xs flex items-center gap-1 mt-2"
                             >
                               <Trash2 className="w-3 h-3" /> Delete
                             </button>
@@ -401,29 +438,19 @@ export const CommunityModal = ({
 
                 {/* REPLY INPUT */}
                 {replyingTo === c._id && (
-                  <div
-                    ref={(el) => (replyInputRefs.current[c._id] = el)}
-                    className="ml-6 mt-2 flex items-center gap-2"
-                  >
-                    <div className="relative flex-grow">
-                      <input
-                        type="text"
-                        placeholder="Write a reply..."
-                        value={replyText}
-                        onChange={(e) =>
-                          setReplyText(e.target.value.slice(0, MAX_CHAR))
-                        }
-                        className="w-full border rounded-lg p-2 pr-14 text-sm focus:ring-2 focus:ring-[#9156F1]"
-                      />
-
-                      <span className="absolute right-2 bottom-1 text-[10px] text-gray-400 bg-white px-1">
-                        {replyText.length} / {MAX_CHAR}
-                      </span>
-                    </div>
-
+                  <div className="ml-6 mt-2 flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Write a reply..."
+                      value={replyText}
+                      onChange={(e) =>
+                        setReplyText(e.target.value.slice(0, MAX_CHAR))
+                      }
+                      className="w-full border rounded-lg p-2 text-sm"
+                    />
                     <button
                       onClick={() => handleReplySubmit(c._id)}
-                      className="bg-[#9156F1] text-white px-4 py-2 rounded-lg hover:bg-[#7a3be0]"
+                      className="bg-[#9156F1] text-white px-4 py-2 rounded-lg"
                     >
                       Send
                     </button>
@@ -432,10 +459,12 @@ export const CommunityModal = ({
               </div>
             );
           })}
+        </div>
 
-          {/* Add comment */}
-          {!districtPage && (
-            <div className="flex flex-wrap items-center gap-2 mt-3">
+        {/* 🌟 FIXED ADD COMMENT BOX (NO SCROLLING) */}
+        {!districtPage && (
+          <div className="p-4 border-t bg-[#fbebff] sticky bottom-0">
+            <div className="flex flex-wrap items-center gap-2">
               <input
                 type="text"
                 placeholder="Add a comment..."
@@ -443,25 +472,24 @@ export const CommunityModal = ({
                 onChange={(e) =>
                   setNewComment(e.target.value.slice(0, MAX_CHAR))
                 }
-                className="flex-grow min-w-[200px] border border-[#9156F1] rounded-lg p-2 focus:ring-2 focus:ring-[#9156F1]"
+                className="flex-grow min-w-[200px] border border-[#9156F1] rounded-lg p-2"
               />
 
               <button
                 onClick={handleAddComment}
-                className="bg-[#9156F1] text-white px-4 py-2 rounded-lg hover:bg-[#7a3be0]"
+                className="bg-[#9156F1] text-white px-4 py-2 rounded-lg"
               >
                 <SendIconAdd className="w-5 h-5" />
               </button>
 
-              <div className="w-full mt-1 text-right text-xs text-gray-400">
+              <div className="w-full text-right text-xs text-gray-400">
                 {newComment.length} / {MAX_CHAR}
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default CommunityModal;

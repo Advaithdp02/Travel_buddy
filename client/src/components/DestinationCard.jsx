@@ -12,7 +12,7 @@ export default function DestinationCard({ destination }) {
   const id=destination._id;
 
   return (
-    <div className="w-[315px]  bg-white rounded-xl shadow-md relative overflow-hidden flex-shrink-0">
+    <div className="w-[280px]  bg-white rounded-xl shadow-md relative overflow-hidden flex-shrink-0">
       <div className="w-full h-[216px] bg-gray-300 relative ">
         <img
           src={destination.imageURL || `/Service.png`}
