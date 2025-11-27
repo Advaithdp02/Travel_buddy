@@ -94,8 +94,6 @@ export const Profile = () => {
       // Optionally: refetch wishlist from backend to restore state
     }
   };
-  
-
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -295,45 +293,51 @@ export const Profile = () => {
                 {activeTab === "wishlist" && (
                   <div className="mt-3 md:mt-4">
                     {wishlist.length ? (
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {wishlist.map((item) => (
-                          <div
-                            key={item._id}
-                            className="bg-white shadow-md rounded-xl p-3 flex items-center justify-between hover:shadow-lg transition-shadow"
-                          >
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={item.images?.[0] || "/defaultCoverPic.png"}
-                                alt={item.name}
-                                className="w-14 h-14 rounded-lg object-cover border border-gray-200 cursor-pointer"
-                                onClick={() =>
-                                  navigate(`/destination/${item._id}`)
-                                }
-                              />
-
-                              <div className="flex flex-col">
-                                <p
-                                  className="font-medium text-gray-800 text-sm md:text-base cursor-pointer"
+                      // ⭐ SCROLLABLE WRAPPER
+                      <div className="max-h-[350px] md:max-h-[450px] overflow-y-auto pr-1 custom-scroll">
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          {wishlist.map((item) => (
+                            <div
+                              key={item._id}
+                              className="bg-white shadow-md rounded-xl p-3 flex items-center justify-between hover:shadow-lg transition-shadow"
+                            >
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={
+                                    item.images?.[0] || "/defaultCoverPic.png"
+                                  }
+                                  alt={item.name}
+                                  className="w-14 h-14 rounded-lg object-cover border border-gray-200 cursor-pointer"
                                   onClick={() =>
                                     navigate(`/destination/${item._id}`)
                                   }
-                                >
-                                  {item.name}
-                                </p>
+                                />
 
-                                <p className="font-medium text-gray-800 text-xs md:text-sm">
-                                  {item.district.name}
-                                </p>
+                                <div className="flex flex-col">
+                                  <p
+                                    className="font-medium text-gray-800 text-sm md:text-base cursor-pointer"
+                                    onClick={() =>
+                                      navigate(`/destination/${item._id}`)
+                                    }
+                                  >
+                                    {item.name}
+                                  </p>
+
+                                  <p className="font-medium text-gray-800 text-xs md:text-sm">
+                                    {item.district.name}
+                                  </p>
+                                </div>
                               </div>
+
+                              <button
+                                onClick={() => removeFromWishlist(item._id)}
+                                className="text-red-500 hover:text-red-600 text-sm font-semibold"
+                              >
+                                Remove
+                              </button>
                             </div>
-                            <button
-                              onClick={() => removeFromWishlist(item._id)}
-                              className="text-red-500 hover:text-red-600 text-sm font-semibold"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     ) : (
                       <p className="text-gray-500 text-center py-6 md:py-10">
@@ -345,168 +349,159 @@ export const Profile = () => {
 
                 {/* followers, following, contribution — unchanged */}
                 {activeTab === "followers" && (
-  <div className="max-h-[400px] overflow-y-auto pr-2">
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
-      {followers?.length ? (
-        followers.map((f) => {
+                  <div className="max-h-[350px] md:max-h-[450px] overflow-y-auto pr-2 custom-scroll">
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+                      {followers?.length ? (
+                        followers.map((f) => {
+                          const isFollowing = following.some(
+                            (u) => u._id === f._id
+                          );
 
-          // Check if current user already follows them
-          const isFollowing = following.some((u) => u._id === f._id);
+                          return (
+                            <div
+                              key={f._id}
+                              className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+                              onClick={(e) => {
+                                if (e.target.tagName !== "BUTTON") {
+                                  navigate(`/profile/${f.username}`);
+                                }
+                              }}
+                            >
+                              {/* LEFT SIDE */}
+                              <div className="flex items-center gap-4">
+                                <img
+                                  src={
+                                    f.profilePic || "/defaultProfilePic.webp"
+                                  }
+                                  alt={f.username}
+                                  className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
+                                />
 
-          return (
-            <div
-              key={f._id}
-              className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={(e) => {
-                if (e.target.tagName !== "BUTTON") {
-                  navigate(`/profile/${f.username}`);
-                }
-              }}
-            >
-              <div className="flex items-center gap-4">
-                <img
-                  src={f.profilePic || "/defaultProfilePic.webp"}
-                  alt={f.username}
-                  className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
-                />
-                <div>
-                  <p className="font-semibold text-gray-800">
-                    {f.username}
-                  </p>
-                </div>
-              </div>
+                                <div className="max-w-[160px]">
+                                  <p className="font-semibold text-gray-800">
+                                    {f.username}
+                                  </p>
 
-              {/* ▼▼ FOLLOW / UNFOLLOW BUTTON ▼▼ */}
-              <button
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  try {
-                    const token = localStorage.getItem("token");
-                    if (!token) return;
+                                  {/* ⭐ Bio (Optional + Truncated) */}
+                                  {f.bio && (
+                                    <p className="text-gray-600 text-xs line-clamp-2 mt-1">
+                                      {f.bio}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
 
-                    const res = await fetch(
-                      `${BACKEND_URL}/users/follow/${f.username}`,
-                      {
-                        method: "PUT",
-                        headers: {
-                          Authorization: `Bearer ${token}`,
-                        },
-                      }
-                    );
+                              {/* RIGHT SIDE BUTTON */}
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    const token = localStorage.getItem("token");
+                                    if (!token) return;
 
-                    if (!res.ok)
-                      throw new Error("Failed to toggle follow");
+                                    const res = await fetch(
+                                      `${BACKEND_URL}/users/follow/${f.username}`,
+                                      {
+                                        method: "PUT",
+                                        headers: {
+                                          Authorization: `Bearer ${token}`,
+                                        },
+                                      }
+                                    );
 
-                    // Update UI instantly
-                    if (isFollowing) {
-                      // remove from following
-                      setFollowing((prev) =>
-                        prev.filter((u) => u._id !== f._id)
-                      );
-                    } else {
-                      // add to following
-                      setFollowing((prev) => [...prev, f]);
-                    }
+                                    if (!res.ok)
+                                      throw new Error(
+                                        "Failed to toggle follow"
+                                      );
 
-                  } catch (err) {
-                    console.error(err);
-                    alert("Error toggling follow");
-                  }
-                }}
-                className={`px-3 py-1 rounded-lg text-sm font-semibold transition-colors ${
-                  isFollowing
-                    ? "bg-red-500 text-white hover:bg-red-600"
-                    : "bg-blue-500 text-white hover:bg-blue-600"
-                }`}
-              >
-                {isFollowing ? "Unfollow" : "Follow"}
-              </button>
-
-            </div>
-          );
-        })
-      ) : (
-        <p className="text-gray-500 text-center col-span-full mt-4">
-          No followers yet
-        </p>
-      )}
-    </div>
-  </div>
-)}
-
+                                    if (isFollowing) {
+                                      setFollowing((prev) =>
+                                        prev.filter((u) => u._id !== f._id)
+                                      );
+                                    } else {
+                                      setFollowing((prev) => [...prev, f]);
+                                    }
+                                  } catch (err) {
+                                    console.error(err);
+                                    alert("Error toggling follow");
+                                  }
+                                }}
+                                className={`px-3 py-1 rounded-lg text-sm font-semibold transition-colors ${
+                                  isFollowing
+                                    ? "bg-red-500 text-white hover:bg-red-600"
+                                    : "bg-blue-500 text-white hover:bg-blue-600"
+                                }`}
+                              >
+                                {isFollowing ? "Unfollow" : "Follow"}
+                              </button>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-gray-500 text-center col-span-full mt-4">
+                          No followers yet
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Following Tab */}
                 {activeTab === "following" && (
-  <div className="max-h-[400px] overflow-y-auto pr-2">
+                  <div className="mt-3 md:mt-4">
+                    <div className="max-h-[350px] md:max-h-[450px] overflow-y-auto pr-2 custom-scroll">
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {following.length ? (
+                          following.map((f) => (
+                            <div
+                              key={f._id}
+                              className="bg-white shadow-md rounded-xl p-3 flex flex-col justify-between hover:shadow-lg transition-shadow"
+                            >
+                              {/* Profile Image + Name */}
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={
+                                    f.profilePic || "/defaultProfilePic.webp"
+                                  }
+                                  className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
+                                />
 
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
-      {following.length ? (
-        following.map((f) => (
-          <div
-            key={f._id}
-            className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={(e) => {
-              if (e.target.tagName !== "BUTTON") {
-                navigate(`/profile/${f.username}`);
-              }
-            }}
-          >
-            <div className="flex items-center gap-4">
-              <img
-                src={f.profilePic || "/defaultProfilePic.webp"}
-                alt={f.username}
-                className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
-              />
-              <div>
-                <p className="font-semibold text-gray-800">
-                  {f.username}
-                </p>
-              </div>
-            </div>
+                                <div>
+                                  <p className="font-semibold text-gray-800">
+                                    {f.username}
+                                  </p>
 
-            <button
-              onClick={async (e) => {
-                e.stopPropagation();
-                try {
-                  const token = localStorage.getItem("token");
-                  if (!token) return;
+                                  {/* ⭐ Bio (Truncated, Optional) */}
+                                  {f.bio && (
+                                    <p className="text-gray-600 text-xs line-clamp-2 max-w-[160px]">
+                                      {f.bio}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
 
-                  const res = await fetch(
-                    `${BACKEND_URL}/users/follow/${f.username}`,
-                    {
-                      method: "PUT",
-                      headers: {
-                        Authorization: `Bearer ${token}`,
-                      },
-                    }
-                  );
-
-                  if (!res.ok) throw new Error("Failed to unfollow");
-
-                  setFollowing((prev) =>
-                    prev.filter((u) => u._id !== f._id)
-                  );
-                } catch (err) {
-                  console.error(err);
-                  alert("Error unfollowing user");
-                }
-              }}
-              className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors"
-            >
-              Unfollow
-            </button>
-          </div>
-        ))
-      ) : (
-        <p className="text-gray-500 text-center col-span-full mt-4">
-          Not following anyone yet
-        </p>
-      )}
-    </div>
-
-  </div>
-)}
-
+                              {/* Unfollow Button */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleFollow(f);
+                                }}
+                                className="mt-3 px-3 py-1 text-sm rounded-lg font-semibold 
+                  bg-red-500 hover:bg-red-600 text-white"
+                              >
+                                Unfollow
+                              </button>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-500 text-center col-span-full py-6">
+                            Not following anyone yet.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {activeTab === "contribution" && (
                   <div>
@@ -734,14 +729,25 @@ export const Profile = () => {
                   placeholder="Username"
                   className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300"
                 />
-                <textarea
-                  name="bio"
-                  value={formData.bio || ""}
-                  onChange={handleInputChange}
-                  placeholder="Bio"
-                  rows={3}
-                  className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300"
-                />
+                <div className="w-full">
+                  <textarea
+                    name="bio"
+                    value={formData.bio || ""}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 1000) {
+                        handleInputChange(e);
+                      }
+                    }}
+                    placeholder="Bio"
+                    rows={3}
+                    className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300"
+                  />
+
+                  <div className="text-right text-sm text-gray-500 mt-1">
+                    {formData.bio?.length || 0} / 1000
+                  </div>
+                </div>
+
                 <input
                   type="date"
                   name="dob"

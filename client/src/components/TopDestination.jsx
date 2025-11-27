@@ -26,6 +26,8 @@ export const TopDestinations = ({ userCoords }) => {
   const [isMobile, setIsMobile] = useState(false);
 
   const scrollRef = useRef(null);
+  const scrollEndTimeout = useRef(null);
+  const centeredIndexRef = useRef(null);
 
   // Card sizes
   const DESKTOP_CARD_WIDTH = 285;
@@ -81,18 +83,17 @@ export const TopDestinations = ({ userCoords }) => {
     if (!scrollRef.current || destinations.length === 0) return;
 
     const cardSize = CARD_WIDTH + GAP;
-
     const extraOffset = isMobile ? 22 : 0;
 
-const startScroll =
-  middleIndex * cardSize -
-  scrollRef.current.offsetWidth / 2 +
-  CARD_WIDTH / 2 +
-  extraOffset; // small mobile correction
-
+    const startScroll =
+      middleIndex * cardSize -
+      scrollRef.current.offsetWidth / 2 +
+      CARD_WIDTH / 2 +
+      extraOffset;
 
     scrollRef.current.scrollLeft = startScroll;
     setActiveIndex(middleIndex);
+    centeredIndexRef.current = middleIndex;
   }, [destinations, CARD_WIDTH]);
 
   // Detect center card
@@ -118,6 +119,24 @@ const startScroll =
     });
 
     setActiveIndex(closestIndex);
+    centeredIndexRef.current = closestIndex;
+  };
+
+  // Snap card EXACTLY to center
+  const snapToCenteredCard = () => {
+    if (!scrollRef.current || centeredIndexRef.current == null) return;
+
+    const cardSize = CARD_WIDTH + GAP;
+    const index = centeredIndexRef.current;
+    const containerWidth = scrollRef.current.offsetWidth;
+
+    const cardCenter = index * cardSize + cardSize / 2;
+    const targetScrollLeft = cardCenter - containerWidth / 2;
+
+    scrollRef.current.scrollTo({
+      left: targetScrollLeft,
+      behavior: "smooth",
+    });
   };
 
   // Infinite scroll
@@ -135,6 +154,13 @@ const startScroll =
       scrollRef.current.scrollLeft = scrollLeft + batchWidth;
 
     detectCenteredCard();
+
+    // Debounce → Snap after user stops scrolling
+    if (scrollEndTimeout.current) clearTimeout(scrollEndTimeout.current);
+
+    scrollEndTimeout.current = setTimeout(() => {
+      snapToCenteredCard();
+    }, 120);
   };
 
   // Buttons scroll
@@ -149,8 +175,8 @@ const startScroll =
     });
 
     setTimeout(() => {
-      handleInfiniteScroll();
       detectCenteredCard();
+      snapToCenteredCard();
     }, 350);
   };
 
@@ -173,22 +199,20 @@ const startScroll =
           </div>
 
           {/* Desktop arrows */}
-         
-{!isMobile && (
-  <>
-    <ArrowButton
-      direction="left"
-      onClick={() => scroll("left")}
-      className="absolute left-0 top-[60%] -translate-y-1/2 z-50"
-    />
-    <ArrowButton
-      direction="right"
-      onClick={() => scroll("right")}
-      className="absolute right-0 top-[60%] -translate-y-1/2 z-50"
-    />
-  </>
-)}
-
+          {!isMobile && (
+            <>
+              <ArrowButton
+                direction="left"
+                onClick={() => scroll("left")}
+                className="absolute left-0 top-[60%] -translate-y-1/2 z-50"
+              />
+              <ArrowButton
+                direction="right"
+                onClick={() => scroll("right")}
+                className="absolute right-0 top-[60%] -translate-y-1/2 z-50"
+              />
+            </>
+          )}
         </div>
 
         {/* Mobile floating arrows */}
@@ -214,31 +238,28 @@ const startScroll =
           className="flex flex-row gap-6 overflow-x-scroll hide-scrollbar flex-nowrap overflow-visible pt-16 pb-20 relative"
         >
           {fullList.map((dest, i) => {
-  const isCenter = activeIndex === i;
+            const isCenter = activeIndex === i;
 
-  return (
-    <div
-      key={i}
-      className="flex-shrink-0 transition-all duration-300 ease-out"
-      style={{
-        width: CARD_WIDTH,
-        zIndex: isCenter ? 20 : 10,
-
-        // ⭐ NEW ZOOM EFFECT
-        transform: isCenter
-          ? "scale(1.12)"                // expands from center: UP + DOWN
-          : "translateY(10px) scale(0.90)", // side cards go slightly down
-        opacity: isCenter ? 1 : 0.85,
-      }}
-    >
-      <DestinationCard
-        destination={dest}
-        isNearest={dest.DistrictCode === nearestCode}
-      />
-    </div>
-  );
-})}
-
+            return (
+              <div
+                key={i}
+                className="flex-shrink-0 transition-all duration-300 ease-out"
+                style={{
+                  width: CARD_WIDTH,
+                  zIndex: isCenter ? 20 : 10,
+                  transform: isCenter
+                    ? "scale(1.12)"
+                    : "translateY(10px) scale(0.90)",
+                  opacity: isCenter ? 1 : 0.85,
+                }}
+              >
+                <DestinationCard
+                  destination={dest}
+                  isNearest={dest.DistrictCode === nearestCode}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useRef } from "react";
 import axios from "axios";
 import {
   Card,
@@ -22,12 +22,13 @@ export default function AdminDistricts() {
   const [filteredDistricts, setFilteredDistricts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     _id: null,
     name: "",
     State: "",
-    DistrictCode:"",
+    DistrictCode: "",
     image: null,
     existingImage: "",
   });
@@ -37,14 +38,13 @@ export default function AdminDistricts() {
 
   const token = localStorage.getItem("token");
 
-  // ---------------- Fetch Districts ----------------
+  // Fetch districts
   useEffect(() => {
     const fetchDistricts = async () => {
       try {
         const res = await axios.get(`${BACKEND_URL}/districts`);
         setDistricts(res.data);
 
-        // Extract unique states for dropdown
         const uniqueStates = [...new Set(res.data.map((d) => d.State))];
         setStates(uniqueStates);
       } catch (err) {
@@ -56,7 +56,7 @@ export default function AdminDistricts() {
     fetchDistricts();
   }, []);
 
-  // ---------------- Filter districts by state ----------------
+  // Filter by state
   useEffect(() => {
     if (selectedState) {
       setFilteredDistricts(districts.filter((d) => d.State === selectedState));
@@ -65,7 +65,7 @@ export default function AdminDistricts() {
     }
   }, [selectedState, districts]);
 
-  // ---------------- CRUD Handlers ----------------
+  // Delete district
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this district?")) return;
     try {
@@ -78,34 +78,50 @@ export default function AdminDistricts() {
     }
   };
 
+  // Form change handler
   const handleFormChange = (e) => {
     const { name, value, files } = e.target;
+
     if (files && files.length > 0) {
-      setFormData({ ...formData, image: files[0] });
+      setFormData({
+        ...formData,
+        image: files[0],
+        existingImage: "", // remove existing preview if uploading new
+      });
     } else {
       setFormData({ ...formData, [name]: value });
     }
   };
 
+  // Open edit modal
   const openModalForEdit = (district) => {
     setFormData({
       _id: district._id,
       name: district.name,
       State: district.State,
-      DistrictCode:district.DistrictCode || '',
+      DistrictCode: district.DistrictCode || "",
       image: null,
       existingImage: district.imageURL || "",
     });
     setOpen(true);
   };
 
+  // Submit form
   const handleSubmit = async () => {
     try {
       const data = new FormData();
       data.append("name", formData.name);
       data.append("State", formData.State);
-      data.append("DistrictCode",formData.DistrictCode);
-      if (formData.image) data.append("image", formData.image);
+      data.append("DistrictCode", formData.DistrictCode);
+
+      if (formData.image) {
+        data.append("image", formData.image);
+      }
+
+      // 👇 IMPORTANT: Remove image flag
+      if (!formData.image && !formData.existingImage) {
+        data.append("removeImage", "true");
+      }
 
       let res;
       if (formData._id) {
@@ -115,7 +131,10 @@ export default function AdminDistricts() {
             "Content-Type": "multipart/form-data",
           },
         });
-        setDistricts(districts.map((d) => (d._id === formData._id ? res.data : d)));
+
+        setDistricts(
+          districts.map((d) => (d._id === formData._id ? res.data : d))
+        );
       } else {
         res = await axios.post(`${BACKEND_URL}/districts`, data, {
           headers: {
@@ -123,21 +142,30 @@ export default function AdminDistricts() {
             "Content-Type": "multipart/form-data",
           },
         });
+
         setDistricts([...districts, res.data]);
       }
 
       setOpen(false);
-      setFormData({ _id: null, name: "", State: "",DistrictCode:"", image: null, existingImage: "" });
+      setFormData({
+        _id: null,
+        name: "",
+        State: "",
+        DistrictCode: "",
+        image: null,
+        existingImage: "",
+      });
     } catch (err) {
       console.error("Submit failed:", err);
     }
   };
 
-  if (loading) return <Typography className="p-6">Loading districts...</Typography>;
+  if (loading)
+    return <Typography className="p-6">Loading districts...</Typography>;
 
   return (
     <Box className="p-6 bg-gray-100 min-h-screen">
-      <Typography variant="h4" className="mb-6 font-bold flex gap-2 ">
+      <Typography variant="h4" className="mb-6 font-bold">
         Manage Districts
       </Typography>
 
@@ -162,6 +190,7 @@ export default function AdminDistricts() {
         + Add New District
       </Button>
 
+      {/* District Cards */}
       <Grid container spacing={4}>
         {filteredDistricts.map((district) => (
           <Grid item xs={12} sm={6} md={4} key={district._id}>
@@ -208,6 +237,7 @@ export default function AdminDistricts() {
             {formData._id ? "Edit District" : "Add New District"}
           </Typography>
 
+          {/* Name */}
           <TextField
             label="Name"
             name="name"
@@ -216,8 +246,10 @@ export default function AdminDistricts() {
             value={formData.name}
             onChange={handleFormChange}
           />
+
+          {/* DistrictCode */}
           <TextField
-            label="DistrictCode"
+            label="District Code"
             name="DistrictCode"
             fullWidth
             margin="dense"
@@ -242,24 +274,53 @@ export default function AdminDistricts() {
             </Select>
           </FormControl>
 
+          {/* Image upload */}
           <input
-            type="file"
-            name="image"
-            accept="image/*"
-            onChange={handleFormChange}
-            className="mt-2"
-          />
+  type="file"
+  name="image"
+  accept="image/*"
+  onChange={handleFormChange}
+  className="mt-2"
+  ref={fileInputRef}
+/>
 
-          {formData.existingImage && (
-            <Box className="flex gap-2 mt-2">
+
+          {/* Image Preview + Remove Button */}
+          {(formData.existingImage || formData.image) && (
+            <Box className="flex items-center gap-3 mt-3">
               <img
-                src={formData.existingImage}
-                alt="Existing"
+                src={
+                  formData.image
+                    ? URL.createObjectURL(formData.image)
+                    : formData.existingImage
+                }
+                alt="Preview"
                 className="w-24 h-24 object-cover rounded"
               />
+
+              <Button
+  variant="outlined"
+  color="error"
+  onClick={() => {
+    setFormData({
+      ...formData,
+      image: null,
+      existingImage: "",
+    });
+
+    // 🔥 Clear actual file input field
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }}
+>
+  Remove
+</Button>
+
             </Box>
           )}
 
+          {/* Actions */}
           <Box className="flex justify-end mt-4 gap-2">
             <Button variant="outlined" onClick={() => setOpen(false)}>
               Cancel

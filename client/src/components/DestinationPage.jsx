@@ -11,6 +11,7 @@ import {
   Cloud,
   HeartIconOutline,
   ClipboardIcon,
+  ShareIconOutline,
 } from "./Icons";
 import { useNavigate, useParams } from "react-router-dom";
 import { CommunityModal } from "./CommunityModal";
@@ -109,6 +110,50 @@ export const DestinationPage = ({}) => {
 
   //Wishlist
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const copyToClipboard = (text) => {
+  navigator.clipboard.writeText(text)
+    .then(() => {
+      showCopyAnimation();  // 🔥 trigger animation
+    })
+    .catch(() => console.log("Failed"));
+};
+
+const showCopyAnimation = () => {
+  const bubble = document.createElement("div");
+
+  bubble.innerText = "Copied!";
+  bubble.style.position = "fixed";
+  bubble.style.left = "50%";
+  bubble.style.top = "60%";
+  bubble.style.transform = "translate(-50%, -50%)";
+  bubble.style.background = "black";
+  bubble.style.color = "white";
+  bubble.style.padding = "8px 14px";
+  bubble.style.borderRadius = "8px";
+  bubble.style.fontSize = "14px";
+  bubble.style.opacity = "0";
+  bubble.style.zIndex = "9999";
+  bubble.style.transition = "all 0.6s ease-out";
+
+  document.body.appendChild(bubble);
+
+  // animate in
+  requestAnimationFrame(() => {
+    bubble.style.top = "50%";
+    bubble.style.opacity = "1";
+  });
+
+  // animate out
+  setTimeout(() => {
+    bubble.style.opacity = "0";
+    bubble.style.top = "40%";
+  }, 900);
+
+  // remove
+  setTimeout(() => {
+    bubble.remove();
+  }, 1500);
+};
 
   // Utility to calculate distance (Haversine formula)
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -460,6 +505,7 @@ export const DestinationPage = ({}) => {
   }, [loaderRef.current, hasMore]);
 
   const handleWishlist = async () => {
+    console.log("clicked wishlist");
     try {
       const location_id = locationId.id;
       const token = localStorage.getItem("token");
@@ -576,12 +622,12 @@ export const DestinationPage = ({}) => {
       <section className="relative h-[60vh] w-full flex items-center sm:h-[70vh] md:h-[60vh]">
         {/* Background Image with gradient overlay */}
         <div
-          className="absolute inset-0  rounded-[20px] mt-[50px] bg-cover bg-center"
+          className="absolute inset-0   mt-[50px] bg-cover bg-center"
           style={{
             backgroundImage: `url(${getBackgroundImage(about.terrain)})`,
           }}
         ></div>
-        <div className="absolute inset-0 rounded-[20px] mt-[50px] bg-gradient-to-r from-transparent to-[#8B63DA]"></div>
+        <div className="absolute inset-0  mt-[50px] bg-gradient-to-r from-[#8B63DA]/85 to-transperant"></div>
 
         {/* Text Content */}
         <div className="relative z-10 text-left max-w-[724px]  px-4 sm:left-3 sm:px-3">
@@ -597,7 +643,7 @@ export const DestinationPage = ({}) => {
           <h1
             className="text-white font-poppins
              text-[clamp(20px,4vw,32px)]
-             leading-tight mt-2
+             leading-tight mt-2 max-w-[500px]
              line-clamp-2"
             style={{ fontFamily: "Baloo, cursive" }}
           >
@@ -658,6 +704,7 @@ export const DestinationPage = ({}) => {
             </ul>
 
             {/* Wishlist Button */}
+            <div className="flex gap-6">
             <button
               onClick={handleWishlist}
               className="bg-[#fbebff] text-[#310a49] font-semibold py-3 px-4 rounded-lg shadow-lg hover:bg-[#9156F1] hover:text-white transition-transform transform hover:scale-105"
@@ -665,12 +712,32 @@ export const DestinationPage = ({}) => {
               <div className="flex gap-4 items-center">
                 {" "}
                 <HeartIconOutline
+                
                   className="h-5  flex items-center"
                   fill={isWishlisted ? "red" : "none"}
                 />{" "}
                 WishList
               </div>
+              
+              
             </button>
+            <button
+              onClick={() => copyToClipboard(window.location.href)}
+              className="bg-[#fbebff] text-[#310a49] font-semibold py-3 px-4 rounded-lg shadow-lg hover:bg-[#9156F1] hover:text-white transition-transform transform hover:scale-105"
+            >
+              <div className="flex gap-4 items-center">
+                {" "}
+                <ShareIconOutline
+                  className="h-5  flex items-center"
+                  
+                />{" "}
+                Share
+              </div>
+              
+              
+            </button>
+            </div>
+            
           </div>
         </div>
       </section>

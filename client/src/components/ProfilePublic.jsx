@@ -203,70 +203,96 @@ export const ProfilePublic = () => {
             {/* Tab Content */}
             <div className="mt-4 md:mt-6 px-3 md:px-6">
               {activeTab === "followers" && (
-                <div className="max-h-[400px] overflow-y-auto pr-2">
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
-                    {user.followers?.length ? (
-                      user.followers.map((f) => (
-                        <div
-                          key={f._id}
-                          className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
-                          onClick={() => navigate(`/profile/${f.username}`)}
-                        >
-                          <div className="flex items-center gap-4">
-                            <img
-                              src={f.profilePic || "/defaultProfilePic.webp"}
-                              alt={f.username}
-                              className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
-                            />
-                            <div>
-                              <p className="font-semibold text-gray-800">
-                                {f.username}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-gray-500 text-center col-span-full mt-4">
-                        No followers yet
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
+  <div className="max-h-[350px] md:max-h-[450px] overflow-y-auto pr-2 custom-scroll">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+
+      {user.followers?.length ? (
+        user.followers.map((f) => (
+          <div
+            key={f._id}
+            className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between 
+            gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate(`/profile/${f.username}`)}
+          >
+            {/* LEFT SIDE */}
+            <div className="flex items-center gap-4">
+              <img
+                src={f.profilePic || "/defaultProfilePic.webp"}
+                alt={f.username}
+                className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
+              />
+
+              <div className="max-w-[160px]">
+                <p className="font-semibold text-gray-800">
+                  {f.username}
+                </p>
+
+                {/* ⭐ Bio section (optional + truncated) */}
+                {f.bio && (
+                  <p className="text-gray-600 text-xs mt-1 line-clamp-2">
+                    {f.bio}
+                  </p>
+                )}
+              </div>
+            </div>
+
+          </div>
+        ))
+      ) : (
+        <p className="text-gray-500 text-center col-span-full mt-4">
+          No followers yet
+        </p>
+      )}
+
+    </div>
+  </div>
+)}
+
 
               {activeTab === "following" && (
-                <div className="max-h-[400px] overflow-y-auto pr-2">
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
-                    {user.following?.length ? (
-                      user.following.map((f) => (
-                        <div
-                          key={f._id}
-                          className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
-                          onClick={() => navigate(`/profile/${f.username}`)}
-                        >
-                          <div className="flex items-center gap-4">
-                            <img
-                              src={f.profilePic || "/defaultProfilePic.webp"}
-                              alt={f.username}
-                              className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
-                            />
-                            <div>
-                              <p className="font-semibold text-gray-800">
-                                {f.username}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-gray-500 text-center col-span-full mt-4">
-                        Not following anyone yet
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
+  <div className="max-h-[350px] md:max-h-[450px] overflow-y-auto pr-2 custom-scroll">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+
+      {user.following?.length ? (
+        user.following.map((f) => (
+          <div
+            key={f._id}
+            className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between 
+            gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate(`/profile/${f.username}`)}
+          >
+            {/* LEFT SIDE */}
+            <div className="flex items-center gap-4">
+              <img
+                src={f.profilePic || "/defaultProfilePic.webp"}
+                alt={f.username}
+                className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
+              />
+
+              <div className="max-w-[160px]">
+                <p className="font-semibold text-gray-800">
+                  {f.username}
+                </p>
+
+                {/* ⭐ Bio (Optional + Truncated) */}
+                {f.bio && (
+                  <p className="text-gray-600 text-xs mt-1 line-clamp-2">
+                    {f.bio}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        ))
+      ) : (
+        <p className="text-gray-500 text-center col-span-full mt-4">
+          Not following anyone yet
+        </p>
+      )}
+
+    </div>
+  </div>
+)}
 
               {activeTab === "contribution" && (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

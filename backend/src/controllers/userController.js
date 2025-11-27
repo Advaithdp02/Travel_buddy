@@ -134,8 +134,8 @@ export const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
   .select("-password") // exclude password
-  .populate("followers", "username profilePic")
-  .populate("following", "username profilePic")
+  .populate("followers", "username profilePic bio")
+  .populate("following", "username profilePic bio")
   .populate({
     path: "wishlist",
     select: "_id name district images",
@@ -229,8 +229,8 @@ export const getOtherUserProfile = async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username })
       .select("-password")
-      .populate("followers", "username profilePic")
-      .populate("following", "username profilePic")
+      .populate("followers", "username profilePic bio")
+      .populate("following", "username profilePic bio")
       .populate({
         path: "contributions",
         select: "title description images likes comments verified createdAt",
