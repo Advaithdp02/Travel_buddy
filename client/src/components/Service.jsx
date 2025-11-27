@@ -53,7 +53,7 @@ export const Service = () => {
         </h2>
 
         {/* Description */}
-        <p className="text-gray-600 text-sm md:text-base leading-7 max-w-lg">
+        <p className="text-gray-600 text-sm md:text-base leading-7">
           We cover all locations, ensuring you have a smooth and enjoyable journey. No matter where you go, TravelBuddy is always by your side, helping you travel smart and stress-free. Let us guide you to the best experiences, making every trip memorable!
           <br/>"Traveling is a lifelong evolution, where every journey shapes a new version of ourselves."  </p>
 
@@ -66,7 +66,7 @@ export const Service = () => {
       </div>
 
       {/* Right Side: Services List */}
-      <div className="md:w-1/3 flex flex-col gap-6">
+      <div className="md:w-1/3 flex flex-col md:mt-[80px] gap-6">
         {services.map((service, index) => (
           <div key={index} className="flex items-center gap-4">
             <div className="w-14 h-14 flex items-center justify-center bg-[#310a49] rounded-full text-white">
@@ -107,7 +107,7 @@ export const Service = () => {
     <p className="text-[20px] font-poppins mt-2">Tourist Places</p>
   </div>
 
-  <div className="hidden md:block w-px h-[70px] bg-[#6F6FC1]"></div>
+  <div className="hidden md:block w-px h-[70px] bg-white bg-opacity-75"></div>
 
   {/* Card 2 */}
   <div>
@@ -117,7 +117,7 @@ export const Service = () => {
     <p className="text-[20px] font-poppins mt-2">Number of Resorts</p>
   </div>
 
-  <div className="hidden md:block w-px h-[70px] bg-[#6F6FC1]"></div>
+  <div className="hidden md:block w-px h-[70px] bg-white bg-opacity-55"></div>
 
   {/* Card 3 */}
   <div>

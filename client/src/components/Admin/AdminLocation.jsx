@@ -15,6 +15,8 @@ import {
   Grid,
 } from "@mui/material";
 
+import LocationBulkAddModal from "./LocationBulkAddModal"; // ADDED
+
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default function AdminLocations() {
@@ -29,8 +31,11 @@ export default function AdminLocations() {
   const [selectedState, setSelectedState] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
 
-  // Modal + Form
+  // Add Location Modal
   const [open, setOpen] = useState(false);
+
+  // Bulk Upload Modal
+  const [openBulk, setOpenBulk] = useState(false); // ADDED
 
   const [formData, setFormData] = useState({
     _id: null,
@@ -56,32 +61,28 @@ export default function AdminLocations() {
 
   const token = localStorage.getItem("token");
 
-  // ---------------- Fetch D I S T R I C T S  ----------------
+  // ---------------- Fetch Districts ----------------
   useEffect(() => {
     const fetchDistricts = async () => {
       try {
         const res = await axios.get(`${BACKEND_URL}/districts`);
         setDistricts(res.data);
 
-        // Extract states
         const unique = [...new Set(res.data.map((d) => d.State))];
         setStates(unique);
-
       } catch (err) {
-        console.error("Districts fetch failed", err);
+        console.error("District fetch failed:", err);
       }
     };
-
     fetchDistricts();
   }, []);
 
-  // ---------------- Fetch Locations for District ----------------
+  // ---------------- Fetch Locations ----------------
   const fetchLocations = async (districtId) => {
     if (!districtId) {
       setLocations([]);
       return;
     }
-
     try {
       setLoading(true);
       const res = await axios.get(
@@ -90,7 +91,7 @@ export default function AdminLocations() {
       );
       setLocations(res.data);
     } catch (err) {
-      console.error("Failed to load locations", err);
+      console.error("Load locations failed", err);
     } finally {
       setLoading(false);
     }
@@ -111,11 +112,10 @@ export default function AdminLocations() {
     fetchLocations(districtId);
   };
 
-  // ---------------- Filter Locations by Search ----------------
+  // ---------------- Filter ----------------
   const filteredLocations = locations.filter((loc) => {
     if (!search.trim()) return true;
     const s = search.toLowerCase();
-
     return (
       loc.name.toLowerCase().includes(s) ||
       loc.terrain?.toLowerCase().includes(s) ||
@@ -123,21 +123,20 @@ export default function AdminLocations() {
     );
   });
 
-  // ---------------- Delete Location ----------------
+  // ---------------- Delete ----------------
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this location?")) return;
     try {
       await axios.delete(`${BACKEND_URL}/locations/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       setLocations((prev) => prev.filter((l) => l._id !== id));
     } catch (err) {
-      console.error("Delete failed:", err);
+      console.error("Delete failed", err);
     }
   };
 
-  // ---------------- Open Edit Modal ----------------
+  // ---------------- Edit Modal ----------------
   const openModalForEdit = (loc) => {
     setFormData({
       _id: loc._id,
@@ -146,7 +145,7 @@ export default function AdminLocations() {
       terrain: loc.terrain,
       description: loc.description,
       subtitle: loc.subtitle,
-      points: loc.points ? loc.points.join(",") : "",
+      points: loc.points?.join(",") || "",
       longitude: loc.coordinates.coordinates[0],
       latitude: loc.coordinates.coordinates[1],
       images: [],
@@ -161,47 +160,43 @@ export default function AdminLocations() {
     setOpen(true);
   };
 
-  // ---------------- Handle Form Input ----------------
+  // ---------------- Form Input ----------------
   const handleFormChange = (e) => {
     const { name, value, files } = e.target;
-    if (files) {
-      setFormData({ ...formData, images: files });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+    if (files) setFormData({ ...formData, images: files });
+    else setFormData({ ...formData, [name]: value });
   };
 
-  // ---------------- Submit Form ----------------
+  // ---------------- Submit ----------------
   const handleSubmit = async () => {
     try {
       const data = new FormData();
 
       Object.keys(formData).forEach((key) => {
-        if (
-          key !== "images" &&
-          key !== "existingImages"
-        ) {
+        if (key !== "images" && key !== "existingImages") {
           data.append(key, formData[key]);
         }
       });
 
       data.append(
         "coordinates",
-        JSON.stringify([parseFloat(formData.longitude), parseFloat(formData.latitude)])
+        JSON.stringify([
+          parseFloat(formData.longitude),
+          parseFloat(formData.latitude),
+        ])
       );
 
-      // points as array
       formData.points
         .split(",")
         .map((p) => p.trim())
-        .forEach((pt) => data.append("points", pt));
+        .forEach((pt) => {
+          if (pt) data.append("points", pt);
+        });
 
-      // deletedImages
       if (deletedImages.length > 0) {
         data.append("deletedImages", JSON.stringify(deletedImages));
       }
 
-      // new images
       if (formData.images?.length > 0) {
         [...formData.images].forEach((file) => data.append("images", file));
       }
@@ -224,13 +219,38 @@ export default function AdminLocations() {
     }
   };
 
-  // ---------------- Remove image ----------------
+  // ---------------- Remove Image ----------------
   const handleRemoveImage = (imgUrl) => {
     setFormData((prev) => ({
       ...prev,
       existingImages: prev.existingImages.filter((i) => i !== imgUrl),
     }));
-    setDeletedImages((p) => [...p, imgUrl]);
+    setDeletedImages((prev) => [...prev, imgUrl]);
+  };
+
+  // ---------------- Bulk Upload Handler (ADDED) ----------------
+  const handleBulkUpload = async ({ file }) => {
+    try {
+      if (!selectedDistrict) {
+        alert("Please select a district before uploading.");
+        return;
+      }
+
+      const form = new FormData();
+      form.append("file", file);
+      form.append("districtId", selectedDistrict);
+
+      await axios.post(`${BACKEND_URL}/locations/bulk/upload`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      alert("Bulk upload successful!");
+      setOpenBulk(false);
+      fetchLocations(selectedDistrict);
+    } catch (err) {
+      console.error("Bulk Upload Error:", err.response?.data || err);
+      alert("Bulk upload failed.");
+    }
   };
 
   // ---------------- UI ----------------
@@ -240,12 +260,11 @@ export default function AdminLocations() {
         Manage Locations
       </Typography>
 
-      {/* ---------------- Select State ---------------- */}
+      {/* ---------------- State Select ---------------- */}
       <FormControl fullWidth className="mb-4">
         <InputLabel>Select State</InputLabel>
         <Select
           value={selectedState}
-          label="Select State"
           onChange={(e) => handleStateChange(e.target.value)}
         >
           <MenuItem value="">-- Select State --</MenuItem>
@@ -257,12 +276,11 @@ export default function AdminLocations() {
         </Select>
       </FormControl>
 
-      {/* ---------------- Select District (dependent) ---------------- */}
+      {/* ---------------- District Select ---------------- */}
       <FormControl fullWidth className="mb-6">
         <InputLabel>Select District</InputLabel>
         <Select
           value={selectedDistrict}
-          label="Select District"
           onChange={(e) => handleDistrictChange(e.target.value)}
           disabled={!selectedState}
         >
@@ -277,12 +295,12 @@ export default function AdminLocations() {
         </Select>
       </FormControl>
 
-      {/* If no district selected */}
       {!selectedDistrict && (
-        <Typography className="text-gray-600">Select a state & district</Typography>
+        <Typography className="text-gray-600">
+          Select a state & district
+        </Typography>
       )}
 
-      {/* After district selection */}
       {selectedDistrict && (
         <>
           {/* Search */}
@@ -294,9 +312,45 @@ export default function AdminLocations() {
             onChange={(e) => setSearch(e.target.value)}
           />
 
-          <Button variant="contained" onClick={() => setOpen(true)} className="mb-4">
-            + Add Location
-          </Button>
+          {/* Add + Bulk Upload Buttons */}
+          <Box className="flex gap-3 mb-4">
+            <Button
+              variant="contained"
+              onClick={() => {
+                setFormData({
+                  _id: null,
+                  name: "",
+                  district: selectedDistrict || "", // auto-fill district
+                  terrain: "none",
+                  description: "",
+                  subtitle: "",
+                  points: "",
+                  longitude: "",
+                  latitude: "",
+                  images: [],
+                  existingImages: [],
+                  review: "",
+                  reviewLength: "",
+                  roadSideAssistant: "",
+                  policeStation: "",
+                  ambulance: "",
+                  localSupport: "",
+                });
+                setDeletedImages([]);
+                setOpen(true);
+              }}
+            >
+              + Add Location
+            </Button>
+
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => setOpenBulk(true)}
+            >
+              + Bulk Upload
+            </Button>
+          </Box>
 
           {loading ? (
             <Typography>Loading...</Typography>
@@ -320,10 +374,17 @@ export default function AdminLocations() {
                       </Typography>
 
                       <Box className="flex gap-2 mt-4">
-                        <Button variant="contained" onClick={() => openModalForEdit(loc)}>
+                        <Button
+                          variant="contained"
+                          onClick={() => openModalForEdit(loc)}
+                        >
                           Edit
                         </Button>
-                        <Button variant="contained" color="error" onClick={() => handleDelete(loc._id)}>
+                        <Button
+                          variant="contained"
+                          color="error"
+                          onClick={() => handleDelete(loc._id)}
+                        >
                           Delete
                         </Button>
                       </Box>
@@ -336,9 +397,219 @@ export default function AdminLocations() {
         </>
       )}
 
-      {/* MODAL (UNCHANGED — keep yours below) */}
-      {/* ... your same modal code ... */}
+      {/* ---------------- Bulk Modal (ADDED) ---------------- */}
+      <LocationBulkAddModal
+        open={openBulk}
+        onClose={() => setOpenBulk(false)}
+        onUpload={handleBulkUpload}
+      />
 
+      {/* ---------------- Add / Edit Location Modal (YOUR ORIGINAL MODAL) ---------------- */}
+      {/* ---------------- Add / Edit Location Modal ---------------- */}
+      <Modal open={open} onClose={() => setOpen(false)}>
+        <Box
+          className="
+      absolute top-1/2 left-1/2 w-[32rem] max-h-[90vh]
+      -translate-x-1/2 -translate-y-1/2
+      bg-white p-6 rounded-xl shadow-lg
+      overflow-y-auto
+    "
+        >
+          <Typography variant="h6" className="mb-4 font-bold">
+            {formData._id ? "Edit Location" : "Add New Location"}
+          </Typography>
+
+          {/* Name */}
+          <TextField
+            label="Name"
+            name="name"
+            fullWidth
+            margin="dense"
+            value={formData.name}
+            onChange={handleFormChange}
+          />
+
+          {/* District */}
+          <FormControl fullWidth margin="dense">
+            <InputLabel>District</InputLabel>
+            <Select
+              name="district"
+              value={formData.district}
+              onChange={handleFormChange}
+            >
+              {districts.map((d) => (
+                <MenuItem key={d._id} value={d._id}>
+                  {d.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Description */}
+          <TextField
+            label="Description"
+            name="description"
+            fullWidth
+            margin="dense"
+            multiline
+            minRows={3}
+            value={formData.description}
+            onChange={handleFormChange}
+          />
+
+          {/* Subtitle */}
+          <TextField
+            label="Subtitle"
+            name="subtitle"
+            fullWidth
+            margin="dense"
+            value={formData.subtitle}
+            onChange={handleFormChange}
+          />
+
+          {/* Review */}
+          <TextField
+            label="Review"
+            name="review"
+            fullWidth
+            margin="dense"
+            value={formData.review}
+            onChange={handleFormChange}
+          />
+
+          {/* Review Length */}
+          <TextField
+            label="Review Length"
+            name="reviewLength"
+            fullWidth
+            margin="dense"
+            value={formData.reviewLength}
+            onChange={handleFormChange}
+          />
+
+          {/* Points */}
+          <TextField
+            label="Points (comma separated)"
+            name="points"
+            fullWidth
+            margin="dense"
+            value={formData.points}
+            onChange={handleFormChange}
+          />
+
+          {/* TERRAIN */}
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Terrain</InputLabel>
+            <Select
+              name="terrain"
+              value={formData.terrain}
+              onChange={handleFormChange}
+            >
+              <MenuItem value="none">Select Terrain</MenuItem>
+              <MenuItem value="Mountain">Mountains</MenuItem>
+              <MenuItem value="Beach">Beaches</MenuItem>
+              <MenuItem value="Forest">Forests</MenuItem>
+              <MenuItem value="Desert">Deserts</MenuItem>
+              <MenuItem value="Plain">Plains</MenuItem>
+              <MenuItem value="Rocky">Rocky</MenuItem>
+              <MenuItem value="River">River</MenuItem>
+              <MenuItem value="Hilly">Hilly</MenuItem>
+              <MenuItem value="Urban">Urban</MenuItem>
+            </Select>
+          </FormControl>
+
+          {/* COORDINATES */}
+          <Box className="flex gap-2 mt-2">
+            <TextField
+              label="Longitude"
+              name="longitude"
+              fullWidth
+              value={formData.longitude}
+              onChange={handleFormChange}
+            />
+            <TextField
+              label="Latitude"
+              name="latitude"
+              fullWidth
+              value={formData.latitude}
+              onChange={handleFormChange}
+            />
+          </Box>
+
+          {/* EMERGENCY CONTACTS */}
+          <Typography variant="subtitle1" className="mt-4 font-semibold">
+            Emergency Contacts
+          </Typography>
+
+          <TextField
+            label="Roadside Assistance"
+            name="roadSideAssistant"
+            fullWidth
+            margin="dense"
+            value={formData.roadSideAssistant}
+            onChange={handleFormChange}
+          />
+
+          <TextField
+            label="Police Station"
+            name="policeStation"
+            fullWidth
+            margin="dense"
+            value={formData.policeStation}
+            onChange={handleFormChange}
+          />
+
+          <TextField
+            label="Ambulance"
+            name="ambulance"
+            fullWidth
+            margin="dense"
+            value={formData.ambulance}
+            onChange={handleFormChange}
+          />
+
+          <TextField
+            label="Local Support"
+            name="localSupport"
+            fullWidth
+            margin="dense"
+            value={formData.localSupport}
+            onChange={handleFormChange}
+          />
+
+          {/* IMAGE UPLOAD */}
+          <input
+            type="file"
+            name="images"
+            multiple
+            onChange={handleFormChange}
+            className="mt-2"
+          />
+
+          {/* Existing Images Preview */}
+          {formData.existingImages?.length > 0 && (
+            <Box className="flex gap-2 mt-2 flex-wrap">
+              {formData.existingImages.map((img, idx) => (
+                <img
+                  key={idx}
+                  src={img}
+                  className="w-20 h-20 object-cover rounded"
+                />
+              ))}
+            </Box>
+          )}
+
+          {/* ACTION BUTTONS */}
+          <Box className="flex justify-end mt-4 gap-2">
+            <Button variant="outlined" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="contained" onClick={handleSubmit}>
+              {formData._id ? "Update" : "Save"}
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
     </Box>
   );
 }

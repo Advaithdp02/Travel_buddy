@@ -1,6 +1,11 @@
 import Location from "../models/Location.js";
 import District from "../models/District.js";
 import { uploadToS3, deleteFromS3 } from "./uploadController.js";
+import nodemailer from "nodemailer";
+import XLSX from "xlsx";
+
+
+let otpStore = {};
 
 
 // Get all locations
@@ -396,4 +401,96 @@ export const deleteLocation = async (req, res) => {
     console.error("Delete Location Error:", err);
     res.status(500).json({ message: "Server error" });
   }
+};
+
+export const bulkUpload = async (req, res) => {
+  try {
+    console.log("Bulk upload started...");
+
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+    const { districtId } = req.body;
+    if (!districtId) return res.status(400).json({ error: "districtId missing" });
+
+    // Read Excel/CSV/JSON
+    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(sheet);
+
+    for (const item of data) {
+      const payload = {
+        name: item.name,
+        district: districtId,
+        description: item.description || "",
+        subtitle: item.subtitle || "",
+        terrain: item.terrain || "",
+        review: item.review || 0,
+        reviewLength: item.reviewLength || 0,
+        points: item.points ? item.points.split(";") : [],
+        coordinates: {
+          type: "Point",
+          coordinates: [item.longitude, item.latitude],
+        },
+      };
+
+      const existing = await Location.findOne({ name: item.name });
+
+      if (existing) {
+        await Location.updateOne({ _id: existing._id }, { $set: payload });
+      } else {
+        await Location.create(payload);
+      }
+    }
+
+    res.json({ success: true, message: "Bulk upload completed" });
+
+  } catch (err) {
+    console.log("FATAL bulk upload error:", err);
+    res.status(500).json({ error: "Bulk upload failed" });
+  }
+};
+
+
+export const verifyOTP = async (req, res) => {
+  const { email, otp } = req.body;
+
+  const record = otpStore[email];
+
+  if (!record)
+    return res.json({ success: false, message: "OTP not sent" });
+
+  if (Date.now() > record.expires)
+    return res.json({ success: false, message: "OTP expired" });
+
+  if (record.otp !== otp)
+    return res.json({ success: false, message: "Invalid OTP" });
+
+  return res.json({ success: true });
+};
+export const sendOTP = async (req, res) => {
+  const { email } = req.body;
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+  otpStore[email] = {
+    otp,
+    expires: Date.now() + 10 * 60 * 1000 // 10 minutes
+  };
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "TravelBuddy Bulk Upload OTP",
+    text: `Your OTP is ${otp}. It expires in 10 minutes.`,
+  });
+
+  res.json({ success: true, message: "OTP sent" });
 };

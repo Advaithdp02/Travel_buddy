@@ -3,11 +3,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import {
   StarIcon,
   CheckIcon,
-  WeatherIcon,
   PhoneIcon,
-  ChevronDownIcon,
   ExternalLinkIcon,
-  LocationPinIcon,
   DistanceArrow,
   TimeClock,
   LocationWithTime,
@@ -679,8 +676,81 @@ export const DestinationPage = ({}) => {
       </section>
 
       {/* Comments & Contributions */}
-      <section className="py-16  pb-0 px-8 bg-[#310a49]/90 rounded-tl-[20px] rounded-tr-[20px]">
-        <div className="container mx-auto">
+
+      <section className="py-16 pb-0 px-8 bg-[#310a49]/90 rounded-tl-[20px] rounded-tr-[20px] relative overflow-hidden">
+        {/* 🌟 BACKGROUND TRAVEL VECTOR ART — EDGE DECORATIONS ONLY */}
+
+        <div className="pointer-events-none absolute inset-0 opacity-[0.5] select-none z-0">
+  {/* ---------------- TOP EDGE ---------------- */}
+
+  {/* ✈️ Plane */}
+  <svg
+    className="absolute top-2 right-4 w-24 sm:w-32 md:w-40"
+    viewBox="0 0 200 200"
+    fill="none"
+  >
+    <path d="M20 180 C120 120, 160 60, 199 10" stroke="#FFFFFF" strokeWidth="3" strokeDasharray="10 6" />
+    <path d="M165 20 L200 10 L185 45 Z" fill="#FFFFFF" />
+  </svg>
+
+  {/* 🛂 Passport */}
+  <svg
+    className="absolute top-3 left-3 w-14 sm:w-16 md:w-20"
+    viewBox="0 0 100 140"
+    fill="#FFFFFF"
+  >
+    <rect x="10" y="10" width="80" height="120" rx="6" />
+    <circle cx="50" cy="60" r="20" fill="#ffffff90" />
+  </svg>
+
+  {/* 🗺️ Map */}
+  <svg
+    className="absolute top-0 left-[1200px]  w-24 sm:w-32 md:w-36"
+    viewBox="0 0 200 120"
+    fill="white"
+  >
+    <polygon points="10,20 70,10 130,25 190,5 190,110 130,95 70,110 10,100" opacity="0.6" />
+  </svg>
+
+  {/* ☁️ Cloud */}
+  <svg
+    className="absolute top-10 left-[400px] -translate-x-1/2 w-20 sm:w-28 md:w-36"
+    viewBox="0 0 64 64"
+    fill="#FFFFFF"
+  >
+    <path d="M20 50c-8 0-14-5-14-12 0-5 4-10 9-11 1-8 8-14 16-14 9 0 17 7 17 16 6 1 10 6 10 12 0 7-6 12-14 12H20z" />
+  </svg>
+
+  {/* Suitcase */}
+  <svg
+    className="absolute bottom-6 left-[1300px] sm:right-1/4 md:right-1/4 w-16 sm:w-20 md:w-24"
+    viewBox="0 0 100 80"
+    fill="#FFFFFF"
+  >
+    <rect x="10" y="25" width="80" height="45" rx="8" />
+    <rect x="35" y="10" width="30" height="15" rx="4" />
+  </svg>
+
+  {/* ---------------- BOTTOM EDGE ---------------- */}
+
+  {/* 🏔 Mountains */}
+  <svg
+    className="absolute bottom-0 left-0 w-1/2 sm:w-1/3 md:w-1/3"
+    viewBox="0 0 200 100"
+    fill="#FFFFFF"
+  >
+    <path d="M0 100 L50 20 L100 100 Z" />
+    <path d="M80 100 L140 10 L200 100 Z" opacity="0.6" />
+  </svg>
+
+  
+
+  
+</div>
+
+
+
+        <div className="container mx-auto relative z-10">
           <h2 className="text-3xl font-bold text-white mb-6">
             Community Insights
           </h2>
@@ -699,12 +769,8 @@ export const DestinationPage = ({}) => {
           <div className="relative overflow-hidden">
             <div
               className="flex transition-transform duration-500"
-              style={{
-                transform: "translateX(0%)",
-                width: "100%",
-              }}
+              style={{ transform: "translateX(0%)", width: "100%" }}
             >
-              {/* -------------------- COMMENTS TAB -------------------- */}
               <div className="w-full pr-6">
                 <div
                   className={`space-y-4 overflow-y-auto ${
@@ -730,7 +796,6 @@ export const DestinationPage = ({}) => {
                         className="bg-[#fbebff] p-4 rounded-xl shadow border border-gray-100 cursor-pointer flex gap-3 hover:shadow-md transition"
                         onClick={() => setIsModalOpen(true)}
                       >
-                        {/* Profile Picture */}
                         {c.user?.profilePic && (
                           <img
                             src={c.user.profilePic}
@@ -739,7 +804,7 @@ export const DestinationPage = ({}) => {
                           />
                         )}
 
-                        <div className="flex-1 ">
+                        <div className="flex-1">
                           <p className="text-sm text-brand-dark font-semibold">
                             {c.user?.name || c.user?.username || "Unknown User"}
                           </p>
@@ -899,7 +964,7 @@ export const DestinationPage = ({}) => {
                     {/* Distance */}
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 text-[#726E6E] flex items-center justify-center">
-                        <DistanceArrow className="w-4 h-4" />
+                        <DistanceArrow className="text-purple-500 w-4 h-4" />
                       </div>
                       <div className="flex flex-col leading-none text-center gap-2">
                         <span className="text-[12px] text-[#9C9C9C] font-['poppins']">
@@ -914,7 +979,7 @@ export const DestinationPage = ({}) => {
                     {/* Arrival */}
                     <div className="flex items-center gap-2">
                       <div className="w-[20px] h-[60px] text-[#726E6E] flex items-center justify-center">
-                        <LocationWithTime className="w-4 h-4" />
+                        <LocationWithTime className="text-purple-500 w-4 h-4" />
                       </div>
                       <div className="flex flex-col leading-none text-center gap-2">
                         <span className="text-[12px] text-[#9C9C9C] font-['poppins']">
@@ -929,7 +994,7 @@ export const DestinationPage = ({}) => {
                     {/* Time */}
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 text-[#726E6E] flex items-center justify-center">
-                        <TimeClock className="w-4 h-4" />
+                        <TimeClock className="text-purple-500 w-4 h-4" />
                       </div>
                       <div className="flex flex-col leading-none text-center gap-2">
                         <span className="text-[12px] text-[#9C9C9C] font-['poppins']">
@@ -1106,7 +1171,7 @@ export const DestinationPage = ({}) => {
                   key={mapKey}
                   title="Destination Map"
                   width="100%"
-                  height="400"
+                  height="600"
                   className="rounded-2xl shadow-lg"
                   loading="lazy"
                   allowFullScreen

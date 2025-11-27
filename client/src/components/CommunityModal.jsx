@@ -29,20 +29,16 @@ export const CommunityModal = ({
   const [replyText, setReplyText] = useState("");
   const [expandedComments, setExpandedComments] = useState({});
   const [expandedReplies, setExpandedReplies] = useState({});
-
-  const [following, setFollowing] = useState([]); // raw array of followed users
-  const [followed, setFollowed] = useState({}); // map for fast lookup
+  const [following, setFollowing] = useState([]);
+  const [followed, setFollowed] = useState({});
 
   const navigate = useNavigate();
-
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
 
   const replyInputRefs = useRef({});
 
-  /* -----------------------------------------------------------
-     FETCH USER FOLLOWING LIST (BY USERNAME)
-  ----------------------------------------------------------- */
+  /* FETCH FOLLOWING */
   useEffect(() => {
     if (!isOpen || !token) return;
 
@@ -54,8 +50,6 @@ export const CommunityModal = ({
 
         const data = await res.json();
         const user = data.user ?? data;
-
-        // backend sends following as list of users
         setFollowing(user.following || []);
       } catch (err) {
         console.error("failed to load following:", err);
@@ -65,45 +59,33 @@ export const CommunityModal = ({
     loadFollowing();
   }, [isOpen]);
 
-  /* -----------------------------------------------------------
-     CONVERT following[] → { username: true }
-  ----------------------------------------------------------- */
   useEffect(() => {
     const map = {};
-
     following.forEach((f) => {
       const uname = f.username || f.name;
       if (uname) map[uname] = true;
     });
-
     setFollowed(map);
   }, [following]);
 
-  /* -----------------------------------------------------------
-     FOLLOW / UNFOLLOW USING USERNAME
-  ----------------------------------------------------------- */
   const handleToggleFollow = async (username) => {
     try {
       const res = await fetch(`${BACKEND_URL}/users/follow/${username}`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (!res.ok) throw new Error("Follow failed");
 
-      setFollowed((prev) => ({
-        ...prev,
-        [username]: !prev[username],
+      setFollowed((p) => ({
+        ...p,
+        [username]: !p[username],
       }));
     } catch (err) {
       console.error(err);
     }
   };
 
-  /* -----------------------------------------------------------
-     OTHER EXISTING LOGIC
-  ----------------------------------------------------------- */
-
+  /* BODY LOCK */
   useEffect(() => {
     if (!isOpen) return;
 
@@ -116,21 +98,21 @@ export const CommunityModal = ({
 
     return () => {
       const storedY = document.body.style.top;
-
       document.body.style.position = "";
       document.body.style.top = "";
       document.body.style.paddingRight = "";
-
       window.scrollTo(0, parseInt(storedY || "0") * -1);
     };
   }, [isOpen]);
 
+  /* EXPANDERS */
   const toggleExpandComment = (id) =>
     setExpandedComments((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const toggleExpandReply = (id) =>
     setExpandedReplies((prev) => ({ ...prev, [id]: !prev[id] }));
 
+  /* REPLY INPUT */
   const toggleReplyInput = (commentId) => {
     setReplyingTo(commentId === replyingTo ? null : commentId);
 
@@ -142,6 +124,7 @@ export const CommunityModal = ({
     }, 150);
   };
 
+  /* SUBMIT REPLY */
   const handleReplySubmit = async (commentId) => {
     if (!replyText.trim()) return;
     if (!token) return alert("You must be logged in");
@@ -167,6 +150,7 @@ export const CommunityModal = ({
     }
   };
 
+  /* LIKE */
   const handleLikeComment = async (commentId) => {
     if (!userId) return alert("You must be logged in");
     try {
@@ -180,6 +164,7 @@ export const CommunityModal = ({
     }
   };
 
+  /* DELETE COMMENT */
   const handleDeleteComment = async (commentId) => {
     if (!token) return alert("You must be logged in");
     if (!confirm("Delete this comment?")) return;
@@ -199,23 +184,21 @@ export const CommunityModal = ({
     }
   };
 
+  /* DELETE REPLY */
   const handleDeleteReply = async (commentId, replyId) => {
     try {
-      const res = await fetch(
-        `${BACKEND_URL}/comments/reply/${commentId}/${replyId}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      await fetch(`${BACKEND_URL}/comments/reply/${commentId}/${replyId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      if (!res.ok) return;
       refreshComments();
     } catch (err) {
       console.error(err);
     }
   };
 
+  /* ADD COMMENT */
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
     if (!token) return alert("You must be logged in");
@@ -236,39 +219,61 @@ export const CommunityModal = ({
       });
 
       if (!res.ok) throw new Error("Failed to add comment");
-
       refreshComments();
     } catch (err) {
       console.error(err);
     }
   };
 
-  /* -----------------------------------------------------------
-     RENDER UI
-  ----------------------------------------------------------- */
-
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
 
-      {/* FULL CONTAINER AS FLEX COLUMN */}
-      <div className="bg-[#fbebff] w-11/12 md:w-4/5 lg:w-3/4 h-[90vh] p-0 rounded-xl shadow-2xl flex flex-col">
+      {/* MAIN WRAPPER */}
+      <div className="bg-[#fbebff]/90 backdrop-blur-sm w-11/12 md:w-4/5 lg:w-3/4 h-[90vh] p-0 rounded-xl shadow-2xl flex flex-col relative overflow-hidden">
+
+
+        {/* 🌟 BACKGROUND TRAVEL VECTOR ART */}
+        <div className="pointer-events-none absolute inset-0 opacity-10 select-none">
+
+          {/* Airplane */}
+          <svg className="absolute top-6 right-10 w-40" viewBox="0 0 100 100" fill="#9156F1">
+            <path d="M4 55 L90 10 L95 20 L40 60 L95 75 L90 90 Z" />
+          </svg>
+
+          {/* Mountains */}
+          <svg className="absolute bottom-0 left-0 w-1/2" viewBox="0 0 200 100" fill="#9156F1">
+            <path d="M0 100 L50 20 L100 100 Z" opacity="0.4" />
+            <path d="M80 100 L140 10 L200 100 Z" opacity="0.3" />
+          </svg>
+
+          {/* Cloud */}
+          <svg className="absolute top-24 left-10 w-32" viewBox="0 0 64 64" fill="#9156F1">
+            <path d="M20 50c-8 0-14-5-14-12 0-5 4-10 9-11 1-8 8-14 16-14 9 0 17 7 17 16 6 1 10 6 10 12 0 7-6 12-14 12H20z" />
+          </svg>
+
+          {/* Location Pin */}
+          <svg className="absolute bottom-10 right-8 w-16" viewBox="0 0 24 24" fill="#9156F1">
+            <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7zm0 9.5c-1.4 0-2.5-1.1-2.5-2.5S10.6 6.5 12 6.5s2.5 1.1 2.5 2.5S13.4 11.5 12 11.5z" />
+          </svg>
+
+        </div>
+        {/* END BACKGROUND */}
 
         {/* HEADER */}
-        <div className="flex justify-between items-center p-4 border-b bg-[#fbebff]">
+        <div className="flex justify-between items-center p-4 border-b bg-[#fbebff] relative z-10">
           <h3 className="text-3xl font-bold text-[#310a49]">Comments</h3>
           <button onClick={onClose}>
             <X className="w-10 h-10 text-[#fbebff] bg-[#37377B] rounded-full p-1 hover:bg-blue-700" />
           </button>
         </div>
 
-        {/* 🌟 MIDDLE SCROLLABLE COMMENT LIST */}
-        <div className="p-4 space-y-4 overflow-y-auto flex-grow">
+        {/* COMMENT LIST */}
+        <div className="p-4 space-y-4 overflow-y-auto flex-grow relative z-10">
           {comments.map((c) => {
             const username = c.user?.username || c.user?.name;
             const hasLiked = c.likes.includes(userId);
-
             const commentTrim = trimText(c.text, 200);
             const isCommentExpanded = expandedComments[c._id];
             const isOwnComment = c.user?._id === userId;
@@ -276,7 +281,7 @@ export const CommunityModal = ({
             return (
               <div key={c._id} className="bg-white border rounded-2xl p-4 shadow-md">
 
-                {/* USER ROW */}
+                {/* USER */}
                 <div className="flex items-center gap-2">
                   {c.user?.profilePic && (
                     <img
@@ -368,13 +373,14 @@ export const CommunityModal = ({
                     {c.replies.map((r) => {
                       const replyUsername = r.user?.username || r.user?.name;
                       const isOwnReply = r.user?._id === userId;
-
                       const replyTrim = trimText(r.text, 150);
                       const isReplyExpanded = expandedReplies[r._id];
 
                       return (
-                        <div key={r._id} className="bg-[#fbebff]/60 p-3 rounded-lg text-sm shadow-md">
-
+                        <div
+                          key={r._id}
+                          className="bg-[#fbebff]/60 p-3 rounded-lg text-sm shadow-md"
+                        >
                           <div className="flex items-center gap-2">
                             <p
                               className="font-semibold cursor-pointer hover:text-[#9156F1]"
@@ -398,9 +404,7 @@ export const CommunityModal = ({
                                     : "bg-[#9156F1] text-white"
                                 }`}
                               >
-                                {followed[replyUsername]
-                                  ? "Following"
-                                  : "Follow"}
+                                {followed[replyUsername] ? "Following" : "Follow"}
                               </button>
                             )}
                           </div>
@@ -461,9 +465,9 @@ export const CommunityModal = ({
           })}
         </div>
 
-        {/* 🌟 FIXED ADD COMMENT BOX (NO SCROLLING) */}
+        {/* ADD COMMENT */}
         {!districtPage && (
-          <div className="p-4 border-t bg-[#fbebff] sticky bottom-0">
+          <div className="p-4 border-t bg-[#fbebff] sticky bottom-0 relative z-10">
             <div className="flex flex-wrap items-center gap-2">
               <input
                 type="text"
@@ -492,4 +496,3 @@ export const CommunityModal = ({
     </div>
   );
 };
-

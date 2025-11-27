@@ -8,6 +8,9 @@ import {
   deleteLocation,
   getAllLocationsNoDistrict,
   getNearestLocation,
+  sendOTP,
+  verifyOTP,
+  bulkUpload,
 } from "../controllers/locationController.js";
 import { protect,staffProtect } from "../middlewares/authMiddleware.js";
 
@@ -27,5 +30,12 @@ router.get("/", getAllLocationsNoDistrict);
 router.post("/", protect, staffProtect,upload.array("images", 10), createLocation);
 router.put("/:id", protect, staffProtect,upload.array("images", 10), updateLocation);
 router.delete("/:id", protect, staffProtect, deleteLocation);
+
+// OTP routes
+router.post("/bulk/send-otp", sendOTP);
+router.post("/bulk/verify-otp", verifyOTP);
+
+// Upload route
+router.post("/bulk/upload", upload.single("file"), bulkUpload);
 
 export default router;
