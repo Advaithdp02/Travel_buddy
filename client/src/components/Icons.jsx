@@ -485,6 +485,22 @@ export const ShareIconOutline = ({
     <path d="M12 2v14" />
   </svg>
 );
+export const HeartIconFilled = ({ className = "" }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="red"
+    viewBox="0 0 24 24"
+    stroke="red"
+    strokeWidth="1.5"
+    className={className}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-1.17-.672 25.18 25.18 0 01-2.07-1.348C5.216 16.227 2.25 12.58 2.25 8.25 2.25 5.322 4.714 3 7.5 3c1.676 0 3.157.723 4.145 1.874A5.48 5.48 0 0115.75 3c2.786 0 5.25 2.322 5.25 5.25 0 4.33-2.966 7.977-6.126 10.624a25.175 25.175 0 01-2.07 1.348 15.247 15.247 0 01-1.17.672l-.022.012-.007.003a.78.78 0 01-.684 0z"
+    />
+  </svg>
+);
 
 export const SendIconAdd=({className})=>(
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-send" viewBox="0 0 16 16">

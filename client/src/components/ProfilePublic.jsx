@@ -229,7 +229,7 @@ export const ProfilePublic = () => {
 
                 {/* ⭐ Bio section (optional + truncated) */}
                 {f.bio && (
-                  <p className="text-gray-600 text-xs mt-1 line-clamp-2">
+                  <p className="text-gray-600 text-xs mt-1 line-clamp-1">
                     {f.bio}
                   </p>
                 )}
@@ -276,7 +276,7 @@ export const ProfilePublic = () => {
 
                 {/* ⭐ Bio (Optional + Truncated) */}
                 {f.bio && (
-                  <p className="text-gray-600 text-xs mt-1 line-clamp-2">
+                  <p className="text-gray-600 text-xs mt-1 line-clamp-1">
                     {f.bio}
                   </p>
                 )}

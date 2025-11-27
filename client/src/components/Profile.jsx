@@ -384,7 +384,7 @@ export const Profile = () => {
 
                                   {/* ⭐ Bio (Optional + Truncated) */}
                                   {f.bio && (
-                                    <p className="text-gray-600 text-xs line-clamp-2 mt-1">
+                                    <p className="text-gray-600 text-xs line-clamp-1 mt-1">
                                       {f.bio}
                                     </p>
                                   )}
@@ -446,62 +446,61 @@ export const Profile = () => {
                   </div>
                 )}
 
-                {/* Following Tab */}
                 {activeTab === "following" && (
-                  <div className="mt-3 md:mt-4">
-                    <div className="max-h-[350px] md:max-h-[450px] overflow-y-auto pr-2 custom-scroll">
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {following.length ? (
-                          following.map((f) => (
-                            <div
-                              key={f._id}
-                              className="bg-white shadow-md rounded-xl p-3 flex flex-col justify-between hover:shadow-lg transition-shadow"
-                            >
-                              {/* Profile Image + Name */}
-                              <div className="flex items-center gap-3">
-                                <img
-                                  src={
-                                    f.profilePic || "/defaultProfilePic.webp"
-                                  }
-                                  className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
-                                />
+  <div className="max-h-[350px] md:max-h-[450px] overflow-y-auto pr-2 custom-scroll">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
 
-                                <div>
-                                  <p className="font-semibold text-gray-800">
-                                    {f.username}
-                                  </p>
+      {following.length ? (
+        following.map((f) => (
+          <div
+            key={f._id}
+            className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between 
+            gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={(e) => {
+              if (e.target.tagName !== "BUTTON") {
+                navigate(`/profile/${f.username}`);
+              }
+            }}
+          >
+            {/* LEFT SIDE */}
+            <div className="flex items-center gap-4">
+              <img
+                src={f.profilePic || "/defaultProfilePic.webp"}
+                alt={f.username}
+                className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
+              />
 
-                                  {/* ⭐ Bio (Truncated, Optional) */}
-                                  {f.bio && (
-                                    <p className="text-gray-600 text-xs line-clamp-2 max-w-[160px]">
-                                      {f.bio}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Unfollow Button */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleFollow(f);
-                                }}
-                                className="mt-3 px-3 py-1 text-sm rounded-lg font-semibold 
-                  bg-red-500 hover:bg-red-600 text-white"
-                              >
-                                Unfollow
-                              </button>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-gray-500 text-center col-span-full py-6">
-                            Not following anyone yet.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+              <div className="max-w-[160px]">
+                <p className="font-semibold text-gray-800">{f.username}</p>
+                {f.bio && (
+                  <p className="text-gray-600 text-xs line-clamp-1 mt-1">
+                    {f.bio}
+                  </p>
                 )}
+              </div>
+            </div>
+
+            {/* RIGHT SIDE — UNFOLLOW BUTTON */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFollow(f);
+              }}
+              className="px-3 py-1 rounded-lg text-sm font-semibold bg-red-500 hover:bg-red-600 text-white"
+            >
+              Unfollow
+            </button>
+          </div>
+        ))
+      ) : (
+        <p className="text-gray-500 text-center col-span-full mt-4">
+          Not following anyone yet
+        </p>
+      )}
+    </div>
+  </div>
+)}
+
 
                 {activeTab === "contribution" && (
                   <div>
@@ -734,7 +733,7 @@ export const Profile = () => {
                     name="bio"
                     value={formData.bio || ""}
                     onChange={(e) => {
-                      if (e.target.value.length <= 1000) {
+                      if (e.target.value.length <= 150) {
                         handleInputChange(e);
                       }
                     }}
@@ -744,7 +743,7 @@ export const Profile = () => {
                   />
 
                   <div className="text-right text-sm text-gray-500 mt-1">
-                    {formData.bio?.length || 0} / 1000
+                    {formData.bio?.length || 0} / 150
                   </div>
                 </div>
 

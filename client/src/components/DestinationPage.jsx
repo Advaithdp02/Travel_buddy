@@ -12,6 +12,7 @@ import {
   HeartIconOutline,
   ClipboardIcon,
   ShareIconOutline,
+  HeartIconFilled
 } from "./Icons";
 import { useNavigate, useParams } from "react-router-dom";
 import { CommunityModal } from "./CommunityModal";
@@ -28,8 +29,9 @@ export const DestinationPage = ({}) => {
   const [skip, setSkip] = useState(0);
   const limit = 10; // number of hotels per batch
   const loaderRef = useRef();
+  const [wishlist, setWishlist] = useState([]);
 
-  const [activeTab, setActiveTab] = useState("comments");
+  
   const locationId = useParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -256,6 +258,47 @@ const showCopyAnimation = () => {
       console.error("Error fetching hotels:", err);
     }
   };
+  const toggleWishlist = async (placeId) => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return alert("Please login first!");
+
+    await axios.put(
+      `${Backend_URL}/users/wishlist/add/${placeId}`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    // Update UI instantly
+    setWishlist((prev) =>
+      prev.includes(placeId)
+        ? prev.filter((id) => id !== placeId)
+        : [...prev, placeId]
+    );
+
+  } catch (err) {
+    console.log(err);
+    alert("Failed to update wishlist");
+  }
+};
+const fetchWishlist = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const res = await axios.get(`${Backend_URL}/users/wishlist`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    setWishlist(res.data.wishlist.map((item) => item._id));
+  } catch (err) {
+    console.error("Wishlist fetch failed:", err);
+  }
+};
+useEffect(() => {
+  fetchWishlist();
+}, []);
+
 
   const fetchhLocationDistrict = async (district, terrain) => {
     try {
@@ -488,6 +531,7 @@ const showCopyAnimation = () => {
 
     fetchLocationData();
   }, [locationId]);
+
   useEffect(() => {}, [mapInfo]);
 
   useEffect(() => {
@@ -1005,7 +1049,7 @@ const showCopyAnimation = () => {
                       </div>
                     </div>
                   </div>
-
+                <div className="flex gap-4">
                   <button
                     className="mt-3 w-fit bg-[#9156F1] text-white font-semibold py-2.5 px-5 rounded-[2.5rem] hover:bg-[#9156F1]/90"
                     onClick={() => {
@@ -1015,6 +1059,20 @@ const showCopyAnimation = () => {
                   >
                     Lets Go
                   </button>
+                  <button
+  className="mt-3 w-fit bg-[#9156F1] text-white font-semibold py-2.5 px-5 rounded-[2.5rem] hover:bg-[#9156F1]/90"
+  onClick={() => toggleWishlist(place._id)}
+  title={wishlist.includes(place._id) ? "Remove from wishlist" : "Add to wishlist"}
+>
+  {wishlist.includes(place._id) ? (
+    <HeartIconFilled className="w-5 h-5 text-red-500" />
+  ) : (
+    <HeartIconOutline className="w-5 h-5" />
+  )}
+</button>
+
+                  </div>
+                  
                 </div>
               ))}
             </div>
@@ -1576,7 +1634,7 @@ const showCopyAnimation = () => {
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="w-5 h-5 text-white"
+                      className="w-5 h-5 text-[#310A49]"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -1600,7 +1658,7 @@ const showCopyAnimation = () => {
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="w-5 h-5 text-white"
+                      className="w-5 h-5 text-[#310A49]"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
