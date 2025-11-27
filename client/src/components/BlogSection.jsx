@@ -35,8 +35,8 @@ export const BlogSection = () => {
   const [mainBlog, ...smallBlogs] = blogs;
 
   return (
-    <section id="blog" className="w-full py-16 flex flex-col items-center ">
-      <h3 className="font-schoolbell text-[#9156F1] text-[30px] mb-2">News and Events</h3>
+    <section id="blog" className="w-full py-16 flex flex-col items-center md:pl-[0px] md:pr-[0px] pl-[15px] pr-[15px] ">
+      <h3 className="font-schoolbell  text-[#9156F1] text-[30px] mb-2">News and Events</h3>
       <h2 className="font-poppins text-[40px] text-[#310a49] leading-[50px] mb-10">Latest Around The Globe</h2>
 
       <div className="w-[90%] max-w-[1200px] flex lg:flex-row flex-col gap-8 h-[600px]">

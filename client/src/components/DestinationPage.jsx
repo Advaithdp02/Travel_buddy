@@ -678,75 +678,7 @@ export const DestinationPage = ({}) => {
       {/* Comments & Contributions */}
 
       <section className="py-16 pb-0 px-8 bg-[#310a49]/90 rounded-tl-[20px] rounded-tr-[20px] relative overflow-hidden">
-        {/* 🌟 BACKGROUND TRAVEL VECTOR ART — EDGE DECORATIONS ONLY */}
-
-        <div className="pointer-events-none absolute inset-0 opacity-[0.5] select-none z-0">
-  {/* ---------------- TOP EDGE ---------------- */}
-
-  {/* ✈️ Plane */}
-  <svg
-    className="absolute top-2 right-4 w-24 sm:w-32 md:w-40"
-    viewBox="0 0 200 200"
-    fill="none"
-  >
-    <path d="M20 180 C120 120, 160 60, 199 10" stroke="#FFFFFF" strokeWidth="3" strokeDasharray="10 6" />
-    <path d="M165 20 L200 10 L185 45 Z" fill="#FFFFFF" />
-  </svg>
-
-  {/* 🛂 Passport */}
-  <svg
-    className="absolute top-3 left-3 w-14 sm:w-16 md:w-20"
-    viewBox="0 0 100 140"
-    fill="#FFFFFF"
-  >
-    <rect x="10" y="10" width="80" height="120" rx="6" />
-    <circle cx="50" cy="60" r="20" fill="#ffffff90" />
-  </svg>
-
-  {/* 🗺️ Map */}
-  <svg
-    className="absolute top-0 left-[1200px]  w-24 sm:w-32 md:w-36"
-    viewBox="0 0 200 120"
-    fill="white"
-  >
-    <polygon points="10,20 70,10 130,25 190,5 190,110 130,95 70,110 10,100" opacity="0.6" />
-  </svg>
-
-  {/* ☁️ Cloud */}
-  <svg
-    className="absolute top-10 left-[400px] -translate-x-1/2 w-20 sm:w-28 md:w-36"
-    viewBox="0 0 64 64"
-    fill="#FFFFFF"
-  >
-    <path d="M20 50c-8 0-14-5-14-12 0-5 4-10 9-11 1-8 8-14 16-14 9 0 17 7 17 16 6 1 10 6 10 12 0 7-6 12-14 12H20z" />
-  </svg>
-
-  {/* Suitcase */}
-  <svg
-    className="absolute bottom-6 left-[1300px] sm:right-1/4 md:right-1/4 w-16 sm:w-20 md:w-24"
-    viewBox="0 0 100 80"
-    fill="#FFFFFF"
-  >
-    <rect x="10" y="25" width="80" height="45" rx="8" />
-    <rect x="35" y="10" width="30" height="15" rx="4" />
-  </svg>
-
-  {/* ---------------- BOTTOM EDGE ---------------- */}
-
-  {/* 🏔 Mountains */}
-  <svg
-    className="absolute bottom-0 left-0 w-1/2 sm:w-1/3 md:w-1/3"
-    viewBox="0 0 200 100"
-    fill="#FFFFFF"
-  >
-    <path d="M0 100 L50 20 L100 100 Z" />
-    <path d="M80 100 L140 10 L200 100 Z" opacity="0.6" />
-  </svg>
-
-  
-
-  
-</div>
+        
 
 
 

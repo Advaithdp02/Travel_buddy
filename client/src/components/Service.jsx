@@ -59,7 +59,7 @@ export const Service = () => {
 
         {/* Background Image Rectangle */}
         <div className="relative mt-10">
-          <div className="w-[90%] h-40 md:h-64 bg-transparent-300 rounded-2xl rounded-[16px]  overflow-hidden">
+          <div className=" h-40 md:h-64 bg-transparent-300 rounded-2xl rounded-[16px]  overflow-hidden">
             <img src="./Service.png" alt="Journey" className="w-full h-full object-cover" />
           </div>
         </div>
@@ -88,7 +88,8 @@ export const Service = () => {
         rounded-[10px] 
         py-10 
         px-6 md:px-16 
-        w-[80%] 
+        md:w-[80%]
+        w-[88%] 
         mx-0
         mb-20 
         mt-0 

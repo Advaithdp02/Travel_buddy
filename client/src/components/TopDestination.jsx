@@ -173,12 +173,22 @@ const startScroll =
           </div>
 
           {/* Desktop arrows */}
-          {!isMobile && (
-            <div className="flex gap-2">
-              <ArrowButton direction="left" onClick={() => scroll("left")} />
-              <ArrowButton direction="right" onClick={() => scroll("right")} />
-            </div>
-          )}
+         
+{!isMobile && (
+  <>
+    <ArrowButton
+      direction="left"
+      onClick={() => scroll("left")}
+      className="absolute left-0 top-[60%] -translate-y-1/2 z-50"
+    />
+    <ArrowButton
+      direction="right"
+      onClick={() => scroll("right")}
+      className="absolute right-0 top-[60%] -translate-y-1/2 z-50"
+    />
+  </>
+)}
+
         </div>
 
         {/* Mobile floating arrows */}
@@ -187,12 +197,12 @@ const startScroll =
             <ArrowButton
               direction="left"
               onClick={() => scroll("left")}
-              className="absolute left-1 top-[48%] -translate-y-1/2 z-50"
+              className="absolute left-1 top-[60%] -translate-y-1/2 z-50"
             />
             <ArrowButton
               direction="right"
               onClick={() => scroll("right")}
-              className="absolute right-1 top-[48%] -translate-y-1/2 z-50"
+              className="absolute right-1 top-[60%] -translate-y-1/2 z-50"
             />
           </>
         )}

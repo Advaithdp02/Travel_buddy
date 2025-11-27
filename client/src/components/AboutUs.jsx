@@ -8,7 +8,7 @@ export const AboutUs = () => {
     <section
       id="aboutUs"
       className="relative flex flex-col md:flex-row items-center justify-center 
-      bg-gradient-to-r from-[#CB98ED] via-[#8B63DA] ml-[-60px] to-[#3C21B7] 
+      bg-gradient-to-r from-[#CB98ED] via-[#8B63DA] md:ml-[-60px] to-[#3C21B7] 
       text-white py-14 md:py-20 overflow-visible"
     >
       {/* Center Wrapper */}
@@ -29,7 +29,7 @@ export const AboutUs = () => {
         </p>
 
         {/* Features */}
-        <div className="flex flex-col md:flex-row gap-8 mt-10 justify-center md:justify-start">
+        <div className="flex flex-col md:flex-row gap-8 mt-10 text-left justify-center md:justify-start">
 
           {/* Must Visit Places */}
           <div className="flex items-start gap-4 justify-center md:justify-start">
