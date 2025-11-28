@@ -29,7 +29,7 @@ export const TopDestinations = ({ userCoords }) => {
   const scrollEndTimeout = useRef(null);
   const centeredIndexRef = useRef(null);
 
-  // Card sizes
+  // Fixed card widths
   const DESKTOP_CARD_WIDTH = 285;
   const MOBILE_CARD_WIDTH = 230;
 
@@ -78,18 +78,15 @@ export const TopDestinations = ({ userCoords }) => {
   const fullList = [...destinations, ...destinations, ...destinations];
   const middleIndex = destinations.length;
 
-  // Perfect initial centering
+  // Initial PERFECT centering (phone + desktop)
   useEffect(() => {
     if (!scrollRef.current || destinations.length === 0) return;
 
     const cardSize = CARD_WIDTH + GAP;
-    const extraOffset = isMobile ? 22 : 0;
+    const containerWidth = scrollRef.current.offsetWidth;
 
     const startScroll =
-      middleIndex * cardSize -
-      scrollRef.current.offsetWidth / 2 +
-      CARD_WIDTH / 2 +
-      extraOffset;
+      middleIndex * cardSize + CARD_WIDTH / 2 - containerWidth / 2 + (isMobile ? 30 : 0);
 
     scrollRef.current.scrollLeft = startScroll;
     setActiveIndex(middleIndex);
@@ -109,7 +106,7 @@ export const TopDestinations = ({ userCoords }) => {
 
     fullList.forEach((_, index) => {
       const cardCenter =
-        index * (CARD_WIDTH + GAP) + (CARD_WIDTH + GAP) / 2;
+        index * (CARD_WIDTH + GAP) + CARD_WIDTH / 2; 
 
       const dist = Math.abs(cardCenter - center);
       if (dist < minDistance) {
@@ -130,8 +127,8 @@ export const TopDestinations = ({ userCoords }) => {
     const index = centeredIndexRef.current;
     const containerWidth = scrollRef.current.offsetWidth;
 
-    const cardCenter = index * cardSize + cardSize / 2;
-    const targetScrollLeft = cardCenter - containerWidth / 2;
+    const cardCenter = index * cardSize + CARD_WIDTH / 2; // ✅ correct center
+    const targetScrollLeft = cardCenter - containerWidth / 2+(isMobile ? 15 : 0);
 
     scrollRef.current.scrollTo({
       left: targetScrollLeft,
@@ -139,7 +136,7 @@ export const TopDestinations = ({ userCoords }) => {
     });
   };
 
-  // Infinite scroll
+  // Infinite scroll logic
   const handleInfiniteScroll = () => {
     if (!scrollRef.current || destinations.length === 0) return;
 
@@ -155,15 +152,13 @@ export const TopDestinations = ({ userCoords }) => {
 
     detectCenteredCard();
 
-    // Debounce → Snap after user stops scrolling
     if (scrollEndTimeout.current) clearTimeout(scrollEndTimeout.current);
-
     scrollEndTimeout.current = setTimeout(() => {
       snapToCenteredCard();
     }, 120);
   };
 
-  // Buttons scroll
+  // Arrow button scroll
   const scroll = (direction) => {
     if (!scrollRef.current) return;
 
@@ -186,7 +181,6 @@ export const TopDestinations = ({ userCoords }) => {
       style={{ backgroundImage: `url(/TopDestinationBG.png)` }}
     >
       <div className="relative z-10 overflow-visible w-full md:ml-[120px] md:max-w-[92rem] mx-auto px-6">
-
         {/* Heading */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-4">
           <div>
@@ -249,7 +243,7 @@ export const TopDestinations = ({ userCoords }) => {
                   zIndex: isCenter ? 20 : 10,
                   transform: isCenter
                     ? "scale(1.12)"
-                    : "translateY(10px) scale(0.90)",
+                    : "translateY(10px) scale(0.9)",
                   opacity: isCenter ? 1 : 0.85,
                 }}
               >

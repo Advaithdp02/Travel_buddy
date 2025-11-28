@@ -156,21 +156,32 @@ export const getNearestDistrict = async (req, res) => {
     });
 
     // Step 3: UNIVERSAL SORT KL01, KA02, TN03, etc.
-    const orderedDistricts = sameStateDistricts.sort((a, b) => {
-      const prefixA = a.DistrictCode.match(/^[A-Za-z]+/)[0];
-      const prefixB = b.DistrictCode.match(/^[A-Za-z]+/)[0];
+    // Step 3: UNIVERSAL SORT (AA + numeric parts)
+  const orderedDistricts = sameStateDistricts.sort((a, b) => {
+    const codeA = a.DistrictCode;
+    const codeB = b.DistrictCode;
 
-      // First compare alphabetic prefixes (KA, KL, TN, MH, etc.)
-      if (prefixA !== prefixB) {
-        return prefixA.localeCompare(prefixB);
-      }
+    // Extract prefixes (letters)
+    const prefixA = codeA.match(/^[A-Za-z]+/)[0];
+    const prefixB = codeB.match(/^[A-Za-z]+/)[0];
 
-      // Then compare numerical parts
-      const numA = parseInt(a.DistrictCode.replace(prefixA, ""));
-      const numB = parseInt(b.DistrictCode.replace(prefixB, ""));
+    // Sort alphabetic prefixes first
+    if (prefixA !== prefixB) {
+      return prefixA.localeCompare(prefixB);
+    }
 
-      return numA - numB;
-    });
+    // Extract numeric portion
+    const numPartA = codeA.replace(prefixA, "");
+    const numPartB = codeB.replace(prefixB, "");
+
+    // Convert to integer safely
+    const numA = parseInt(numPartA);
+    const numB = parseInt(numPartB);
+
+    // Sort by numeric value
+    return numA - numB;
+  });
+
 
     // Step 4: Return nearest + sorted list
     res.json({
