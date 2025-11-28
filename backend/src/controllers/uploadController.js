@@ -1,17 +1,27 @@
 import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "../config/awsS3.js";
+import sharp from "sharp";
 
 /**
- * Upload a file buffer to S3 and return its URL
+ * Upload and automatically optimize image before upload
  */
 export const uploadToS3 = async (fileBuffer, fileName, folder, mimeType) => {
-  const fileKey = `${folder}/${Date.now()}-${fileName}`;
+  // 🔥 AUTO OPTIMIZE IMAGE HERE
+  const optimizedBuffer = await sharp(fileBuffer)
+    .resize({ width: 1200, withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer();
+
+  // Convert file name to .webp
+  const newFileName = fileName.replace(/\.\w+$/, ".webp");
+
+  const fileKey = `${folder}/${Date.now()}-${newFileName}`;
 
   const params = {
     Bucket: process.env.BUCKET_NAME,
     Key: fileKey,
-    Body: fileBuffer,
-    ContentType: mimeType,
+    Body: optimizedBuffer,
+    ContentType: "image/webp",
   };
 
   const command = new PutObjectCommand(params);
@@ -21,24 +31,25 @@ export const uploadToS3 = async (fileBuffer, fileName, folder, mimeType) => {
 };
 
 /**
- * Delete a file from S3 using its URL
+ * Delete from S3
  */
 export const deleteFromS3 = async (fileUrl) => {
-  if (!fileUrl) return;
+  if (!fileUrl || typeof fileUrl !== "string") return;
 
   try {
-    // Extract Key from full URL
     const key = fileUrl.split(".amazonaws.com/")[1];
+    if (!key) return; // ⬅️ PREVENT CRASH
 
     const params = {
       Bucket: process.env.BUCKET_NAME,
       Key: key,
     };
 
-    const command = new DeleteObjectCommand(params);
-    await s3.send(command);
+    await s3.send(new DeleteObjectCommand(params));
     console.log(`🗑️ Deleted old file from S3: ${key}`);
+
   } catch (error) {
     console.error("❌ Failed to delete from S3:", error.message);
   }
 };
+

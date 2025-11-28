@@ -1,4 +1,4 @@
-import { useEffect, useState,useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import {
   Card,
@@ -38,7 +38,7 @@ export default function AdminDistricts() {
 
   const token = localStorage.getItem("token");
 
-  // Fetch districts
+  // ---------------- Fetch Districts ----------------
   useEffect(() => {
     const fetchDistricts = async () => {
       try {
@@ -56,16 +56,16 @@ export default function AdminDistricts() {
     fetchDistricts();
   }, []);
 
-  // Filter by state
+  // ---------------- Filter by selected state ----------------
   useEffect(() => {
     if (selectedState) {
       setFilteredDistricts(districts.filter((d) => d.State === selectedState));
     } else {
-      setFilteredDistricts(districts);
+      setFilteredDistricts([]); // ⬅️ Show NOTHING if no state selected
     }
   }, [selectedState, districts]);
 
-  // Delete district
+  // ---------------- Delete District ----------------
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this district?")) return;
     try {
@@ -78,7 +78,7 @@ export default function AdminDistricts() {
     }
   };
 
-  // Form change handler
+  // ---------------- Handle Form Change ----------------
   const handleFormChange = (e) => {
     const { name, value, files } = e.target;
 
@@ -86,14 +86,14 @@ export default function AdminDistricts() {
       setFormData({
         ...formData,
         image: files[0],
-        existingImage: "", // remove existing preview if uploading new
+        existingImage: "",
       });
     } else {
       setFormData({ ...formData, [name]: value });
     }
   };
 
-  // Open edit modal
+  // ---------------- Open modal for Edit ----------------
   const openModalForEdit = (district) => {
     setFormData({
       _id: district._id,
@@ -106,7 +106,20 @@ export default function AdminDistricts() {
     setOpen(true);
   };
 
-  // Submit form
+  // ---------------- Open modal for Add ----------------
+  const openModalForAdd = () => {
+    setFormData({
+      _id: null,
+      name: "",
+      State: selectedState || "", // ⬅️ AUTO-SELECT SELECTED STATE
+      DistrictCode: "",
+      image: null,
+      existingImage: "",
+    });
+    setOpen(true);
+  };
+
+  // ---------------- Submit Form (Add or Edit) ----------------
   const handleSubmit = async () => {
     try {
       const data = new FormData();
@@ -118,7 +131,6 @@ export default function AdminDistricts() {
         data.append("image", formData.image);
       }
 
-      // 👇 IMPORTANT: Remove image flag
       if (!formData.image && !formData.existingImage) {
         data.append("removeImage", "true");
       }
@@ -177,7 +189,7 @@ export default function AdminDistricts() {
           label="Select State"
           onChange={(e) => setSelectedState(e.target.value)}
         >
-          <MenuItem value="">All States</MenuItem>
+          <MenuItem value="">Select a State</MenuItem>
           {states.map((state) => (
             <MenuItem key={state} value={state}>
               {state}
@@ -186,9 +198,19 @@ export default function AdminDistricts() {
         </Select>
       </FormControl>
 
-      <Button variant="contained" onClick={() => setOpen(true)} className="mb-4">
-        + Add New District
-      </Button>
+      {/* Add button should appear only when a state is selected */}
+      {selectedState && (
+        <Button variant="contained" onClick={openModalForAdd} className="mb-4">
+          + Add New District
+        </Button>
+      )}
+
+      {/* Message when no state selected */}
+      {!selectedState && (
+        <Typography className="text-gray-600 mb-4">
+          👉 Please select a state to view districts.
+        </Typography>
+      )}
 
       {/* District Cards */}
       <Grid container spacing={4}>
@@ -230,7 +252,7 @@ export default function AdminDistricts() {
         ))}
       </Grid>
 
-      {/* Modal */}
+      {/* ------------ Modal ------------ */}
       <Modal open={open} onClose={() => setOpen(false)}>
         <Box className="absolute top-1/2 left-1/2 w-96 -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-xl shadow-lg">
           <Typography variant="h6" className="mb-4 font-bold">
@@ -247,7 +269,7 @@ export default function AdminDistricts() {
             onChange={handleFormChange}
           />
 
-          {/* DistrictCode */}
+          {/* District Code */}
           <TextField
             label="District Code"
             name="DistrictCode"
@@ -274,18 +296,17 @@ export default function AdminDistricts() {
             </Select>
           </FormControl>
 
-          {/* Image upload */}
+          {/* Image Upload */}
           <input
-  type="file"
-  name="image"
-  accept="image/*"
-  onChange={handleFormChange}
-  className="mt-2"
-  ref={fileInputRef}
-/>
+            type="file"
+            name="image"
+            accept="image/*"
+            onChange={handleFormChange}
+            className="mt-2"
+            ref={fileInputRef}
+          />
 
-
-          {/* Image Preview + Remove Button */}
+          {/* Image Preview */}
           {(formData.existingImage || formData.image) && (
             <Box className="flex items-center gap-3 mt-3">
               <img
@@ -298,25 +319,24 @@ export default function AdminDistricts() {
                 className="w-24 h-24 object-cover rounded"
               />
 
+              {/* Remove Button */}
               <Button
-  variant="outlined"
-  color="error"
-  onClick={() => {
-    setFormData({
-      ...formData,
-      image: null,
-      existingImage: "",
-    });
+                variant="outlined"
+                color="error"
+                onClick={() => {
+                  setFormData({
+                    ...formData,
+                    image: null,
+                    existingImage: "",
+                  });
 
-    // 🔥 Clear actual file input field
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  }}
->
-  Remove
-</Button>
-
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                  }
+                }}
+              >
+                Remove
+              </Button>
             </Box>
           )}
 

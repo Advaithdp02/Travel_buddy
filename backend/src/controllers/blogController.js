@@ -7,12 +7,17 @@ const getBlogFolder = (title) => `blogs/${title.replace(/\s+/g, "_")}`;
 // Create a blog
 export const createBlog = async (req, res) => {
   try {
-    const { title, slug, content, tags, published } = req.body;
+    const { title, slug, content, tags, published, author } = req.body;
 
     let image = null;
     if (req.file) {
       const folderName = getBlogFolder(title);
-      image = await uploadToS3(req.file.buffer, req.file.originalname, folderName, req.file.mimetype);
+      image = await uploadToS3(
+        req.file.buffer,
+        req.file.originalname,
+        folderName,
+        req.file.mimetype
+      );
     }
 
     const blog = new Blog({
@@ -22,7 +27,7 @@ export const createBlog = async (req, res) => {
       tags,
       published: published || false,
       image,
-      author: req.user._id,
+      author, // now a simple string
     });
 
     await blog.save();
@@ -33,44 +38,62 @@ export const createBlog = async (req, res) => {
   }
 };
 
+
 // Update a blog
 export const updateBlog = async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id);
     if (!blog) return res.status(404).json({ message: "Blog not found" });
 
-    if (!req.user || (blog.author.toString() !== req.user._id.toString() && req.user.role !== "admin")) {
-      return res.status(403).json({ message: "Not authorized" });
-    }
+    const { title, slug, content, tags, published, clearImage, author } = req.body;
 
-    const { title, slug, content, tags, published, clearImage } = req.body;
+    // Update fields
+    if (title !== undefined) blog.title = title;
+    if (slug !== undefined) blog.slug = slug;
+    if (content !== undefined) blog.content = content;
+    if (tags !== undefined) blog.tags = tags.split(",");
+    if (published !== undefined) blog.published = published;
+    if (author !== undefined) blog.author = author;
 
-    blog.title = title || blog.title;
-    blog.slug = slug || blog.slug;
-    blog.content = content || blog.content;
-    blog.tags = tags || blog.tags;
-    blog.published = published !== undefined ? published : blog.published;
+    // ------------------- IMAGE LOGIC -------------------
 
-    // Handle image replacement
+    // 1️⃣ If user uploaded a new image → delete old & replace
     if (req.file) {
-      if (blog.image) await deleteFromS3(blog.image); // delete old image
+      if (blog.image) {
+        await deleteFromS3(blog.image);
+      }
+
       const folderName = getBlogFolder(blog.title);
-      blog.image = await uploadToS3(req.file.buffer, req.file.originalname, folderName, req.file.mimetype);
+      blog.image = await uploadToS3(
+        req.file.buffer,
+        req.file.originalname,
+        folderName,
+        req.file.mimetype
+      );
     }
 
-    // Clear image if requested
-    if (clearImage === "true" && blog.image) {
-      await deleteFromS3(blog.image);
+    // 2️⃣ If user selected "remove image"
+    if (!req.file && clearImage === "true") {
+      if (blog.image) {
+        await deleteFromS3(blog.image);
+      }
       blog.image = null;
     }
 
+    // ------------------- END IMAGE LOGIC -------------------
+
     await blog.save();
     res.json(blog);
+
   } catch (err) {
     console.error("Update Blog Error:", err);
     res.status(500).json({ message: "Failed to update blog" });
   }
 };
+
+
+
+
 
 // Delete blog
 export const deleteBlog = async (req, res) => {
