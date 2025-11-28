@@ -1060,12 +1060,12 @@ useEffect(() => {
                     Lets Go
                   </button>
                   <button
-  className="mt-3 w-fit bg-[#9156F1] text-white font-semibold py-2.5 px-5 rounded-[2.5rem] hover:bg-[#9156F1]/90"
+  className="mt-3 w-fit bg-[#fbebff] text-[#310a49] font-semibold py-2.5 px-5 rounded-[2.5rem] hover:bg-[#9156F1]/90"
   onClick={() => toggleWishlist(place._id)}
   title={wishlist.includes(place._id) ? "Remove from wishlist" : "Add to wishlist"}
 >
   {wishlist.includes(place._id) ? (
-    <HeartIconFilled className="w-5 h-5 text-red-500" />
+    <HeartIconOutline className="w-5 h-5 text-red-500" fill="red" />
   ) : (
     <HeartIconOutline className="w-5 h-5" />
   )}
@@ -1630,11 +1630,11 @@ useEffect(() => {
                       if (scroll)
                         scroll.scrollBy({ left: -300, behavior: "smooth" });
                     }}
-                    className="w-[35px] h-[35px] rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center transition"
+                    className="w-[35px] h-[35px] rounded-full bg-[#310a49] hover:bg-white/40 flex items-center justify-center transition"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="w-5 h-5 text-[#310A49]"
+                      className="w-5 h-5 text-[#fbebff]"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -1654,11 +1654,11 @@ useEffect(() => {
                       if (scroll)
                         scroll.scrollBy({ left: 300, behavior: "smooth" });
                     }}
-                    className="w-[35px] h-[35px] rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center transition"
+                    className="w-[35px] h-[35px] rounded-full bg-[#310a49] hover:bg-white/40 flex items-center justify-center transition"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="w-5 h-5 text-[#310A49]"
+                      className="w-5 h-5 text-[#fbebff]"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
