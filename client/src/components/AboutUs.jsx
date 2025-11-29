@@ -28,32 +28,7 @@ export const AboutUs = () => {
           you navigate, explore, and find the best options.
         </p>
 
-        {/* Features */}
-        <div className="flex flex-col md:flex-row gap-8 mt-10 text-left justify-center md:justify-start">
-
-          {/* Must Visit Places */}
-          <div className="flex items-start gap-4 justify-center md:justify-start">
-            <LocationIcon className="opacity-70 text-white" />
-            <div>
-              <h5 className="font-semibold">Must-Visit Places</h5>
-              <p className="text-gray-300 text-sm">
-                Explore top attractions and hidden gems near you.
-              </p>
-            </div>
-          </div>
-
-          {/* Climate */}
-          <div className="flex items-start gap-4 justify-center md:justify-start">
-            <ClimateIcon className="opacity-70 text-white" />
-            <div>
-              <h5 className="font-semibold">Weather Updates</h5>
-              <p className="text-gray-300 text-sm">
-                Stay informed about the latest climate conditions.
-              </p>
-            </div>
-          </div>
-
-        </div>
+        
 
       </div>
     </section>
