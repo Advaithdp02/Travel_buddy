@@ -185,7 +185,7 @@ useEffect(() => {
     const containerWidth = scrollRef.current.offsetWidth;
 
     const cardCenter = index * cardSize + CARD_WIDTH / 2; // ✅ correct center
-    const targetScrollLeft = cardCenter - containerWidth / 2+(isMobile ? 15 : 0);
+    const targetScrollLeft = cardCenter - containerWidth / 2+(isMobile ? 30 : 0);
 
     scrollRef.current.scrollTo({
       left: targetScrollLeft,
@@ -272,12 +272,12 @@ useEffect(() => {
         <ArrowButton
           direction="left"
           onClick={() => scroll("left")}
-          className="absolute left-2 top-[50%] -translate-y-1/2 z-50"
+          className="absolute left-2 top-[55%] -translate-y-1/2 z-50"
         />
         <ArrowButton
           direction="right"
           onClick={() => scroll("right")}
-          className="absolute right-2 top-[50%] -translate-y-1/2 z-50"
+          className="absolute right-2 top-[55%] -translate-y-1/2 z-50"
         />
       </>
     )}
