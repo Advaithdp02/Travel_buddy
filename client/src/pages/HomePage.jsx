@@ -62,25 +62,6 @@ function useGeolocation({ enableFallback = false } = {}) {
     }
   }, []);
 
-  const getFallbackIP = useCallback(async () => {
-    try {
-      setStatus("fallback");
-      const res = await fetch("https://ipapi.co/json/");
-      const data = await res.json();
-
-      const parsed = {
-        latitude: parseFloat(data.latitude),
-        longitude: parseFloat(data.longitude),
-      };
-
-      setCoords(parsed);
-      localStorage.setItem("userCoords", JSON.stringify(parsed));
-      setStatus("success");
-    } catch (e) {
-      setStatus("error");
-      setError(e);
-    }
-  }, []);
 
   return { coords, status, error };
 }
@@ -105,23 +86,47 @@ export const HomePage = () => {
 
   // Fetch nearest destination
   useEffect(() => {
-    const fetchNearest = async () => {
-      if (!coords) return;
+  if (!coords) return;
 
-      try {
-        const res = await fetch(
-          `${BACKEND_URL}/locations/nearest/${coords.latitude}/${coords.longitude}`
-        );
-        const data = await res.json();
-        setNearestLocation(data._id);
-        localStorage.setItem("nearestLocation", data._id);
-      } catch (err) {
-        console.error("Error fetching nearest location:", err);
-      }
-    };
+  // 🔹 Full precise coords (for backend)
+  const fullLat = coords.latitude;
+  const fullLon = coords.longitude;
 
-    fetchNearest();
-  }, [coords]);
+  // 🔹 Rounded ONLY for cache key stability
+  const keyLat = fullLat.toFixed(3);
+  const keyLon = fullLon.toFixed(3);
+
+  const cacheKey = `nearest_location_${keyLat}_${keyLon}`;
+  const cached = localStorage.getItem(cacheKey);
+
+  if (cached) {
+    const data = JSON.parse(cached);
+    setNearestLocation(data._id);
+    console.log("cached");
+    return; // 🚀 CACHE HIT → skip backend
+  }
+
+  const fetchNearest = async () => {
+    try {
+      const res = await fetch(
+        `${BACKEND_URL}/locations/nearest/${fullLat}/${fullLon}`
+      );
+
+      const data = await res.json();
+
+      setNearestLocation(data._id);
+
+      // Save in cache using ROUNDED KEY but FULL DATA
+      localStorage.setItem(cacheKey, JSON.stringify(data));
+    } catch (err) {
+      console.error("Error fetching nearest location:", err);
+    }
+  };
+
+  fetchNearest();
+}, [coords]);
+
+
 
   return (
     <div className="app-container">

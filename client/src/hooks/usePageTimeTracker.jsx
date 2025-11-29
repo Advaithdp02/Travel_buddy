@@ -10,10 +10,13 @@ const usePageTimeTracker = () => {
   const startTimeRef = useRef(Date.now());
   const prevPathRef = useRef(location.pathname);
   const idleTimerRef = useRef(null);
+  const idleTriggeredRef = useRef(false);
+  const unloadSentRef = useRef(false);
+  const firstLoadRef = useRef(true);
 
-  // -------------------------------
-  // ⭐ Ensure sessionId exists
-  // -------------------------------
+  // -----------------------------------
+  // ⭐ Ensure sessionId (1 per device)
+  // -----------------------------------
   let sessionId = localStorage.getItem("sessionId");
   if (!sessionId) {
     sessionId = uuidv4();
@@ -21,75 +24,87 @@ const usePageTimeTracker = () => {
   }
 
   const getUserId = () => localStorage.getItem("userId") || null;
+  const CACHE_TTL = 20 * 60 * 1000; // 20 minutes
 
-  // -------------------------------
-  // ⭐ ACCURATE GPS LOCKING (NEW)
-  // -------------------------------
+const cleanOldCache = () => {
+  const now = Date.now();
+
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith("nearest_location_") || key.startsWith("nearest_district_")) {
+      try {
+        const item = JSON.parse(localStorage.getItem(key));
+        if (!item?.expiry || now > item.expiry) {
+          localStorage.removeItem(key);
+        }
+      } catch {
+        localStorage.removeItem(key);
+      }
+    }
+  });
+};
+
+
+  // -----------------------------------------------------
+  // ⭐ GET GPS (first reading only — NO ACCURACY CHECK)
+  // -----------------------------------------------------
   const getAccurateLocation = () => {
     return new Promise((resolve) => {
       let watchId = null;
-      let locked = false;
+
+      const failTimeout = setTimeout(() => {
+        if (watchId) navigator.geolocation.clearWatch(watchId);
+        resolve(null);
+      }, 8000); // prevent leaking forever
 
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
-          const { latitude, longitude, accuracy } = pos.coords;
+          const { latitude, longitude } = pos.coords;
 
-          
+          const coords = { latitude, longitude };
+          localStorage.setItem("userCoords", JSON.stringify(coords));
 
-          // Only lock when accuracy is GOOD
-          if (!locked && accuracy < 50) {
-            locked = true;
+          clearTimeout(failTimeout);
+          navigator.geolocation.clearWatch(watchId);
 
-            const coords = { latitude, longitude };
-
-            // Save once — never overwrite with bad readings
-            localStorage.setItem("userCoords", JSON.stringify(coords));
-
-            navigator.geolocation.clearWatch(watchId);
-            resolve(coords);
-          }
+          resolve(coords);
         },
-        (err) => {
-          console.warn("GPS error:", err);
+        () => {
+          clearTimeout(failTimeout);
           resolve(null);
         },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
-        }
+        { enableHighAccuracy: true, timeout: 5000 }
       );
     });
   };
 
-  // -------------------------------
-  // ⭐ GeoJSON formatting
-  // -------------------------------
   const getUserCoords = () => {
-    const coords = localStorage.getItem("userCoords");
-    if (!coords) return null;
-
     try {
-      const { latitude, longitude } = JSON.parse(coords);
-      if (!latitude || !longitude) return null;
+      const stored = JSON.parse(localStorage.getItem("userCoords"));
+      if (!stored) return null;
 
       return {
         type: "Point",
-        coordinates: [longitude, latitude], // GeoJSON
+        coordinates: [stored.longitude, stored.latitude],
       };
     } catch {
       return null;
     }
   };
 
-  // -------------------------------
-  // ⭐ Tracking Sender
-  // -------------------------------
-  const sendTrackingData = async (path, timeSpent, reason = "unknown", isSiteExit = false) => {
+  // -----------------------------------------------------
+  // ⭐ SEND TRACK DATA
+  // -----------------------------------------------------
+  const sendTrackingData = async (
+    path,
+    timeSpent,
+    reason = "unknown",
+    isSiteExit = false
+  ) => {
     try {
       await fetch(`${BACKEND_URL}/track`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        keepalive: true,
         body: JSON.stringify({
           user: getUserId(),
           sessionId,
@@ -100,65 +115,71 @@ const usePageTimeTracker = () => {
           isAnonymous: !getUserId(),
           geoLocation: getUserCoords(),
         }),
-        keepalive: true,
       });
     } catch (err) {
       console.error("Tracking error:", err);
     }
   };
 
-  // -------------------------------
-  // ⭐ Exit Reason
-  // -------------------------------
-  const detectExitReason = (eventType = "unknown") => {
+  // -----------------------------------------------------
+  // ⭐ EXIT REASON
+  // -----------------------------------------------------
+  const getExitReason = (eventType = "unknown") => {
     if (eventType === "beforeunload") return "tab_closed_or_reload";
     return "unknown";
   };
 
-
-  // -------------------------------
-  // ⭐ Send + Reset Timer
-  // -------------------------------
-  const handleSendAndReset = (path, reason, isSiteExit) => {
+  // -----------------------------------------------------
+  // ⭐ Safe Send + Reset Timer
+  // -----------------------------------------------------
+  const handleSendAndReset = (path, reason, isSiteExit = false) => {
     const now = Date.now();
     const timeSpent = Math.floor((now - startTimeRef.current) / 1000);
 
     sendTrackingData(path, timeSpent, reason, isSiteExit);
+
     startTimeRef.current = now;
   };
 
-  // -------------------------------
-  // ⭐ Idle Timer Reset
-  // -------------------------------
+  // -----------------------------------------------------
+  // ⭐ Idle tracking
+  // -----------------------------------------------------
   const resetIdleTimer = () => {
-    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    if (idleTriggeredRef.current) return; // block after timeout
+
+    clearTimeout(idleTimerRef.current);
+
     idleTimerRef.current = setTimeout(() => {
+      idleTriggeredRef.current = true;
       handleSendAndReset(location.pathname, "idle_timeout", true);
     }, IDLE_TIMEOUT);
   };
 
-  // -------------------------------
+  // -----------------------------------------------------
   // ⭐ Main Effect
-  // -------------------------------
+  // -----------------------------------------------------
   useEffect(() => {
-    // Lock accurate GPS once per session
-    getAccurateLocation();
+    getAccurateLocation(); // run once per mount
 
-    // SPA page navigation tracking
-    if (prevPathRef.current !== location.pathname) {
+    // --- Detect internal navigation ---
+    // ⭐ Prevent tracking on first load
+    if (!firstLoadRef.current && prevPathRef.current !== location.pathname) {
       handleSendAndReset(prevPathRef.current, "internal_navigation", false);
-      prevPathRef.current = location.pathname;
     }
+
+    // After first render, disable first load flag
+    firstLoadRef.current = false;
+
+    // Always update the previous path
+    prevPathRef.current = location.pathname;
 
     resetIdleTimer();
 
-    const handleActivity = () => resetIdleTimer();
-
-    const handleBeforeUnload = () => {
-      handleSendAndReset(location.pathname, detectExitReason("beforeunload"), true);
+    const handleActivity = () => {
+      if (!idleTriggeredRef.current) resetIdleTimer();
     };
 
-    const handleClick = (e) => {
+    const handleExternalClick = (e) => {
       const link = e.target.closest("a");
       if (link && link.href && !link.href.includes(window.location.host)) {
         handleSendAndReset(location.pathname, "external_link", true);
@@ -166,22 +187,41 @@ const usePageTimeTracker = () => {
       handleActivity();
     };
 
+    // --- Tab close / reload ---
+    const handleBeforeUnload = () => {
+      if (unloadSentRef.current) return;
+      unloadSentRef.current = true;
+
+      clearTimeout(idleTimerRef.current);
+
+      handleSendAndReset(
+        location.pathname,
+        getExitReason("beforeunload"),
+        true
+      );
+    };
+
     window.addEventListener("beforeunload", handleBeforeUnload);
-    document.addEventListener("click", handleClick);
+    document.addEventListener("click", handleExternalClick);
     document.addEventListener("mousemove", handleActivity);
     document.addEventListener("keydown", handleActivity);
     document.addEventListener("scroll", handleActivity);
 
     return () => {
+      
+
       window.removeEventListener("beforeunload", handleBeforeUnload);
-      document.removeEventListener("click", handleClick);
+      document.removeEventListener("click", handleExternalClick);
       document.removeEventListener("mousemove", handleActivity);
       document.removeEventListener("keydown", handleActivity);
       document.removeEventListener("scroll", handleActivity);
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+
+      clearTimeout(idleTimerRef.current);
     };
   }, [location.pathname]);
+   useEffect(() => {
+    cleanOldCache();
+  }, []);
 };
 
 export default usePageTimeTracker;
-  // -------------------------------

@@ -53,26 +53,61 @@ export const TopDestinations = ({ userCoords }) => {
 
   // Fetch Data
   useEffect(() => {
-    const fetchDestinations = async () => {
-      if (!userCoords) return;
+  const fetchDestinations = async () => {
+    if (!userCoords) return;
 
-      try {
-        const res = await fetch(
-          `${BACKEND_URL}/districts/nearest/${userCoords.latitude}/${userCoords.longitude}`
-        );
-        const data = await res.json();
+    // full coords for backend accuracy
+    const fullLat = userCoords.latitude;
+    const fullLon = userCoords.longitude;
 
+    // rounded for stable cache key (NO GPS drift)
+    const keyLat = fullLat.toFixed(3);
+    const keyLon = fullLon.toFixed(3);
+
+    const cacheKey = `nearest_district_${keyLat}_${keyLon}`;
+    const cached = localStorage.getItem(cacheKey);
+
+    if (cached) {
+      const { data, expiry } = JSON.parse(cached);
+
+      if (Date.now() < expiry) {
+        // use cached response
         if (data?.orderedDistricts) {
           setDestinations(data.orderedDistricts);
           setNearestCode(data.nearestDistrict?.DistrictCode);
         }
-      } catch (err) {
-        console.error(err);
+        return;
       }
-    };
+    }
 
-    fetchDestinations();
-  }, [userCoords]);
+    // if no valid cache → fetch fresh
+    try {
+      const res = await fetch(
+        `${BACKEND_URL}/districts/nearest/${fullLat}/${fullLon}`
+      );
+      const data = await res.json();
+
+      if (data?.orderedDistricts) {
+        setDestinations(data.orderedDistricts);
+        setNearestCode(data.nearestDistrict?.DistrictCode);
+      }
+
+      // Save in cache for 20 minutes
+      localStorage.setItem(
+        cacheKey,
+        JSON.stringify({
+          data,
+          expiry: Date.now() + CACHE_TTL,
+        })
+      );
+    } catch (err) {
+      console.error("Error fetching districts:", err);
+    }
+  };
+
+  fetchDestinations();
+}, [userCoords]);
+
 
   // Infinite list
   const fullList = [...destinations, ...destinations, ...destinations];
@@ -92,6 +127,28 @@ export const TopDestinations = ({ userCoords }) => {
     setActiveIndex(middleIndex);
     centeredIndexRef.current = middleIndex;
   }, [destinations, CARD_WIDTH]);
+const CACHE_TTL = 20 * 60 * 1000; // 20 minutes
+
+const cleanOldCache = () => {
+  const now = Date.now();
+
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith("nearest_district_")) {
+      try {
+        const item = JSON.parse(localStorage.getItem(key));
+        if (!item?.expiry || now > item.expiry) {
+          localStorage.removeItem(key);
+        }
+      } catch {
+        localStorage.removeItem(key);
+      }
+    }
+  });
+};
+useEffect(() => {
+  cleanOldCache(); // runs once when component mounts
+}, []);
+
 
   // Detect center card
   const detectCenteredCard = () => {
@@ -177,85 +234,85 @@ export const TopDestinations = ({ userCoords }) => {
 
   return (
     <section
-      className="flex flex-col md:-ml-[60px] md:flex-row items-start justify-between bg-cover bg-center text-white py-20 overflow-visible"
-      style={{ backgroundImage: `url(/TopDestinationBG.png)` }}
-    >
-      <div className="relative z-10 overflow-visible w-full md:ml-[120px] md:max-w-[92rem] mx-auto px-6">
-        {/* Heading */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-4">
-          <div>
-            <h2 className="font-schoolbell text-[#F2B024] text-3xl md:text-4xl">
-              Top Destination
-            </h2>
-            <p className="font-poppins text-white text-4xl md:text-5xl mt-2">
-              Explore Top Destinations
-            </p>
-          </div>
-
-          {/* Desktop arrows */}
-          {!isMobile && (
-            <>
-              <ArrowButton
-                direction="left"
-                onClick={() => scroll("left")}
-                className="absolute left-0 top-[60%] -translate-y-1/2 z-50"
-              />
-              <ArrowButton
-                direction="right"
-                onClick={() => scroll("right")}
-                className="absolute right-0 top-[60%] -translate-y-1/2 z-50"
-              />
-            </>
-          )}
-        </div>
-
-        {/* Mobile floating arrows */}
-        {isMobile && (
-          <>
-            <ArrowButton
-              direction="left"
-              onClick={() => scroll("left")}
-              className="absolute left-1 top-[60%] -translate-y-1/2 z-50"
-            />
-            <ArrowButton
-              direction="right"
-              onClick={() => scroll("right")}
-              className="absolute right-1 top-[60%] -translate-y-1/2 z-50"
-            />
-          </>
-        )}
-
-        {/* Card List */}
-        <div
-          ref={scrollRef}
-          onScroll={handleInfiniteScroll}
-          className="flex flex-row gap-6 overflow-x-scroll hide-scrollbar flex-nowrap overflow-visible pt-16 pb-20 relative"
-        >
-          {fullList.map((dest, i) => {
-            const isCenter = activeIndex === i;
-
-            return (
-              <div
-                key={i}
-                className="flex-shrink-0 transition-all duration-300 ease-out"
-                style={{
-                  width: CARD_WIDTH,
-                  zIndex: isCenter ? 20 : 10,
-                  transform: isCenter
-                    ? "scale(1.12)"
-                    : "translateY(10px) scale(0.9)",
-                  opacity: isCenter ? 1 : 0.85,
-                }}
-              >
-                <DestinationCard
-                  destination={dest}
-                  isNearest={dest.DistrictCode === nearestCode}
-                />
-              </div>
-            );
-          })}
-        </div>
+  className="lg:w-[100vw] w-full bg-cover bg-center text-white py-20 md:mr-[-60px] "
+  style={{ backgroundImage: `url(/TopDestinationBG.png)` }}
+>
+  <div className="max-w-[1400px] mx-auto px-4 md:px-12 lg:px-20 xl:px-32 relative">
+    {/* Heading */}
+    <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-4">
+      <div>
+        <h2 className="font-schoolbell text-[#F2B024] text-3xl md:text-4xl">
+          Top Destination
+        </h2>
+        <p className="font-poppins text-white text-4xl md:text-5xl mt-2">
+          Explore Top Destinations
+        </p>
       </div>
-    </section>
+
+      {/* Desktop arrows */}
+      {!isMobile && (
+        <>
+          <ArrowButton
+            direction="left"
+            onClick={() => scroll("left")}
+            className="absolute left-4 top-[55%] -translate-y-1/2 z-50"
+          />
+          <ArrowButton
+            direction="right"
+            onClick={() => scroll("right")}
+            className="absolute right-4 top-[55%] -translate-y-1/2 z-50"
+          />
+        </>
+      )}
+    </div>
+
+    {/* Mobile floating arrows */}
+    {isMobile && (
+      <>
+        <ArrowButton
+          direction="left"
+          onClick={() => scroll("left")}
+          className="absolute left-2 top-[50%] -translate-y-1/2 z-50"
+        />
+        <ArrowButton
+          direction="right"
+          onClick={() => scroll("right")}
+          className="absolute right-2 top-[50%] -translate-y-1/2 z-50"
+        />
+      </>
+    )}
+
+    {/* Card List */}
+    <div
+      ref={scrollRef}
+      onScroll={handleInfiniteScroll}
+      className="flex flex-row gap-6 overflow-x-scroll hide-scrollbar pt-16 pb-20 relative"
+    >
+      {fullList.map((dest, i) => {
+        const isCenter = activeIndex === i;
+        return (
+          <div
+            key={i}
+            className="flex-shrink-0 transition-all duration-300 ease-out"
+            style={{
+              width: CARD_WIDTH,
+              zIndex: isCenter ? 20 : 10,
+              transform: isCenter
+                ? "scale(1.12)"
+                : "translateY(10px) scale(0.9)",
+              opacity: isCenter ? 1 : 0.85,
+            }}
+          >
+            <DestinationCard
+              destination={dest}
+              isNearest={dest.DistrictCode === nearestCode}
+            />
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</section>
+
   );
 };

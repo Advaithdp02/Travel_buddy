@@ -7,7 +7,7 @@ export const Home = ({nearestLocation}) => {
   return (
     <section
   id="home"
-  className="w-full px-10 font-poppins flex flex-col md:flex-row lg:flex-row items-center justify-between md:pr-0 md:pl-20 lg:pr-0 lg:pl-50  bg-[#fbebff]"
+  className="w-full px-10 font-poppins pt-5 flex flex-col md:flex-row lg:flex-row items-center pb-5 justify-between md:pr-0 md:pl-20 lg:pr-0 lg:pl-50  bg-[#fbebff]"
 >
 
 

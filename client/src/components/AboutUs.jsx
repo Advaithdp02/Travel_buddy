@@ -7,8 +7,8 @@ export const AboutUs = () => {
   return (
     <section
       id="aboutUs"
-      className="relative flex flex-col md:flex-row items-center justify-center 
-      bg-gradient-to-r from-[#CB98ED] via-[#8B63DA] md:ml-[-60px] to-[#3C21B7] 
+      className="relative md:w-[100vh] lg:w-[100vw] flex flex-col md:flex-row items-center justify-center 
+      bg-gradient-to-r from-[#CB98ED] via-[#8B63DA] md:ml-[-60px] to-[#3C21B7] md:mr-[-60px]
       text-white py-14 md:py-20 overflow-visible"
     >
       {/* Center Wrapper */}
