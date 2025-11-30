@@ -51,199 +51,171 @@ MONGO_URI=
 
 ---
 
-## Users
+# TravelBuddy Backend API Documentation  
+**Version:** Updated with latest schema changes  
 
+---
+
+## Users  
 **Base route:** `/api/users`  
-
-Handles user registration, login, profiles, wishlist, follow/unfollow, password reset, and admin management.
+Handles registration, login, profile management, follow system, wishlist, visited locations, OTP reset, and admin controls.
 
 | Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/register` | POST | No | Register a new user |
-| `/login` | POST | No | Login user and get token |
-| `/profile` | GET | ✅ | Get logged-in user profile |
-| `/profile` | PUT | ✅ | Update profile (supports `profilePic` and `coverPhoto` uploads) |
-| `/profile/:username` | GET | ✅ | Get another user's profile by username |
-| `/follow/:username` | PUT | ✅ | Follow or unfollow a user |
-| `/wishlist/add/:locationId` | PUT | ✅ | Add a location to wishlist |
-| `/wishlist/remove/:locationId` | PUT | ✅ | Remove a location from wishlist |
-| `/wishlist` | GET | ✅ | Get user's wishlist |
-| `/locations/track/:locationId` | PUT | Optional | Track a location visit (supports logged-in & anonymous) |
-| `/admin/users` | GET | ✅ + staff | Get all users (admin/staff only) |
-| `/admin/users/:id/role` | PUT | ✅ + staff | Update a user's role |
-| `/admin/users/:id` | DELETE | ✅ + staff | Delete a user |
-| `/forgot-password` | POST | No | Request password reset OTP |
-| `/verify-otp` | POST | No | Verify password reset OTP |
-| `/reset-password` | POST | No | Reset password with OTP verification |
+|----------|---------|--------|-------------|
+| /register | POST | No | Register a new user |
+| /login | POST | No | Login and receive JWT |
+| /profile | GET | ✔️ | Get logged-in user's profile |
+| /profile | PUT | ✔️ | Update profile (profilePic, coverPhoto, gender, dob, phone, etc.) |
+| /profile/:username | GET | ✔️ | Get another user's profile |
+| /follow/:username | PUT | ✔️ | Follow or unfollow a user |
+| /wishlist/add/:locationId | PUT | ✔️ | Add location to wishlist |
+| /wishlist/remove/:locationId | PUT | ✔️ | Remove location from wishlist |
+| /wishlist | GET | ✔️ | Get wishlist |
+| /visited/add/:locationId | PUT | ✔️ | Add/update visited location with timeSpent |
+| /visited | GET | ✔️ | Get user visited locations |
+| /admin/users | GET | ✔️ Staff | Get all users |
+| /admin/users/:id/role | PUT | ✔️ Staff | Update a user role |
+| /admin/users/:id | DELETE | ✔️ Staff | Delete a user |
+| /forgot-password | POST | No | Request OTP for password reset |
+| /verify-otp | POST | No | Verify OTP |
+| /reset-password | POST | No | Reset password using OTP |
 
 ---
 
-## Locations
-
-**Base route:** `/api/locations`  
-
-Handles fetching, creating, updating, deleting, and nearby location features.
-
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/` | GET | No | Get all locations (no district filter) |
-| `/district/:district` | GET | No | Get all locations by district name |
-| `/:id` | GET | No | Get location by ID |
-| `/nearest/:lat/:lon` | GET | No | Get nearest location by coordinates |
-| `/` | POST | ✅ + staff | Create new location (with multiple images) |
-| `/:id` | PUT | ✅ + staff | Update location info (with images) |
-| `/:id` | DELETE | ✅ + staff | Delete a location |
-
----
-
-## Districts
-
+## Districts  
 **Base route:** `/api/districts`  
-
-Handles district data, including adding locations and retrieving comments.
+Manages districts, points, coordinates, images, and linked locations.
 
 | Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/` | GET | No | Get all districts |
-| `/:id` | GET | No | Get district by ID |
-| `/state/:state` | GET | No | Get districts by state name |
-| `/:id/comments` | GET | No | Get all comments related to a district |
-| `/nearest/:lat/:lon` | GET | No | Get nearest district by coordinates |
-| `/` | POST | ✅ + admin | Create new district (with image upload) |
-| `/:id/location` | PUT | ✅ + admin | Add location to district |
-| `/:id` | PUT | ✅ + admin | Update district info and image |
+|----------|---------|--------|-------------|
+| / | GET | No | Get all districts |
+| /:id | GET | No | Get district by ID |
+| /state/:state | GET | No | Get districts by state |
+| /:id/comments | GET | No | Get comments for district |
+| /nearest/:lat/:lon | GET | No | Get nearest district |
+| / | POST | ✔️ Admin | Create district |
+| /:id/location | PUT | ✔️ Admin | Add location to district |
+| /:id | PUT | ✔️ Admin | Update district |
+| /:id | DELETE | ✔️ Admin | Delete district |
 
 ---
 
-## Contributions
+## Locations  
+**Base route:** `/api/locations`  
+Handles creation, updates, mapping to districts, safety info, services, terrain, GPS coordinates, contributions.
 
+| Endpoint | Method | Auth | Description |
+|----------|---------|--------|-------------|
+| / | GET | No | Get all locations |
+| /district/:district | GET | No | Get locations by district |
+| /:id | GET | No | Get location by ID |
+| /nearest/:lat/:lon | GET | No | Get nearest location |
+| / | POST | ✔️ Staff | Create location (multiple images) |
+| /:id | PUT | ✔️ Staff | Update location info |
+| /:id | DELETE | ✔️ Staff | Delete location |
+
+---
+
+## Hotels  
+**Base route:** `/api/hotels`  
+Updated with coordinates object, district reference, and amenities array.
+
+| Endpoint | Method | Auth | Description |
+|----------|---------|--------|-------------|
+| / | GET | No | Get all hotels |
+| /:id | GET | No | Get hotel details |
+| /nearest/:locationId | GET | No | Get nearby hotels for a location |
+| / | POST | ✔️ Staff | Create hotel |
+| /:id | PUT | ✔️ Staff | Update hotel |
+| /:id | DELETE | ✔️ Staff | Delete hotel |
+
+---
+
+## Contributions  
 **Base route:** `/api/contributions`  
 
-Handles user-submitted content such as reviews, experiences, and photos.
-
 | Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/` | POST | ✅ | Create a new contribution (supports multiple images & cover image) |
-| `/user` | GET | ✅ | Get contributions created by logged-in user |
-| `/location/:locationId` | GET | No | Get verified contributions for a specific location |
-| `/:id` | GET | No | Get single contribution by ID |
-| `/verify/:id` | PUT | ✅ + staff | Verify a contribution |
-| `/:id/like` | PUT | ✅ | Like or unlike a contribution |
-| `/:id/comments` | GET | No | Get all comments for a contribution |
-| `/:id/comments` | POST | ✅ | Add a comment to a contribution |
-| `/:contribId/comments/like/:commentId` | PUT | ✅ | Like/unlike a comment on a contribution |
-| `/district/:id` | GET | No | Get contributions filtered by district |
-| `/` | GET | ✅ + staff | Get all contributions (staff/admin only) |
-| `/:id` | DELETE | ✅ + staff | Delete a contribution (admin/staff only) |
+|----------|---------|--------|-------------|
+| / | POST | ✔️ | Create contribution |
+| /user | GET | ✔️ | Get user's contributions |
+| /location/:locationId | GET | No | Get contributions for location |
+| /district/:id | GET | No | Get contributions for district |
+| /:id | GET | No | Get single contribution |
+| /verify/:id | PUT | ✔️ Staff | Verify contribution |
+| /:id/like | PUT | ✔️ | Like/unlike |
+| /:id/comments | GET | No | Get comments for contribution |
+| /:id/comments | POST | ✔️ | Add comment to contribution |
+| / | GET | ✔️ Staff | Get all contributions |
+| /:id | DELETE | ✔️ Staff | Delete contribution |
+| /contribId/comments/like/:commentId | PUT | ✔️ | Like/unlike a comment |
 
 ---
 
-## Comments
-
+## Comments  
 **Base route:** `/api/comments`  
-
-Manages user comments, likes, replies, and moderation.
+Supports replies, nested comments, and moderation.
 
 | Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/` | POST | ✅ | Add a new comment |
-| `/location/:locationId` | GET | No | Get all comments for a specific location |
-| `/like/:id` | PUT | ✅ | Like or unlike a comment |
-| `/reply/:id` | POST | ✅ | Add a reply to a comment |
-| `/reply/:commentId/:replyId` | DELETE | ✅ | Delete a specific reply |
-| `/district/:id` | GET | No | Get all comments for a district |
-| `/` | GET | ✅ + staff | Get all comments (with optional district/location filters) |
-| `/:id` | DELETE | ✅ + staff | Delete a comment (admin/staff only) |
+|----------|---------|--------|-------------|
+| / | POST | ✔️ | Add comment |
+| /location/:locationId | GET | No | Get comments for location |
+| /district/:districtId | GET | No | Get comments for district |
+| /like/:id | PUT | ✔️ | Like/unlike comment |
+| /reply/:id | POST | ✔️ | Add reply |
+| /reply/:commentId/:replyId | DELETE | ✔️ | Delete reply |
+| / | GET | ✔️ Staff | Get all comments |
+| /:id | DELETE | ✔️ Staff | Delete comment |
 
 ---
 
-## Tracking
-
+## Tracking  
 **Base route:** `/api/track`  
-
-Tracks page visits, user engagement, and analytics.
+Handles analytics, anonymous visits, and page interactions.
 
 | Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/` | POST | No | Track a page or location visit |
-| `/stats` | GET | No | Get overall analytics |
-| `/user-stats` | GET | No | Get user visit statistics |
-| `/user-details/:userId` | GET | No | Get detailed stats for a specific user |
-| `/location-stats` | GET | No | Get stats for all locations |
-| `/location-details/:location` | GET | No | Get detailed analytics for a location |
-| `/top-hotels` | GET | No | Get top-rated or most-visited hotels |
-| `/hotel-details/:hotelId` | GET | No | Get detailed stats for a hotel |
-| `/hotel-stats` | GET | No | Get overall hotel analytics |
-| `/exit` | POST | No | Record a user exit event |
+|----------|---------|--------|-------------|
+| / | POST | No | Track visit |
+| /exit | POST | No | Record exit event |
+| /stats | GET | No | Full analytics overview |
+| /user-stats | GET | No | Stats for logged-in user |
+| /user-details/:userId | GET | No | Detailed user analytics |
+| /location-stats | GET | No | All location analytics |
+| /location-details/:locationId | GET | No | Single location analytics |
+| /hotel-stats | GET | No | All hotel analytics |
+| /hotel-details/:hotelId | GET | No | Single hotel analytics |
+| /top-hotels | GET | No | Top visited hotels |
 
 ---
 
-## Hotels
-
-**Base route:** `/api/hotels`  
-
-Handles hotel data management, retrieval, and nearby hotel search.
+## Blogs  
+**Base route:** `/api/blogs`
 
 | Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/` | GET | No | Get all hotels |
-| `/:id` | GET | No | Get hotel by ID |
-| `/nearest/:locationId` | GET | No | Get nearby hotels for a location |
-| `/` | POST | ✅ + staff | Create a hotel with image |
-| `/:id` | PUT | ✅ + staff | Update hotel info and image |
-| `/:id` | DELETE | ✅ + staff | Delete a hotel entry |
+|----------|---------|--------|-------------|
+| / | GET | No | Get all blogs |
+| /:slug | GET | No | Get blog by slug |
+| / | POST | ✔️ Staff | Create blog |
+| /:id | PUT | ✔️ Staff | Update blog |
+| /:id | DELETE | ✔️ Staff | Delete blog |
 
 ---
 
-## Blogs
-
-**Base route:** `/api/blogs`  
-
-Handles creation, editing, and viewing of travel blogs and articles.
+## Contact  
+**Base route:** `/api/contact`
 
 | Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/` | GET | No | Get all blogs |
-| `/:slug` | GET | No | Get blog by slug |
-| `/` | POST | ✅ + staff | Create a new blog (with image upload) |
-| `/:id` | PUT | ✅ + staff | Update a blog (with image) |
-| `/:id` | DELETE | ✅ + staff | Delete a blog |
+|----------|---------|--------|-------------|
+| / | POST | No | Send contact message |
+| /send-otp | POST | No | Send OTP |
+| /verify-otp | POST | No | Verify OTP |
 
 ---
 
-## Contact
-
-**Base route:** `/api/contact`  
-
-Handles user contact messages and OTP verification.
-
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/` | POST | No | Send a contact message |
-| `/send-otp` | POST | No | Send OTP to user’s phone/email |
-| `/verify-otp` | POST | No | Verify OTP for contact or feedback form |
-
----
-
-
-**Base route:** `/api/contact`  
-
-Handles user inquiries and OTP verification.
-
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/` | POST | No | Send a contact message |
-| `/send-otp` | POST | No | Send OTP to phone/email |
-| `/verify-otp` | POST | No | Verify OTP |
-
----
-
-## Authentication
-
-- **JWT-based authentication** using `protect` middleware.
-- **Role-based access** using `staffProtect` and `adminProtect`.
-- Public routes do not require authentication.
-- Admin/staff routes require both login and elevated role.
+## Authentication Notes  
+- Uses **JWT (Bearer Token)**  
+- `protect` middleware required for user routes  
+- `staffProtect` and `adminProtect` used for restricted routes  
+- Tracking routes allow **anonymous access**  
 
 ---
 
