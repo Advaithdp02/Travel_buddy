@@ -36,8 +36,9 @@ const AdminContributor = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const list =
-          Array.isArray(res.data.contributions) ? res.data.contributions : res.data;
+        const list = Array.isArray(res.data.contributions)
+          ? res.data.contributions
+          : res.data;
 
         setAllContributions(list);
         setFilteredContributions(list.filter((c) => !c.verified));
@@ -62,24 +63,27 @@ const AdminContributor = () => {
 
   // Approve contribution
   const handleApprove = async (id) => {
-    try {
-      await axios.put(
-        `${BACKEND_URL}/contributions/verify/${id}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  try {
+    await axios.put(
+      `${BACKEND_URL}/contributions/verify/${id}`,
+      { terrain: selected.terrain },   // ⬅ SEND IT
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      const updated = allContributions.map((c) =>
-        c._id === id ? { ...c, verified: true } : c
-      );
+    const updated = allContributions.map((c) =>
+      c._id === id
+        ? { ...c, verified: true, terrain: selected.terrain }
+        : c
+    );
 
-      setAllContributions(updated);
-      setSelected(null);
-    } catch (err) {
-      console.error("Approve failed:", err);
-      alert("Failed to approve contribution.");
-    }
-  };
+    setAllContributions(updated);
+    setSelected(null);
+  } catch (err) {
+    console.error("Approve failed:", err);
+    alert("Failed to approve contribution.");
+  }
+};
+
 
   // Delete contribution
   const handleDelete = async (id) => {
@@ -230,10 +234,14 @@ const AdminContributor = () => {
               {/* Details */}
               <Box className="mt-4 text-sm text-gray-600">
                 <p>🏖 Best Time: {selected.bestTimeToVisit || "N/A"}</p>
-                <p>👨‍👩‍👧 Family Friendly: {selected.familyFriendly ? "Yes" : "No"}</p>
+                <p>
+                  👨‍👩‍👧 Family Friendly: {selected.familyFriendly ? "Yes" : "No"}
+                </p>
                 <p>🐶 Pet Friendly: {selected.petFriendly ? "Yes" : "No"}</p>
                 <p>♿ Accessibility: {selected.accessibility || "N/A"}</p>
-                <p>🎯 Activities: {selected.activities?.join(", ") || "None"}</p>
+                <p>
+                  🎯 Activities: {selected.activities?.join(", ") || "None"}
+                </p>
               </Box>
 
               {/* Ratings */}
@@ -254,6 +262,31 @@ const AdminContributor = () => {
               <Box className="mt-4">
                 <Typography variant="h6">Tips</Typography>
                 <Typography>{selected.tips || "None"}</Typography>
+              </Box>
+              {/* Terrain Selection */}
+              <Box className="mt-4">
+                <Typography variant="h6" className="mb-2">
+                  Terrain Type
+                </Typography>
+
+                <select
+                  className="border px-3 py-2 rounded w-full"
+                  value={selected?.terrain || "none"}
+                  onChange={(e) =>
+                    setSelected({ ...selected, terrain: e.target.value })
+                  }
+                >
+                  <option value="none">Select Terrain</option>
+                  <option value="Mountain">Mountains</option>
+                  <option value="Beach">Beaches</option>
+                  <option value="Forest">Forests</option>
+                  <option value="Desert">Deserts</option>
+                  <option value="Plain">Plains</option>
+                  <option value="Rocky">Rocky</option>
+                  <option value="River">River</option>
+                  <option value="Hilly">Hilly</option>
+                  <option value="Urban">Urban</option>
+                </select>
               </Box>
 
               {/* Buttons */}

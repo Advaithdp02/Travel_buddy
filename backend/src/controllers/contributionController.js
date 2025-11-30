@@ -5,7 +5,6 @@ import District from "../models/District.js";
 import mongoose from "mongoose";
 import { uploadToS3, deleteFromS3 } from "./uploadController.js";
 
-
 export const createContribution = async (req, res) => {
   try {
     // User authentication
@@ -45,11 +44,22 @@ export const createContribution = async (req, res) => {
     }
 
     // Parse JSON fields if sent as string
-    const parsedActivities = typeof activities === "string" ? JSON.parse(activities) : activities || [];
-    const parsedFacilities = typeof facilities === "string" ? JSON.parse(facilities) : facilities || [];
-    const parsedRatings = typeof ratings === "string" ? JSON.parse(ratings) : ratings || {};
-    const parsedHiddenGems = typeof hiddenGems === "string" ? JSON.parse(hiddenGems) : hiddenGems || [];
-    const parsedPoints = typeof points === "string" ? JSON.parse(points) : points || [];
+    const parsedActivities =
+      typeof activities === "string"
+        ? JSON.parse(activities)
+        : activities || [];
+    const parsedFacilities =
+      typeof facilities === "string"
+        ? JSON.parse(facilities)
+        : facilities || [];
+    const parsedRatings =
+      typeof ratings === "string" ? JSON.parse(ratings) : ratings || {};
+    const parsedHiddenGems =
+      typeof hiddenGems === "string"
+        ? JSON.parse(hiddenGems)
+        : hiddenGems || [];
+    const parsedPoints =
+      typeof points === "string" ? JSON.parse(points) : points || [];
 
     // Upload files to S3
     let images = [];
@@ -131,8 +141,6 @@ export const createContribution = async (req, res) => {
   }
 };
 
-
-
 // Get a single contribution by ID
 export const getContributionById = async (req, res) => {
   try {
@@ -140,7 +148,7 @@ export const getContributionById = async (req, res) => {
       .populate("user", "name username profilePic")
       .populate({
         path: "comments",
-        populate: { path: "user", select: "name username profilePic" }
+        populate: { path: "user", select: "name username profilePic" },
       });
 
     if (!contribution) {
@@ -177,7 +185,7 @@ export const getContributionsForDistrict = async (req, res) => {
 
     // 3️⃣ Now fetch contributions matching this district (case-insensitive)
     const contributions = await Contribution.find({
-      district: { $regex: `^${districtName}$`, $options: "i" }
+      district: { $regex: `^${districtName}$`, $options: "i" },
     })
       .populate("user", "name username profilePic")
       .sort({ createdAt: -1 });
@@ -194,9 +202,10 @@ export const getContributionsForDistrict = async (req, res) => {
   }
 };
 
-
 // Admin: Verify a contribution
 export const verifyContribution = async (req, res) => {
+  const adminTerrain = req.body.terrain; // <-- admin override
+
   try {
     const contribId = req.params.id;
     const c = await Contribution.findById(contribId);
@@ -210,7 +219,7 @@ export const verifyContribution = async (req, res) => {
     // FIND DISTRICT OR CREATE NEW
     // -----------------------------------------
     let districtDoc = await District.findOne({
-      name: { $regex: `^${c.district}$`, $options: "i" }
+      name: { $regex: `^${c.district}$`, $options: "i" },
     });
 
     if (!districtDoc) {
@@ -244,14 +253,40 @@ export const verifyContribution = async (req, res) => {
       // ✔ Activity based
       if (activities?.includes("Beach / Swimming")) return "Beach";
       if (activities?.includes("Adventure / Trekking")) return "Hilly";
-      if (activities?.includes("Photography") && elevation > 600) return "Mountain";
+      if (activities?.includes("Photography") && elevation > 600)
+        return "Mountain";
 
       // ✔ Keyword based
-      if (text.includes("forest") || text.includes("trees") || text.includes("wildlife")) return "Forest";
-      if (text.includes("desert") || text.includes("sand") || text.includes("dunes")) return "Desert";
-      if (text.includes("rock") || text.includes("cliff") || text.includes("boulder")) return "Rocky";
-      if (text.includes("river") || text.includes("stream") || text.includes("waterfall")) return "River";
-      if (text.includes("town") || text.includes("city") || text.includes("urban")) return "Urban";
+      if (
+        text.includes("forest") ||
+        text.includes("trees") ||
+        text.includes("wildlife")
+      )
+        return "Forest";
+      if (
+        text.includes("desert") ||
+        text.includes("sand") ||
+        text.includes("dunes")
+      )
+        return "Desert";
+      if (
+        text.includes("rock") ||
+        text.includes("cliff") ||
+        text.includes("boulder")
+      )
+        return "Rocky";
+      if (
+        text.includes("river") ||
+        text.includes("stream") ||
+        text.includes("waterfall")
+      )
+        return "River";
+      if (
+        text.includes("town") ||
+        text.includes("city") ||
+        text.includes("urban")
+      )
+        return "Urban";
 
       // ✔ Elevation based
       if (elevation !== null) {
@@ -274,10 +309,9 @@ export const verifyContribution = async (req, res) => {
     // -----------------------------------------
     // AUTO-GENERATED SUBTITLE
     // -----------------------------------------
-    const generatedSubtitle =
-      c.activities?.length
-        ? `A popular place for ${c.activities.slice(0, 3).join(", ")}`
-        : `A notable destination in ${c.district}`;
+    const generatedSubtitle = c.activities?.length
+      ? `A popular place for ${c.activities.slice(0, 3).join(", ")}`
+      : `A notable destination in ${c.district}`;
 
     // -----------------------------------------
     // AUTO-GENERATED POINTS
@@ -320,15 +354,15 @@ ${c.description || ""}
 Visitors describe the atmosphere as ${
       c.crowded ? "often crowded" : "generally calm"
     } and family-friendly. ${
-      c.bestTimeToVisit ? `Recommended time to visit: ${c.bestTimeToVisit}.` : ""
-    } ${
-      c.hiddenGems?.length
-        ? `Hidden gems: ${c.hiddenGems.join(", ")}.`
+      c.bestTimeToVisit
+        ? `Recommended time to visit: ${c.bestTimeToVisit}.`
         : ""
     } ${
-      c.tips ? `Traveler tips: ${c.tips}` : ""
-    }
-`.replace(/\s+/g, " ").trim();
+      c.hiddenGems?.length ? `Hidden gems: ${c.hiddenGems.join(", ")}.` : ""
+    } ${c.tips ? `Traveler tips: ${c.tips}` : ""}
+`
+      .replace(/\s+/g, " ")
+      .trim();
 
     // -----------------------------------------
     // CREATE LOCATION
@@ -343,7 +377,9 @@ Visitors describe the atmosphere as ${
       images: c.images || [],
       coverImage: c.coverImage || "",
 
-      terrain: autoTerrain,  // ⭐ AUTO TERRAIN HERE ⭐
+      terrain:
+        adminTerrain && adminTerrain !== "none" ? adminTerrain : autoTerrain,
+
       reviewLength: 0,
       review: 0,
 
@@ -371,14 +407,11 @@ Visitors describe the atmosphere as ${
       message: "Contribution verified + Auto terrain + Auto content",
       location: newLocation,
     });
-
   } catch (err) {
     console.error("verifyContribution error:", err);
     return res.status(500).json({ message: err.message });
   }
 };
-
-
 
 // ✅ Get all contributions (Admin)
 export const getAllContributions = async (req, res) => {
@@ -405,7 +438,6 @@ export const getAllContributions = async (req, res) => {
   }
 };
 
-
 export const deleteContribution = async (req, res) => {
   try {
     const { id } = req.params;
@@ -426,13 +458,16 @@ export const deleteContribution = async (req, res) => {
     const isAdmin = req.user && req.user.role === "admin";
 
     if (!isOwner && !isAdmin) {
-      return res.status(403).json({ message: "Not authorized to delete this contribution" });
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this contribution" });
     }
 
     // Safety: Prevent deleting contribution that already created a Location
     if (contribution.verified && contribution.approvedLocation) {
       return res.status(400).json({
-        message: "Cannot delete a verified contribution that created a Location"
+        message:
+          "Cannot delete a verified contribution that created a Location",
       });
     }
 
@@ -478,10 +513,3 @@ export const getContributionsByUser = async (req, res) => {
     });
   }
 };
-
-
-
-
-
-
-

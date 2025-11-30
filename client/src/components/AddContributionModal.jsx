@@ -124,6 +124,14 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
       ...files.map((f) => URL.createObjectURL(f)),
     ]);
   };
+  const handleRemoveImage = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
+
+    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+  };
 
   // -----------------------------
   // API: Save Contribution
@@ -354,13 +362,25 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
         </div>
 
         {/* Image Previews */}
-        <div className="flex flex-wrap gap-2 mt-3">
+        <div className="flex flex-wrap gap-4 mt-3">
           {previewImages.map((img, i) => (
-            <img
-              key={i}
-              src={img}
-              className="w-24 h-24 rounded-lg border object-cover"
-            />
+            <div key={i} className="relative">
+              <img
+                src={img}
+                className="w-24 h-24 rounded-lg border object-cover"
+              />
+
+              {/* Remove Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemoveImage(i);
+                }}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm"
+              >
+                ✕
+              </button>
+            </div>
           ))}
         </div>
 
