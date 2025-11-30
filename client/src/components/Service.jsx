@@ -66,7 +66,7 @@ export const Service = () => {
       </div>
 
       {/* Right Side: Services List */}
-      <div className="md:w-1/3 flex flex-col md:mt-[80px] gap-6">
+      <div className="md:w-1/3 flex flex-col md:mt-[80px] lg:w-[400px] gap-6">
         {services.map((service, index) => (
           <div key={index} className="flex items-center gap-4">
             <div className="w-14 h-14 flex items-center justify-center bg-[#310a49] rounded-full text-white">

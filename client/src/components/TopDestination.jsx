@@ -234,10 +234,10 @@ useEffect(() => {
 
   return (
     <section
-  className="lg:w-[100vw] w-full bg-cover bg-center text-white py-20 md:mr-[-60px] "
+  className="lg:w-[100vw] md:ml-[-60px]  w-full bg-cover bg-center text-white py-20 md:mr-[-60px] "
   style={{ backgroundImage: `url(/TopDestinationBG.png)` }}
 >
-  <div className="max-w-[1400px] mx-auto px-4 md:px-12 lg:px-20 xl:px-32 relative">
+  <div className="max-w-[1400px] mx-auto px-4 md:px-12 lg:px-0 xl:px-0 relative">
     {/* Heading */}
     <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-4">
       <div>
