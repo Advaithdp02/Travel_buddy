@@ -114,19 +114,48 @@ export const TopDestinations = ({ userCoords }) => {
   const middleIndex = destinations.length;
 
   // Initial PERFECT centering (phone + desktop)
-  useEffect(() => {
-    if (!scrollRef.current || destinations.length === 0) return;
+  // useEffect(() => {
+  //   if (!scrollRef.current || destinations.length === 0) return;
 
-    const cardSize = CARD_WIDTH + GAP;
-    const containerWidth = scrollRef.current.offsetWidth;
+  //   const cardSize = CARD_WIDTH + GAP;
+  //   const containerWidth = scrollRef.current.offsetWidth;
 
-    const startScroll =
-      middleIndex * cardSize + CARD_WIDTH / 2 - containerWidth / 2 + (isMobile ? 30 : 0);
+  //   const startScroll =
+  //     middleIndex * cardSize + CARD_WIDTH / 2 - containerWidth / 2 + (isMobile ? 30 : 0);
 
-    scrollRef.current.scrollLeft = startScroll;
-    setActiveIndex(middleIndex);
-    centeredIndexRef.current = middleIndex;
-  }, [destinations, CARD_WIDTH]);
+  //   scrollRef.current.scrollLeft = startScroll;
+  //   setActiveIndex(middleIndex);
+  //   centeredIndexRef.current = middleIndex;
+  // }, [destinations, CARD_WIDTH]);
+useEffect(() => {
+  if (!scrollRef.current || destinations.length === 0) return;
+
+  const cardSize = CARD_WIDTH + GAP;
+  const containerWidth = scrollRef.current.offsetWidth;
+
+  // find index of the nearest district inside the base destinations array
+  const nearestIndex = destinations.findIndex(
+    (d) => d.DistrictCode === nearestCode
+  );
+
+  // If nearest not found, fall back to a default (start of middle copy)
+  const indexToCenter =
+    nearestIndex >= 0 ? middleIndex + nearestIndex : middleIndex;
+
+  const startCardCenter = indexToCenter * cardSize + CARD_WIDTH / 2;
+  const startScroll =
+    startCardCenter - containerWidth / 2 + (isMobile ? 30 : 0);
+
+  scrollRef.current.scrollLeft = startScroll;
+
+  setActiveIndex(indexToCenter);
+  centeredIndexRef.current = indexToCenter;
+
+  // Debugging (optional)
+  // console.log("Centering index:", indexToCenter, "nearestIndex:", nearestIndex);
+}, [destinations, CARD_WIDTH, nearestCode, isMobile]);
+
+
 const CACHE_TTL = 20 * 60 * 1000; // 20 minutes
 
 const cleanOldCache = () => {
@@ -289,6 +318,8 @@ useEffect(() => {
       className="flex flex-row gap-6 overflow-x-scroll hide-scrollbar pt-16 pb-20 relative"
     >
       {fullList.map((dest, i) => {
+        console.log(`Destination ${i}: ${dest.name}`);
+
         const isCenter = activeIndex === i;
         return (
           <div
