@@ -405,16 +405,35 @@ export const updateUserRole = async (req, res) => {
 // -------------------- ADMIN: DELETE USER --------------------
 export const deleteUser = async (req, res) => {
   try {
-    
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    const deleted = await User.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ message: "User not found" });
+    // Delete profile pic from S3
+    if (user.profilePic) await deleteFromS3(user.profilePic);
 
-    res.json({ message: "User deleted successfully" });
+    // Delete cover photo from S3
+    if (user.coverPhoto) await deleteFromS3(user.coverPhoto);
+
+    // Delete user contributions' images
+    const contributions = await Contribution.find({ user: user._id });
+
+    for (const c of contributions) {
+      for (const img of c.images) {
+        await deleteFromS3(img);
+      }
+    }
+
+    await Contribution.deleteMany({ user: user._id });
+
+    // Delete user
+    await User.findByIdAndDelete(user._id);
+
+    res.json({ message: "User and images deleted" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 //-------------------- Get Wishlist --------------------
 export const getWishlist = async (req, res) => {

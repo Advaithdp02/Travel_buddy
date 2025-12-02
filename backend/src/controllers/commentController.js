@@ -62,18 +62,19 @@ export const deleteReply = async (req, res) => {
       return res.status(404).json({ message: "Comment not found" });
     }
 
-    // Find the reply inside comment.replies
     const reply = comment.replies.id(replyId);
     if (!reply) {
       return res.status(404).json({ message: "Reply not found" });
     }
 
-    // Check if current user is the reply author
-    if (reply.user.toString() !== req.user.id) {
+    // Allow ADMIN or STAFF or the reply OWNER
+    const isPrivileged =
+      req.user.role === "admin" || req.user.role === "staff";
+
+    if (!isPrivileged && reply.user.toString() !== req.user.id) {
       return res.status(403).json({ message: "Not authorized to delete this reply" });
     }
 
-    // Remove the reply
     reply.deleteOne();
     await comment.save();
 
@@ -86,6 +87,7 @@ export const deleteReply = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // Get comments by location
 
