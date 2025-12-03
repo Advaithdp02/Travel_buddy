@@ -161,7 +161,7 @@ export const Registration = ({ currentPage }) => {
                 disabled={loading}
                 className="w-full bg-[#9156F1] text-white font-semibold py-3 rounded-lg shadow-lg hover:bg-[#310a49]/90"
               >
-                {loading ? "Sending OTP..." : "Next"}
+                {loading ? "Sending OTP To Mail " : "Next"}
               </button>
             </form>
           )}

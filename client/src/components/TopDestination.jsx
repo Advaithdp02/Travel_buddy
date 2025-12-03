@@ -41,7 +41,7 @@ export const TopDestinations = ({ userCoords }) => {
   // Detect mobile
   useEffect(() => {
     const checkMobile = () => {
-      const mobile = window.innerWidth <= 768;
+      const mobile = window.matchMedia("(max-width: 600px)").matches;
       setIsMobile(mobile);
       setCARD_WIDTH(mobile ? MOBILE_CARD_WIDTH : DESKTOP_CARD_WIDTH);
     };
