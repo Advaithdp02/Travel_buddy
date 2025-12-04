@@ -821,28 +821,50 @@ export const getLiveUsers = async (req, res) => {
       {
         $match: {
           visitedAt: { $gte: cutoff },
-          isSiteExit: false, // not exited yet
+          isSiteExit: false,
         },
       },
+
+      // Create a key:
+      // - logged-in: use userId
+      // - anonymous: use sessionId
+      {
+        $addFields: {
+          liveKey: {
+            $cond: [
+              { $ifNull: ["$user", false] },
+              { $toString: "$user" }, // logged-in users share same key
+              "$sessionId",           // anonymous keyed by session
+            ],
+          },
+        },
+      },
+
+      // GROUP BY liveKey (unique user)
       {
         $group: {
-          _id: "$sessionId",
-          username: { $first: "$user" },
+          _id: "$liveKey",
+          userId: { $first: "$user" },
           lastVisitedAt: { $max: "$visitedAt" },
         },
       },
+
+      // Populate username
       {
         $lookup: {
           from: "users",
-          localField: "username",
+          localField: "userId",
           foreignField: "_id",
           as: "userDetails",
         },
       },
+
       {
         $project: {
-          sessionId: "$_id",
-          username: { $arrayElemAt: ["$userDetails.username", 0] },
+          sessionOrUserKey: "$_id",
+          username: {
+            $ifNull: [{ $arrayElemAt: ["$userDetails.username", 0] }, "Anonymous"],
+          },
           lastVisitedAt: 1,
         },
       },
@@ -854,3 +876,4 @@ export const getLiveUsers = async (req, res) => {
     res.status(500).json({ success: false });
   }
 };
+
