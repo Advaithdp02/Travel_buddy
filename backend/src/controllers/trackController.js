@@ -4,90 +4,141 @@ import User from "../models/User.js";
 import District from "../models/District.js";
 import mongoose from "mongoose";
 
+const resolveLocation = async (url) => {
+  if (!url) {
+    return {
+      locationName: "Unknown Location",
+      districtName: "N/A",
+    };
+  }
+
+  const clean = url.replace(/^\/+/, "");
+  if (clean === "") {
+    return {
+      locationName: "Home",
+      districtName: "N/A",
+    };
+  }
+
+  const segments = clean.split("/");
+  const base = segments[0];
+  const lastSegment = segments[segments.length - 1];
+
+  const NON_LOCATION_PAGES = [
+    "admin",
+    "login",
+    "register",
+    "account",
+    "settings",
+    "about",
+    "contact",
+    "help",
+  ];
+  // ⭐ Detect external URLs → do NOT resolve internally
+if (url.startsWith("http://") || url.startsWith("https://")) {
+  return {
+    locationName: url,        // show full URL
+    districtName: "External", // label as external
+  };
+}
+
+
+  // ⭐ Profile special case
+  if (base === "profile") {
+    const username = segments[1];
+    return {
+      locationName: username ? `Profile: ${username}` : "Profile",
+      districtName: "N/A",
+    };
+  }
+
+  if (NON_LOCATION_PAGES.includes(base)) {
+    return {
+      locationName: base.charAt(0).toUpperCase() + base.slice(1),
+      districtName: "N/A",
+    };
+  }
+
+  // If not ObjectId → simple route
+  if (!mongoose.Types.ObjectId.isValid(lastSegment)) {
+    return {
+      locationName: segments[1] || segments[0] || "Unknown Location",
+      districtName: "N/A",
+    };
+  }
+
+  try {
+    const locationDoc = await Location.findById(lastSegment)
+      .populate("district", "name")
+      .select("name district");
+
+    if (locationDoc) {
+      return {
+        locationName: locationDoc.name || "Unknown Location",
+        districtName: locationDoc.district?.name || "",
+      };
+    }
+
+    const districtDoc = await District.findById(lastSegment).select("name");
+
+    if (districtDoc) {
+      return {
+        locationName: districtDoc.name,
+        districtName: districtDoc.name,
+      };
+    }
+  } catch (err) {
+    console.log("resolveLocation error:", err);
+  }
+
+  return {
+    locationName: segments[1] || segments[0] || "Unknown Location",
+    districtName: "N/A",
+  };
+};
+
+
 // -------------------- POST /api/track --------------------
 export const trackVisit = async (req, res) => {
   try {
     const {
       user,
       sessionId,
-      path,
+      fromUrl,
+      toUrl,
+      actionType,
+      exitReason,
+      isSiteExit,
       timeSpent,
       isAnonymous,
       deviceInfo,
       geoLocation,
     } = req.body;
 
-    if (!sessionId || !path || timeSpent == null) {
+    // -----------------------------------------------
+    // REQUIRED FIELDS CHECK
+    // -----------------------------------------------
+    if (!sessionId || !fromUrl || !actionType || timeSpent == null) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    let locationName = path;
-    let districtName = "Unknown";
-    let locationDoc = null;
-    // ❌ Do not track admin pages
-    if (path.startsWith("/admin")) {
-      return res.status(204).end(); // no tracking, silent OK
+    // DO NOT TRACK ADMIN NAVIGATION
+    if (fromUrl.startsWith("/admin")) {
+      return res.status(204).end();
     }
 
-    // ------------------------------------------
-    // ⭐ 0️⃣ HANDLE SIMPLE PATHS FIRST
-    // ------------------------------------------
-    if (path === "/") {
-      locationName = "home";
-      districtName = "home";
-    } else {
-      // remove leading slash, split
-      const segments = path.replace(/^\/+/, "").split("/");
+    // -----------------------------------------------
+    // RESOLVE BOTH URLs → readable names
+    // -----------------------------------------------
+    const { locationName: fromLocation, districtName: fromDistrict } =
+      await resolveLocation(fromUrl);
 
-      if (segments.length === 1) {
-        // /profile → profile
-        locationName = segments[0];
-        districtName = segments[0];
-      } else if (segments.length === 2) {
-        // /profile/Nitin → Nitin
-        locationName = segments[1];
-        districtName = segments[0]; // "profile"
-      }
-    }
+    const { locationName: toLocation, districtName: toDistrict } =
+      await resolveLocation(toUrl);
 
-    // ------------------------------------------
-    // 1️⃣ LOCATION / DISTRICT ID RESOLUTION
-    // (Overrides the above only if ObjectId is detected)
-    // ------------------------------------------
-    try {
-      const segments = path.split("/");
-      const possibleId = segments[segments.length - 1];
-
-      if (mongoose.Types.ObjectId.isValid(possibleId)) {
-        // Try resolving as LOCATION
-        locationDoc = await Location.findById(possibleId)
-          .populate("district", "name")
-          .select("name district");
-
-        if (locationDoc) {
-          locationName = locationDoc.name;
-          districtName = locationDoc.district?.name || "Unknown";
-        }
-
-        // Try resolving as DISTRICT
-        if (!locationDoc) {
-          const districtDoc = await District.findById(possibleId).select(
-            "name"
-          );
-
-          if (districtDoc) {
-            locationName = districtDoc.name;
-            districtName = districtDoc.name;
-          }
-        }
-      }
-    } catch (err) {
-      console.warn("Failed to resolve location or district:", err);
-    }
-
-    // ------------------------------------------
-    // 2️⃣ GEOJSON SAFE BUILD
-    // ------------------------------------------
+    // -----------------------------------------------
+    // GEO JSON FORMAT
+    // -----------------------------------------------
     let geoJSON = null;
     if (geoLocation?.coordinates?.length === 2) {
       geoJSON = {
@@ -96,18 +147,31 @@ export const trackVisit = async (req, res) => {
       };
     }
 
-    // ------------------------------------------
-    // 3️⃣ SAVE VISIT
-    // ------------------------------------------
+    // -----------------------------------------------
+    // CREATE DATABASE RECORD
+    // -----------------------------------------------
     const visit = await PageVisit.create({
       user: user || null,
       sessionId,
-      location: locationName,
-      district: districtName,
+      fromUrl,
+      toUrl,
+      actionType,
+      exitReason,
+      isSiteExit: !!isSiteExit,
       timeSpent,
       isAnonymous,
       deviceInfo: deviceInfo || {},
       geoLocation: geoJSON,
+
+      // PRIMARY location info (by default fromUrl)
+      location: fromLocation,
+      district: fromDistrict,
+
+      // EXTRA readable values (for UI)
+      fromLocation,
+      toLocation,
+      fromDistrict,
+      toDistrict,
     });
 
     res.status(201).json({ success: true, visit });
@@ -372,6 +436,13 @@ export const getUserDetails = async (req, res) => {
           visitedAt: 1,
           exitReason: 1,
           isSiteExit: 1,
+          fromUrl: 1,
+          toUrl: 1,
+          actionType: 1,
+          fromLocation: 1,
+          toLocation: 1,
+          fromDistrict: 1,
+          toDistrict: 1,
         },
       },
       { $sort: { visitedAt: -1 } }, // latest visit first
@@ -621,7 +692,7 @@ export const getGeoStats = async (req, res) => {
     const latestVisits = await PageVisit.aggregate([
       {
         // Sort by newest visit first
-        $sort: { visitedAt: -1 }
+        $sort: { visitedAt: -1 },
       },
       {
         // Group by user – take the MOST RECENT visit (first after sorting)
@@ -633,15 +704,15 @@ export const getGeoStats = async (req, res) => {
           timeSpent: { $first: "$timeSpent" },
           exitReason: { $first: "$exitReason" },
           visitedAt: { $first: "$visitedAt" },
-          geoLocation: { $first: "$geoLocation" } // KEEP AS-IS (even if null)
-        }
-      }
+          geoLocation: { $first: "$geoLocation" }, // KEEP AS-IS (even if null)
+        },
+      },
     ]);
 
     // Populate user info (username/name)
     const populated = await PageVisit.populate(latestVisits, {
       path: "user",
-      select: "username name"
+      select: "username name",
     });
 
     // Final response format
@@ -652,7 +723,7 @@ export const getGeoStats = async (req, res) => {
       timeSpent: v.timeSpent,
       exitReason: v.exitReason,
       visitedAt: v.visitedAt,
-      geoLocation: v.geoLocation
+      geoLocation: v.geoLocation,
     }));
 
     res.json({ success: true, data: result });
@@ -660,15 +731,17 @@ export const getGeoStats = async (req, res) => {
     console.error("Geo Stats Error:", err);
     res.status(500).json({
       success: false,
-      message: "Failed to load geo stats"
+      message: "Failed to load geo stats",
     });
   }
 };
 
 export const getAllLocationGeoStats = async (req, res) => {
   try {
-    const locations = await Location.find({})
-      .populate("district", "name districtCode");
+    const locations = await Location.find({}).populate(
+      "district",
+      "name districtCode"
+    );
 
     const result = locations.map((loc) => ({
       name: loc.name,
@@ -694,7 +767,90 @@ export const getAllLocationGeoStats = async (req, res) => {
     console.error("Location Geo Error:", err);
     res.status(500).json({
       success: false,
-      message: "Failed to load all locations"
+      message: "Failed to load all locations",
     });
+  }
+};
+
+export const getAllVisits = async (req, res) => {
+  try {
+    const { from, to } = req.query;
+
+    // If no dates provided → default = all
+    const fromDate = from ? new Date(from) : new Date("1970-01-01");
+    const toDate = to ? new Date(to) : new Date();
+
+    const visits = await PageVisit.find({
+      visitedAt: { 
+        $gte: fromDate,
+        $lte: toDate
+      }
+    })
+      .populate("user", "username")
+      .sort({ visitedAt: 1 });
+
+    const formatted = visits.map(v => ({
+      username: v.user?.username || "Anonymous",
+      visitedAt: v.visitedAt,
+      fromLocation: v.fromLocation,
+      fromDistrict: v.fromDistrict,
+      toLocation: v.toLocation,
+      toDistrict: v.toDistrict,
+      timeSpent: v.timeSpent,
+      exitReason: v.exitReason,
+
+      // Easy-to-read flow
+      flow: v.toLocation
+        ? `${v.fromLocation} → ${v.toLocation}`
+        : `${v.fromLocation} → EXIT`
+    }));
+
+    res.json({ success: true, data: formatted });
+  } catch (err) {
+    console.error("Get all visits error:", err);
+    res.status(500).json({ success: false });
+  }
+};
+// GET /track/live
+export const getLiveUsers = async (req, res) => {
+  try {
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - 60 * 1000); // last 60 sec
+
+    const live = await PageVisit.aggregate([
+      {
+        $match: {
+          visitedAt: { $gte: cutoff },
+          isSiteExit: false, // not exited yet
+        },
+      },
+      {
+        $group: {
+          _id: "$sessionId",
+          username: { $first: "$user" },
+          lastVisitedAt: { $max: "$visitedAt" },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "username",
+          foreignField: "_id",
+          as: "userDetails",
+        },
+      },
+      {
+        $project: {
+          sessionId: "$_id",
+          username: { $arrayElemAt: ["$userDetails.username", 0] },
+          lastVisitedAt: 1,
+        },
+      },
+    ]);
+
+    res.json({ success: true, liveUsers: live });
+  } catch (err) {
+    console.error("Live users error:", err);
+    res.status(500).json({ success: false });
   }
 };

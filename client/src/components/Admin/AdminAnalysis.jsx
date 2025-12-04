@@ -91,6 +91,7 @@ export default function AdminAnalysis() {
 
   const handleTabChange = (e, v) => setTabValue(v);
 
+
   /* ------------------------------------------------------------
       FETCH MAIN TABLE DATA
   ------------------------------------------------------------ */
@@ -116,6 +117,13 @@ export default function AdminAnalysis() {
               uniqueLocations: item.uniqueLocations.join(", "),
               uniqueDistricts: item.uniqueDistricts.join(", "),
               userId: item.user,
+              fromUrl: item.fromUrl || "",
+              toUrl: item.toUrl || "",
+              actionType:item.actionType || "",
+              fromLocation:item.fromLocation || "",
+              toLocation : item.toLocation || "",
+              fromDistrict: item.fromDistrict || "",
+              toDistrict: item.toDistrict || "",
             }))
           );
         }
@@ -204,6 +212,28 @@ export default function AdminAnalysis() {
       setUserLoading(false);
     }
   };
+  /* ------------------------------------------------------------
+      FETCH ALL USER DETAILS
+  ------------------------------------------------------------ */
+  const exportAllUserVisits = async () => {
+  try {
+    const from = fromDate.startOf("day").toISOString();
+const to = toDate.endOf("day").toISOString();
+
+const res = await axios.get(
+  `${BACKEND_URL}/track/all-visits?from=${from}&to=${to}`,
+  { headers: { Authorization: `Bearer ${token}` } }
+);
+
+
+    if (!res.data.success) return;
+
+    // Export directly to Excel
+    exportToExcel(res.data.data, "All_User_Visit_Details");
+  } catch (err) {
+    console.error("Full visit export error:", err);
+  }
+};
 
   const handleCloseModal = () => {
     setOpenModal(false);
@@ -315,6 +345,14 @@ export default function AdminAnalysis() {
               >
                 Export Users
               </Button>
+              <Button
+  variant="outlined"
+  sx={{ mb: 2, ml: 2 }}
+  onClick={exportAllUserVisits}
+>
+  Export Full Visit Details
+</Button>
+
 
               <DataGrid
                 rows={rows}
@@ -481,7 +519,26 @@ export default function AdminAnalysis() {
                   <Typography><b>Location:</b> {v.location}</Typography>
                   <Typography><b>District:</b> {v.district}</Typography>
                   <Typography><b>Time:</b> {v.timeSpent}s</Typography>
-                  <Typography><b>Exit:</b> {v.exitReason}</Typography>
+                  <Typography>
+  <b>Exit:</b>{" "}
+  {(() => {
+    console.log("DETAIL ROW", v);
+
+    const reason = v.exitReason || "";
+
+    const from = v.fromLocation || "";
+    const to = v.toLocation || "";
+
+    let nav = "";
+    if (from && to) nav = ` (from ${from} → ${to})`;
+    else if (from) nav = ` (from ${from})`;
+    else if (to) nav = ` (to ${to})`;
+
+    return reason + nav;
+  })()}
+</Typography>
+
+
 
                   {v.geoLocation?.coordinates && (
                     <>

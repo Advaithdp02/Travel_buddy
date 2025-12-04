@@ -13,17 +13,48 @@ const pageVisitSchema = new mongoose.Schema(
       required: true
     },
 
-    location: {
+    // ⭐ EXACT FROM & TO URL
+    fromUrl: { type: String, required: true },
+    toUrl: { type: String, default: null },
+
+    // ⭐ ACTION TYPE (what happened)
+    actionType: {
       type: String,
+      enum: [
+        "page_load",
+        "internal_navigation",
+        "external_exit",
+        "tab_hidden_exit",
+        "tab_close_exit",
+        "reload_exit",
+        "idle_timeout_exit"
+      ],
       required: true
     },
 
-    district: {
-      type: String,
+    // ⭐ For readable understanding
+    exitReason: { type: String, default: null },
+
+    // ⭐ Did user leave the site fully?
+    isSiteExit: { type: Boolean, default: false },
+
+    // ⭐ Time spent on FROM page
+    timeSpent: {
+      type: Number,
+      min: 0,
       required: true
     },
 
-    // ⭐ GEOJSON POINT (lat/lng)
+    // ---------------------------------------
+    // ADD YOUR OTHER FIELDS (location, device)
+    // ---------------------------------------
+    location: { type: String, required: true },
+    district: { type: String, required: true },
+    fromLocation: { type: String, default: null },
+    toLocation: { type: String, default: null },
+    fromDistrict: { type: String, default: null },
+    toDistrict: { type: String, default: null },
+
     geoLocation: {
       type: {
         type: String,
@@ -34,17 +65,6 @@ const pageVisitSchema = new mongoose.Schema(
         type: [Number], // [long, lat]
         required: false
       }
-    },
-
-    timeSpent: {
-      type: Number,
-      min: 0,
-      required: true
-    },
-
-    visitedAt: {
-      type: Date,
-      default: Date.now
     },
 
     deviceInfo: {
@@ -64,13 +84,15 @@ const pageVisitSchema = new mongoose.Schema(
       default: true
     },
 
-    exitReason: { type: String, default: "unknown" },
-    isSiteExit: { type: Boolean, default: false }
+    visitedAt: {
+      type: Date,
+      default: Date.now
+    }
   },
   { timestamps: true }
 );
 
-// Required for location-based queries
+// GEO location indexing
 pageVisitSchema.index({ geoLocation: "2dsphere" });
 
 export default mongoose.model("PageVisit", pageVisitSchema);

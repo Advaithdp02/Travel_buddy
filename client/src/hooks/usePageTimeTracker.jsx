@@ -1,22 +1,111 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
+import { initGA, trackGAView, trackGAEvent } from "../ga";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 const IDLE_TIMEOUT = 15 * 60 * 1000; // 15 minutes
 
 const usePageTimeTracker = () => {
   const location = useLocation();
+
   const startTimeRef = useRef(Date.now());
   const prevPathRef = useRef(location.pathname);
   const idleTimerRef = useRef(null);
-  const idleTriggeredRef = useRef(false);
   const unloadSentRef = useRef(false);
   const firstLoadRef = useRef(true);
+  const resolveLocation = async (url) => {
+  if (!url) {
+    return {
+      locationName: "Unknown Location",
+      districtName: "N/A",
+    };
+  }
 
-  // -----------------------------------
-  // ⭐ Ensure sessionId (1 per device)
-  // -----------------------------------
+  const clean = url.replace(/^\/+/, "");
+  if (clean === "") {
+    return {
+      locationName: "Home",
+      districtName: "N/A",
+    };
+  }
+
+  const segments = clean.split("/");
+  const base = segments[0];
+  const lastSegment = segments[segments.length - 1];
+
+  const NON_LOCATION_PAGES = [
+    "admin",
+    "login",
+    "register",
+    "account",
+    "settings",
+    "about",
+    "contact",
+    "help",
+  ];
+
+  // ⭐ Profile special rule
+  if (base === "profile") {
+    const username = segments[1];
+    return {
+      locationName: username ? `Profile: ${username}` : "Profile",
+      districtName: "N/A",
+    };
+  }
+
+  // Normal system pages (no district)
+  if (NON_LOCATION_PAGES.includes(base)) {
+    return {
+      locationName: base.charAt(0).toUpperCase() + base.slice(1),
+      districtName: "N/A",
+    };
+  }
+
+  // Not ObjectId → raw text page
+  if (!mongoose.Types.ObjectId.isValid(lastSegment)) {
+    return {
+      locationName: segments[1] || segments[0] || "Unknown Location",
+      districtName: "N/A",
+    };
+  }
+
+  // Try database: Location
+  try {
+    const locationDoc = await Location.findById(lastSegment)
+      .populate("district", "name")
+      .select("name district");
+
+    if (locationDoc) {
+      return {
+        locationName: locationDoc.name || "Unknown Location",
+        districtName: locationDoc.district?.name || "",
+      };
+    }
+
+    // Try database: District
+    const districtDoc = await District.findById(lastSegment).select("name");
+    if (districtDoc) {
+      return {
+        locationName: districtDoc.name || "Unknown District",
+        districtName: districtDoc.name || "",
+      };
+    }
+  } catch (err) {
+    console.log("resolveLocation error:", err);
+  }
+
+  return {
+    locationName: segments[1] || segments[0] || "Unknown Location",
+    districtName: "N/A",
+  };
+};
+
+
+
+  // -----------------------------
+  // CREATE SESSION ID
+  // -----------------------------
   let sessionId = localStorage.getItem("sessionId");
   if (!sessionId) {
     sessionId = uuidv4();
@@ -24,204 +113,170 @@ const usePageTimeTracker = () => {
   }
 
   const getUserId = () => localStorage.getItem("userId") || null;
-  const CACHE_TTL = 20 * 60 * 1000; // 20 minutes
 
-const cleanOldCache = () => {
-  const now = Date.now();
-
-  Object.keys(localStorage).forEach((key) => {
-    if (key.startsWith("nearest_location_") || key.startsWith("nearest_district_")) {
-      try {
-        const item = JSON.parse(localStorage.getItem(key));
-        if (!item?.expiry || now > item.expiry) {
-          localStorage.removeItem(key);
-        }
-      } catch {
-        localStorage.removeItem(key);
-      }
-    }
-  });
-};
-
-
-  // -----------------------------------------------------
-  // ⭐ GET GPS (first reading only — NO ACCURACY CHECK)
-  // -----------------------------------------------------
-  const getAccurateLocation = () => {
-    return new Promise((resolve) => {
-      let watchId = null;
-
-      const failTimeout = setTimeout(() => {
-        if (watchId) navigator.geolocation.clearWatch(watchId);
-        resolve(null);
-      }, 8000); // prevent leaking forever
-
-      watchId = navigator.geolocation.watchPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-
-          const coords = { latitude, longitude };
-          localStorage.setItem("userCoords", JSON.stringify(coords));
-
-          clearTimeout(failTimeout);
-          navigator.geolocation.clearWatch(watchId);
-
-          resolve(coords);
-        },
-        () => {
-          clearTimeout(failTimeout);
-          resolve(null);
-        },
-        { enableHighAccuracy: true, timeout: 5000 }
-      );
-    });
-  };
-
+  // -----------------------------
+  // GEOLOCATION
+  // -----------------------------
   const getUserCoords = () => {
     try {
       const stored = JSON.parse(localStorage.getItem("userCoords"));
       if (!stored) return null;
-
       return {
         type: "Point",
-        coordinates: [stored.longitude, stored.latitude],
+        coordinates: [stored.longitude, stored.latitude]
       };
     } catch {
       return null;
     }
   };
 
-  // -----------------------------------------------------
-  // ⭐ SEND TRACK DATA
-  // -----------------------------------------------------
-  const sendTrackingData = async (
-    path,
-    timeSpent,
-    reason = "unknown",
+  // -----------------------------
+  // 🔥 FIXED FUNCTION — this now sends correct data
+  // -----------------------------
+  const sendTrackingData = async ({
+    actionType,
+    fromUrl,
+    toUrl = null,
+    exitReason,
     isSiteExit = false
-  ) => {
+  }) => {
+    const now = Date.now();
+    const timeSpent = Math.floor((now - startTimeRef.current) / 1000);
+    startTimeRef.current = now;
+    const { loc, dist, skip } = resolveLocation(fromUrl);
+    // Prevent duplicate exit logging
+if (isSiteExit && window.__EXIT_SENT__) {
+  return;
+}
+if (isSiteExit) {
+  window.__EXIT_SENT__ = true;
+}
+
+    const payload = {
+      user: getUserId(),
+      sessionId,
+      actionType,
+      fromUrl,
+      toUrl,
+      exitReason,
+      isSiteExit,
+      timeSpent,
+      isAnonymous: !getUserId(),
+      geoLocation: getUserCoords(),
+      location: skip ? fromUrl : loc,
+  district: skip ? fromUrl : dist
+    };
+
+    console.log("🔥 Sending Track:", payload);
+
     try {
       await fetch(`${BACKEND_URL}/track`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         keepalive: true,
-        body: JSON.stringify({
-          user: getUserId(),
-          sessionId,
-          path,
-          timeSpent,
-          exitReason: reason,
-          isSiteExit,
-          isAnonymous: !getUserId(),
-          geoLocation: getUserCoords(),
-        }),
+        body: JSON.stringify(payload)
       });
     } catch (err) {
-      console.error("Tracking error:", err);
+      console.error("Track failed:", err);
     }
   };
 
-  // -----------------------------------------------------
-  // ⭐ EXIT REASON
-  // -----------------------------------------------------
-  const getExitReason = (eventType = "unknown") => {
-    if (eventType === "beforeunload") return "tab_closed_or_reload";
-    return "unknown";
-  };
-
-  // -----------------------------------------------------
-  // ⭐ Safe Send + Reset Timer
-  // -----------------------------------------------------
-  const handleSendAndReset = (path, reason, isSiteExit = false) => {
-    const now = Date.now();
-    const timeSpent = Math.floor((now - startTimeRef.current) / 1000);
-
-    sendTrackingData(path, timeSpent, reason, isSiteExit);
-
-    startTimeRef.current = now;
-  };
-
-  // -----------------------------------------------------
-  // ⭐ Idle tracking
-  // -----------------------------------------------------
-  const resetIdleTimer = () => {
-    if (idleTriggeredRef.current) return; // block after timeout
-
+  // -----------------------------
+  // IDLE TIMER
+  // -----------------------------
+  const startIdleTimer = () => {
     clearTimeout(idleTimerRef.current);
 
     idleTimerRef.current = setTimeout(() => {
-      idleTriggeredRef.current = true;
-      handleSendAndReset(location.pathname, "idle_timeout", true);
+      sendTrackingData({
+        actionType: "idle_timeout_exit",
+        fromUrl: location.pathname,
+        exitReason: "User inactive for 15 minutes",
+        isSiteExit: true
+      });
     }, IDLE_TIMEOUT);
   };
 
-  // -----------------------------------------------------
-  // ⭐ Main Effect
-  // -----------------------------------------------------
+  // -----------------------------
+  // MAIN EFFECT
+  // -----------------------------
   useEffect(() => {
-    getAccurateLocation(); // run once per mount
+    if (firstLoadRef.current) {
+      initGA();
+      trackGAView(location.pathname);
+      firstLoadRef.current = false;
+    } else {
+      sendTrackingData({
+        actionType: "internal_navigation",
+        fromUrl: prevPathRef.current,
+        toUrl: location.pathname,
+        exitReason: "User navigated inside site",
+        isSiteExit: false
+      });
 
-    // --- Detect internal navigation ---
-    // ⭐ Prevent tracking on first load
-    if (!firstLoadRef.current && prevPathRef.current !== location.pathname) {
-      handleSendAndReset(prevPathRef.current, "internal_navigation", false);
+      trackGAView(location.pathname);
     }
 
-    // After first render, disable first load flag
-    firstLoadRef.current = false;
-
-    // Always update the previous path
     prevPathRef.current = location.pathname;
+    startIdleTimer();
 
-    resetIdleTimer();
-
-    const handleActivity = () => {
-      if (!idleTriggeredRef.current) resetIdleTimer();
-    };
-
-    const handleExternalClick = (e) => {
+    // External link detection
+    const detectExternal = (e) => {
       const link = e.target.closest("a");
-      if (link && link.href && !link.href.includes(window.location.host)) {
-        handleSendAndReset(location.pathname, "external_link", true);
+      if (!link) return;
+
+      if (!link.href.includes(window.location.host)) {
+        sendTrackingData({
+          actionType: "external_exit",
+          fromUrl: location.pathname,
+          toUrl: link.href,
+          exitReason: "Clicked external link",
+          isSiteExit: true
+        });
       }
-      handleActivity();
     };
 
-    // --- Tab close / reload ---
-    const handleBeforeUnload = () => {
-      if (unloadSentRef.current) return;
-      unloadSentRef.current = true;
+    // Tab hidden
+    const onHide = () => {
+  if (document.visibilityState !== "hidden") return;
 
-      clearTimeout(idleTimerRef.current);
+  // Prevent duplicate exit
+  if (unloadSentRef.current) return;
+  unloadSentRef.current = true;
 
-      handleSendAndReset(
-        location.pathname,
-        getExitReason("beforeunload"),
-        true
-      );
-    };
+  sendTrackingData({
+    actionType: "tab_hidden_exit",
+    fromUrl: location.pathname,
+    exitReason: "Tab hidden or switched",
+    isSiteExit: true
+  });
+};
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    document.addEventListener("click", handleExternalClick);
-    document.addEventListener("mousemove", handleActivity);
-    document.addEventListener("keydown", handleActivity);
-    document.addEventListener("scroll", handleActivity);
+    // Tab close / reload
+    const onUnload = () => {
+  if (unloadSentRef.current) return;
+  unloadSentRef.current = true;
+
+  sendTrackingData({
+    actionType: "tab_close_exit",
+    fromUrl: location.pathname,
+    exitReason: "Tab closed or reloaded",
+    isSiteExit: true
+  });
+};
+
+
+    document.addEventListener("click", detectExternal);
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("beforeunload", onUnload);
 
     return () => {
-      
-
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      document.removeEventListener("click", handleExternalClick);
-      document.removeEventListener("mousemove", handleActivity);
-      document.removeEventListener("keydown", handleActivity);
-      document.removeEventListener("scroll", handleActivity);
-
+      document.removeEventListener("click", detectExternal);
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("beforeunload", onUnload);
       clearTimeout(idleTimerRef.current);
     };
   }, [location.pathname]);
-   useEffect(() => {
-    cleanOldCache();
-  }, []);
 };
 
 export default usePageTimeTracker;

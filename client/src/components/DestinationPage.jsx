@@ -12,7 +12,7 @@ import {
   HeartIconOutline,
   ClipboardIcon,
   ShareIconOutline,
-  HeartIconFilled
+  HeartIconFilled,
 } from "./Icons";
 import { useNavigate, useParams } from "react-router-dom";
 import { CommunityModal } from "./CommunityModal";
@@ -31,7 +31,6 @@ export const DestinationPage = ({}) => {
   const loaderRef = useRef();
   const [wishlist, setWishlist] = useState([]);
 
-  
   const locationId = useParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -113,49 +112,50 @@ export const DestinationPage = ({}) => {
   //Wishlist
   const [isWishlisted, setIsWishlisted] = useState(false);
   const copyToClipboard = (text) => {
-  navigator.clipboard.writeText(text)
-    .then(() => {
-      showCopyAnimation();  // 🔥 trigger animation
-    })
-    .catch(() => console.log("Failed"));
-};
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        showCopyAnimation(); // 🔥 trigger animation
+      })
+      .catch(() => console.log("Failed"));
+  };
 
-const showCopyAnimation = () => {
-  const bubble = document.createElement("div");
+  const showCopyAnimation = () => {
+    const bubble = document.createElement("div");
 
-  bubble.innerText = "Copied!";
-  bubble.style.position = "fixed";
-  bubble.style.left = "50%";
-  bubble.style.top = "60%";
-  bubble.style.transform = "translate(-50%, -50%)";
-  bubble.style.background = "black";
-  bubble.style.color = "white";
-  bubble.style.padding = "8px 14px";
-  bubble.style.borderRadius = "8px";
-  bubble.style.fontSize = "14px";
-  bubble.style.opacity = "0";
-  bubble.style.zIndex = "9999";
-  bubble.style.transition = "all 0.6s ease-out";
-
-  document.body.appendChild(bubble);
-
-  // animate in
-  requestAnimationFrame(() => {
-    bubble.style.top = "50%";
-    bubble.style.opacity = "1";
-  });
-
-  // animate out
-  setTimeout(() => {
+    bubble.innerText = "Copied!";
+    bubble.style.position = "fixed";
+    bubble.style.left = "50%";
+    bubble.style.top = "60%";
+    bubble.style.transform = "translate(-50%, -50%)";
+    bubble.style.background = "black";
+    bubble.style.color = "white";
+    bubble.style.padding = "8px 14px";
+    bubble.style.borderRadius = "8px";
+    bubble.style.fontSize = "14px";
     bubble.style.opacity = "0";
-    bubble.style.top = "40%";
-  }, 900);
+    bubble.style.zIndex = "9999";
+    bubble.style.transition = "all 0.6s ease-out";
 
-  // remove
-  setTimeout(() => {
-    bubble.remove();
-  }, 1500);
-};
+    document.body.appendChild(bubble);
+
+    // animate in
+    requestAnimationFrame(() => {
+      bubble.style.top = "50%";
+      bubble.style.opacity = "1";
+    });
+
+    // animate out
+    setTimeout(() => {
+      bubble.style.opacity = "0";
+      bubble.style.top = "40%";
+    }, 900);
+
+    // remove
+    setTimeout(() => {
+      bubble.remove();
+    }, 1500);
+  };
 
   // Utility to calculate distance (Haversine formula)
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -259,46 +259,44 @@ const showCopyAnimation = () => {
     }
   };
   const toggleWishlist = async (placeId) => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) return alert("Please login first!");
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return alert("Please login first!");
 
-    await axios.put(
-      `${Backend_URL}/users/wishlist/add/${placeId}`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+      await axios.put(
+        `${Backend_URL}/users/wishlist/add/${placeId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    // Update UI instantly
-    setWishlist((prev) =>
-      prev.includes(placeId)
-        ? prev.filter((id) => id !== placeId)
-        : [...prev, placeId]
-    );
+      // Update UI instantly
+      setWishlist((prev) =>
+        prev.includes(placeId)
+          ? prev.filter((id) => id !== placeId)
+          : [...prev, placeId]
+      );
+    } catch (err) {
+      console.log(err);
+      alert("Failed to update wishlist");
+    }
+  };
+  const fetchWishlist = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
-  } catch (err) {
-    console.log(err);
-    alert("Failed to update wishlist");
-  }
-};
-const fetchWishlist = async () => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+      const res = await axios.get(`${Backend_URL}/users/wishlist`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    const res = await axios.get(`${Backend_URL}/users/wishlist`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    setWishlist(res.data.wishlist.map((item) => item._id));
-  } catch (err) {
-    console.error("Wishlist fetch failed:", err);
-  }
-};
-useEffect(() => {
-  fetchWishlist();
-}, []);
-
+      setWishlist(res.data.wishlist.map((item) => item._id));
+    } catch (err) {
+      console.error("Wishlist fetch failed:", err);
+    }
+  };
+  useEffect(() => {
+    fetchWishlist();
+  }, []);
 
   const fetchhLocationDistrict = async (district, terrain) => {
     try {
@@ -581,44 +579,41 @@ useEffect(() => {
   };
 
   const handleExternalLinkClick = async (url, hotel) => {
-    if (!url) {
-      console.warn("No URL provided for hotel:", hotel.name);
-      return;
-    }
+    if (!url) return;
 
     const sessionId = localStorage.getItem("sessionId");
+
     let userId = localStorage.getItem("userId");
     if (!userId) {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        try {
-          userId = JSON.parse(storedUser)._id;
-        } catch {
-          userId = null;
-        }
-      }
+      const user = localStorage.getItem("user");
+      if (user) userId = JSON.parse(user)._id;
     }
 
     try {
-      await fetch(`${Backend_URL}/track/exit`, {
+      await fetch(`${Backend_URL}/track`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: userId,
+          user: userId,
           sessionId,
-          hotelId: hotel._id,
-          exitReason: `Clicked on ${hotel.name}`,
-          destinationUrl: url,
-          location: locationId,
-          timestamp: new Date().toISOString(),
+          actionType: "external_exit",
+          fromUrl: window.location.pathname,
+          toUrl: url,
+          exitReason: `Clicked external link: ${hotel.name}`,
           isSiteExit: true,
+          timeSpent: 0,
           isAnonymous: !userId,
+          geoLocation: null,
+          hotelId: hotel._id,
+
+          // frontend will send raw, backend resolves correctly
+          location: window.location.pathname,
+          district: window.location.pathname,
         }),
       });
     } catch (err) {
-      console.error("Error logging external exit:", err);
+      console.error("External exit log failed:", err);
     } finally {
-      // Open URL in new tab after tracking
       window.open(url.startsWith("http") ? url : `https://${url}`, "_blank");
     }
   };
@@ -749,39 +744,29 @@ useEffect(() => {
 
             {/* Wishlist Button */}
             <div className="flex gap-6">
-            <button
-              onClick={handleWishlist}
-              className="bg-[#fbebff] text-[#310a49] font-semibold py-3 px-4 rounded-lg shadow-lg hover:bg-[#9156F1] hover:text-white transition-transform transform hover:scale-105"
-            >
-              <div className="flex gap-4 items-center">
-                {" "}
-                <HeartIconOutline
-                
-                  className="h-5  flex items-center"
-                  fill={isWishlisted ? "red" : "none"}
-                />{" "}
-                WishList
-              </div>
-              
-              
-            </button>
-            <button
-              onClick={() => copyToClipboard(window.location.href)}
-              className="bg-[#fbebff] text-[#310a49] font-semibold py-3 px-4 rounded-lg shadow-lg hover:bg-[#9156F1] hover:text-white transition-transform transform hover:scale-105"
-            >
-              <div className="flex gap-4 items-center">
-                {" "}
-                <ShareIconOutline
-                  className="h-5  flex items-center"
-                  
-                />{" "}
-                Share
-              </div>
-              
-              
-            </button>
+              <button
+                onClick={handleWishlist}
+                className="bg-[#fbebff] text-[#310a49] font-semibold py-3 px-4 rounded-lg shadow-lg hover:bg-[#9156F1] hover:text-white transition-transform transform hover:scale-105"
+              >
+                <div className="flex gap-4 items-center">
+                  {" "}
+                  <HeartIconOutline
+                    className="h-5  flex items-center"
+                    fill={isWishlisted ? "red" : "none"}
+                  />{" "}
+                  WishList
+                </div>
+              </button>
+              <button
+                onClick={() => copyToClipboard(window.location.href)}
+                className="bg-[#fbebff] text-[#310a49] font-semibold py-3 px-4 rounded-lg shadow-lg hover:bg-[#9156F1] hover:text-white transition-transform transform hover:scale-105"
+              >
+                <div className="flex gap-4 items-center">
+                  {" "}
+                  <ShareIconOutline className="h-5  flex items-center" /> Share
+                </div>
+              </button>
             </div>
-            
           </div>
         </div>
       </section>
@@ -789,10 +774,6 @@ useEffect(() => {
       {/* Comments & Contributions */}
 
       <section className="py-16 pb-0 px-8 bg-[#310a49]/90 rounded-tl-[20px] rounded-tr-[20px] relative overflow-hidden">
-        
-
-
-
         <div className="container mx-auto relative z-10">
           <h2 className="text-3xl font-bold text-white mb-6">
             Community Insights
@@ -1049,30 +1030,35 @@ useEffect(() => {
                       </div>
                     </div>
                   </div>
-                <div className="flex gap-4">
-                  <button
-                    className="mt-3 w-fit bg-[#9156F1] text-white font-semibold py-2.5 px-5 rounded-[2.5rem] hover:bg-[#9156F1]/90"
-                    onClick={() => {
-                      navigate(`/destination/${place._id}`);
-                      window.scrollTo(0, 0);
-                    }}
-                  >
-                    Lets Go
-                  </button>
-                  <button
-  className="mt-3 w-fit bg-[#fbebff] text-[#310a49] font-semibold py-2.5 px-5 rounded-[2.5rem] hover:bg-[#9156F1]/90"
-  onClick={() => toggleWishlist(place._id)}
-  title={wishlist.includes(place._id) ? "Remove from wishlist" : "Add to wishlist"}
->
-  {wishlist.includes(place._id) ? (
-    <HeartIconOutline className="w-5 h-5 text-red-500" fill="red" />
-  ) : (
-    <HeartIconOutline className="w-5 h-5" />
-  )}
-</button>
-
+                  <div className="flex gap-4">
+                    <button
+                      className="mt-3 w-fit bg-[#9156F1] text-white font-semibold py-2.5 px-5 rounded-[2.5rem] hover:bg-[#9156F1]/90"
+                      onClick={() => {
+                        navigate(`/destination/${place._id}`);
+                        window.scrollTo(0, 0);
+                      }}
+                    >
+                      Lets Go
+                    </button>
+                    <button
+                      className="mt-3 w-fit bg-[#fbebff] text-[#310a49] font-semibold py-2.5 px-5 rounded-[2.5rem] hover:bg-[#9156F1]/90"
+                      onClick={() => toggleWishlist(place._id)}
+                      title={
+                        wishlist.includes(place._id)
+                          ? "Remove from wishlist"
+                          : "Add to wishlist"
+                      }
+                    >
+                      {wishlist.includes(place._id) ? (
+                        <HeartIconOutline
+                          className="w-5 h-5 text-red-500"
+                          fill="red"
+                        />
+                      ) : (
+                        <HeartIconOutline className="w-5 h-5" />
+                      )}
+                    </button>
                   </div>
-                  
                 </div>
               ))}
             </div>
