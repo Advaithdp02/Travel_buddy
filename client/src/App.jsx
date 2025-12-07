@@ -31,7 +31,6 @@ export default function App() {
       <GlobalAuthCheck />
       <ScrollToTop />
 
-      {/* Proper Layout */}
       <Header />
 
       <MainRoutes />
