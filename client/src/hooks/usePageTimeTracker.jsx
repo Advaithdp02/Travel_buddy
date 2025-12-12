@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
-import { initGA, trackGAView, trackGAEvent } from "../ga";
+import { initGA, trackGAView } from "../ga";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 const IDLE_TIMEOUT = 15 * 60 * 1000; // 15 minutes
@@ -14,94 +14,85 @@ const usePageTimeTracker = () => {
   const idleTimerRef = useRef(null);
   const unloadSentRef = useRef(false);
   const firstLoadRef = useRef(true);
+
+  // ---------------------------------------------------------
+  // FIXED resolveLocation (NO mongoose, NO DB models in frontend)
+  // ---------------------------------------------------------
   const resolveLocation = async (url) => {
-  if (!url) {
-    return {
-      locationName: "Unknown Location",
-      districtName: "N/A",
-    };
-  }
-
-  const clean = url.replace(/^\/+/, "");
-  if (clean === "") {
-    return {
-      locationName: "Home",
-      districtName: "N/A",
-    };
-  }
-
-  const segments = clean.split("/");
-  const base = segments[0];
-  const lastSegment = segments[segments.length - 1];
-
-  const NON_LOCATION_PAGES = [
-    "admin",
-    "login",
-    "register",
-    "account",
-    "settings",
-    "about",
-    "contact",
-    "help",
-  ];
-
-  // ⭐ Profile special rule
-  if (base === "profile") {
-    const username = segments[1];
-    return {
-      locationName: username ? `Profile: ${username}` : "Profile",
-      districtName: "N/A",
-    };
-  }
-
-  // Normal system pages (no district)
-  if (NON_LOCATION_PAGES.includes(base)) {
-    return {
-      locationName: base.charAt(0).toUpperCase() + base.slice(1),
-      districtName: "N/A",
-    };
-  }
-
-  // Not ObjectId → raw text page
-  if (!mongoose.Types.ObjectId.isValid(lastSegment)) {
-    return {
-      locationName: segments[1] || segments[0] || "Unknown Location",
-      districtName: "N/A",
-    };
-  }
-
-  // Try database: Location
-  try {
-    const locationDoc = await Location.findById(lastSegment)
-      .populate("district", "name")
-      .select("name district");
-
-    if (locationDoc) {
+    if (!url) {
       return {
-        locationName: locationDoc.name || "Unknown Location",
-        districtName: locationDoc.district?.name || "",
+        locationName: "Unknown Location",
+        districtName: "N/A",
       };
     }
 
-    // Try database: District
-    const districtDoc = await District.findById(lastSegment).select("name");
-    if (districtDoc) {
+    const clean = url.replace(/^\/+/, "");
+    if (clean === "") {
       return {
-        locationName: districtDoc.name || "Unknown District",
-        districtName: districtDoc.name || "",
+        locationName: "Home",
+        districtName: "N/A",
       };
     }
-  } catch (err) {
-    console.log("resolveLocation error:", err);
-  }
 
-  return {
-    locationName: segments[1] || segments[0] || "Unknown Location",
-    districtName: "N/A",
+    const segments = clean.split("/");
+    const base = segments[0];
+    const lastSegment = segments[segments.length - 1];
+
+    const NON_LOCATION_PAGES = [
+      "admin",
+      "login",
+      "register",
+      "account",
+      "settings",
+      "about",
+      "contact",
+      "help",
+    ];
+
+    // ⭐ Profile special rule
+    if (base === "profile") {
+      const username = segments[1];
+      return {
+        locationName: username ? `Profile: ${username}` : "Profile",
+        districtName: "N/A",
+      };
+    }
+
+    // Normal static pages
+    if (NON_LOCATION_PAGES.includes(base)) {
+      return {
+        locationName: base.charAt(0).toUpperCase() + base.slice(1),
+        districtName: "N/A",
+      };
+    }
+
+    // ⭐ Check if ID looks like MongoDB ObjectId (NO mongoose needed)
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(lastSegment);
+
+    if (!isObjectId) {
+      return {
+        locationName: segments[1] || segments[0] || "Unknown Location",
+        districtName: "N/A",
+      };
+    }
+
+    // ⭐ Call backend to resolve location + district
+    try {
+      const res = await fetch(`${BACKEND_URL}/resolve-location/${lastSegment}`);
+      const data = await res.json();
+
+      return {
+        locationName: data.locationName || segments[0],
+        districtName: data.districtName || "N/A"
+      };
+    } catch (err) {
+      console.log("resolveLocation error:", err);
+      return {
+        locationName: segments[1] || segments[0] || "Unknown Location",
+        districtName: "N/A",
+      };
+    }
   };
-};
-
-
 
   // -----------------------------
   // CREATE SESSION ID
@@ -130,9 +121,9 @@ const usePageTimeTracker = () => {
     }
   };
 
-  // -----------------------------
-  // 🔥 FIXED FUNCTION — this now sends correct data
-  // -----------------------------
+  // --------------------------------------------------------
+  // sendTrackingData
+  // --------------------------------------------------------
   const sendTrackingData = async ({
     actionType,
     fromUrl,
@@ -140,17 +131,16 @@ const usePageTimeTracker = () => {
     exitReason,
     isSiteExit = false
   }) => {
+
     const now = Date.now();
     const timeSpent = Math.floor((now - startTimeRef.current) / 1000);
     startTimeRef.current = now;
-    const { loc, dist, skip } = resolveLocation(fromUrl);
+
+    const resolved = await resolveLocation(fromUrl);
+
     // Prevent duplicate exit logging
-if (isSiteExit && window.__EXIT_SENT__) {
-  return;
-}
-if (isSiteExit) {
-  window.__EXIT_SENT__ = true;
-}
+    if (isSiteExit && window.__EXIT_SENT__) return;
+    if (isSiteExit) window.__EXIT_SENT__ = true;
 
     const payload = {
       user: getUserId(),
@@ -163,11 +153,9 @@ if (isSiteExit) {
       timeSpent,
       isAnonymous: !getUserId(),
       geoLocation: getUserCoords(),
-      location: skip ? fromUrl : loc,
-  district: skip ? fromUrl : dist
+      location: resolved.locationName,
+      district: resolved.districtName
     };
-
-    console.log("🔥 Sending Track:", payload);
 
     try {
       await fetch(`${BACKEND_URL}/track`, {
@@ -186,7 +174,6 @@ if (isSiteExit) {
   // -----------------------------
   const startIdleTimer = () => {
     clearTimeout(idleTimerRef.current);
-
     idleTimerRef.current = setTimeout(() => {
       sendTrackingData({
         actionType: "idle_timeout_exit",
@@ -238,33 +225,30 @@ if (isSiteExit) {
 
     // Tab hidden
     const onHide = () => {
-  if (document.visibilityState !== "hidden") return;
+      if (document.visibilityState !== "hidden") return;
+      if (unloadSentRef.current) return;
+      unloadSentRef.current = true;
 
-  // Prevent duplicate exit
-  if (unloadSentRef.current) return;
-  unloadSentRef.current = true;
-
-  sendTrackingData({
-    actionType: "tab_hidden_exit",
-    fromUrl: location.pathname,
-    exitReason: "Tab hidden or switched",
-    isSiteExit: true
-  });
-};
+      sendTrackingData({
+        actionType: "tab_hidden_exit",
+        fromUrl: location.pathname,
+        exitReason: "Tab hidden or switched",
+        isSiteExit: true
+      });
+    };
 
     // Tab close / reload
     const onUnload = () => {
-  if (unloadSentRef.current) return;
-  unloadSentRef.current = true;
+      if (unloadSentRef.current) return;
+      unloadSentRef.current = true;
 
-  sendTrackingData({
-    actionType: "tab_close_exit",
-    fromUrl: location.pathname,
-    exitReason: "Tab closed or reloaded",
-    isSiteExit: true
-  });
-};
-
+      sendTrackingData({
+        actionType: "tab_close_exit",
+        fromUrl: location.pathname,
+        exitReason: "Tab closed or reloaded",
+        isSiteExit: true
+      });
+    };
 
     document.addEventListener("click", detectExternal);
     document.addEventListener("visibilitychange", onHide);

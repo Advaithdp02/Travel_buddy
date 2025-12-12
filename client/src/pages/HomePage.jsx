@@ -102,7 +102,7 @@ export const HomePage = () => {
   if (cached) {
     const data = JSON.parse(cached);
     setNearestLocation(data._id);
-    console.log("cached");
+    
     return; // 🚀 CACHE HIT → skip backend
   }
 

@@ -547,7 +547,7 @@ export const DestinationPage = ({}) => {
   }, [loaderRef.current, hasMore]);
 
   const handleWishlist = async () => {
-    console.log("clicked wishlist");
+    
     try {
       const location_id = locationId.id;
       const token = localStorage.getItem("token");

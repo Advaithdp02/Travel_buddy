@@ -522,7 +522,7 @@ const res = await axios.get(
                   <Typography>
   <b>Exit:</b>{" "}
   {(() => {
-    console.log("DETAIL ROW", v);
+    
 
     const reason = v.exitReason || "";
 

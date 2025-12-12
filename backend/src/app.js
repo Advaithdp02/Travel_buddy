@@ -11,6 +11,8 @@ import trackRoutes from "./routes/trackRoutes.js";
 import hotelRoutes from "./routes/hotelRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
+import resolveLocationRoute from "./routes/resolveLocation.js";
+
 // Create app
 const app = express();
 
@@ -42,6 +44,8 @@ app.use("/track", trackRoutes);
 app.use('/hotels', hotelRoutes);
 app.use('/blogs', blogRoutes);
 app.use("/contact", contactRoutes);
+app.use("/resolve-location", resolveLocationRoute);
+
 // --------------------
 // 404 HANDLER
 // --------------------

@@ -12,9 +12,10 @@ export const Footer = () => {
       {/* Main Footer Content */}
       <div className="container mx-auto px-6 sm:px-8 py-12 sm:py-16 relative">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 sm:gap-12 relative text-center sm:text-left">
+          
           {/* Column 1: Logo + About + Follow Us */}
           <div className="relative z-10 flex flex-col items-center sm:items-start">
-            <p className="text-[#310a49] mb-6 text-sm leading-6 max-w-xs sm:max-w-none">
+            <div className="text-[#310a49] mb-6 text-sm leading-6 max-w-xs sm:max-w-none">
               <div className="w-full flex justify-center">
                 <img
                   src="./FooterLogo.png"
@@ -22,9 +23,12 @@ export const Footer = () => {
                   className="w-[10.25rem] sm:w-32"
                 />
               </div>
-              Travel Buddy - here to help you create amazing experiences and
-              make the most of every moment.{" "}
-            </p>
+              <p>
+                Travel Buddy - here to help you create amazing experiences and
+                make the most of every moment.
+              </p>
+            </div>
+
             <h4 className="text-white text-lg font-semibold mb-2">Follow Us</h4>
 
             {/* Social Icons */}
@@ -111,7 +115,7 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* Vertical Lines Between Columns (hide on mobile) */}
+          {/* Vertical Lines Between Columns */}
           <hr className="hidden lg:block absolute top-0 left-[25%] h-44 border-l border-[#310a49]" />
           <hr className="hidden lg:block absolute top-0 left-[50%] h-44 border-l border-[#310a49]" />
           <hr className="hidden lg:block absolute top-0 left-[75%] h-44 border-l border-[#310a49]" />
