@@ -416,24 +416,38 @@ Visitors describe the atmosphere as ${
 // ✅ Get all contributions (Admin)
 export const getAllContributions = async (req, res) => {
   try {
-    // Optional filtering: ?status=pending | verified | all
-    const status = req.query.status || "all";
-    let filter = {};
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, parseInt(req.query.limit) || 9);
+    const skip = (page - 1) * limit;
 
-    if (status === "pending") filter.verified = false;
-    if (status === "verified") filter.verified = true;
+    const { status } = req.query;
 
-    const contributions = await Contribution.find(filter)
-      .populate("user", "name email username profilePic")
-      .populate("approvedLocation", "name district");
+    // ---------- FILTER ----------
+    const query = {};
 
-    res.status(200).json({
-      success: true,
-      count: contributions.length,
+    if (status === "pending") query.verified = false;
+    if (status === "approved") query.verified = true;
+    // status === "all" → no filter
+
+    // ---------- DATA ----------
+    const [contributions, total] = await Promise.all([
+      Contribution.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Contribution.countDocuments(query),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
       contributions,
+      currentPage: page,
+      totalPages,
+      totalItems: total,
     });
   } catch (error) {
-    console.error("❌ Error fetching contributions:", error);
+    console.error("Get contributions error:", error);
     res.status(500).json({ message: "Failed to fetch contributions" });
   }
 };
