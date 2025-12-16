@@ -51,6 +51,7 @@ export const Login = ({ currentPage }) => {
       // Save user details on successful login
       localStorage.setItem("token", data.token);
       localStorage.setItem("userId", data.user.id);
+      localStorage.setItem("userEmail", data.user.email);
       localStorage.setItem("isLoggedIn", "true");
 
       alert("Login successful ✅");
