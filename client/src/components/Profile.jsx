@@ -357,85 +357,50 @@ export const Profile = () => {
                             (u) => u._id === f._id
                           );
 
-                          return (
-                            <div
-                              key={f._id}
-                              className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
-                              onClick={(e) => {
-                                if (e.target.tagName !== "BUTTON") {
-                                  navigate(`/profile/${f.username}`);
-                                }
-                              }}
-                            >
-                              {/* LEFT SIDE */}
-                              <div className="flex items-center gap-4">
-                                <img
-                                  src={
-                                    f.profilePic || "/defaultProfilePic.webp"
-                                  }
-                                  alt={f.username}
-                                  className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
-                                />
+                          return (<div
+  className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+  onClick={(e) => {
+    if (e.target.tagName !== "BUTTON") {
+      navigate(`/profile/${f.username}`);
+    }
+  }}
+>
+  {/* LEFT SECTION — FIXED */}
+  <div className="flex items-center gap-4 min-w-0">
+    {/* Avatar */}
+    <div className="w-14 h-14 flex-shrink-0">
+      <img
+        src={f.profilePic || "/defaultProfilePic.webp"}
+        alt={f.username}
+        className="w-full h-full rounded-full object-cover border-2 border-gray-200"
+      />
+    </div>
 
-                                <div className="max-w-[160px]">
-                                  <p className="font-semibold text-gray-800">
-                                    {f.username}
-                                  </p>
+    {/* Text (can shrink + truncate) */}
+    <div className="min-w-0">
+      <p className="font-semibold text-gray-800 truncate">
+        {f.username}
+      </p>
+      {f.bio && (
+        <p className="text-gray-600 text-xs truncate">
+          {f.bio}
+        </p>
+      )}
+    </div>
+  </div>
 
-                                  {/* ⭐ Bio (Optional + Truncated) */}
-                                  {f.bio && (
-                                    <p className="text-gray-600 text-xs line-clamp-1 mt-1">
-                                      {f.bio}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* RIGHT SIDE BUTTON */}
-                              <button
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  try {
-                                    const token = localStorage.getItem("token");
-                                    if (!token) return;
-
-                                    const res = await fetch(
-                                      `${BACKEND_URL}/users/follow/${f.username}`,
-                                      {
-                                        method: "PUT",
-                                        headers: {
-                                          Authorization: `Bearer ${token}`,
-                                        },
-                                      }
-                                    );
-
-                                    if (!res.ok)
-                                      throw new Error(
-                                        "Failed to toggle follow"
-                                      );
-
-                                    if (isFollowing) {
-                                      setFollowing((prev) =>
-                                        prev.filter((u) => u._id !== f._id)
-                                      );
-                                    } else {
-                                      setFollowing((prev) => [...prev, f]);
-                                    }
-                                  } catch (err) {
-                                    console.error(err);
-                                    alert("Error toggling follow");
-                                  }
-                                }}
-                                className={`px-3 py-1 rounded-lg text-sm font-semibold transition-colors ${
-                                  isFollowing
-                                    ? "bg-red-500 text-white hover:bg-red-600"
-                                    : "bg-blue-500 text-white hover:bg-blue-600"
-                                }`}
-                              >
-                                {isFollowing ? "Unfollow" : "Follow"}
-                              </button>
-                            </div>
-                          );
+  {/* RIGHT BUTTON — FIXED */}
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      toggleFollow(f);
+    }}
+    className="flex-shrink-0 px-3 py-1 rounded-lg text-sm font-semibold bg-red-500 hover:bg-red-600 text-white"
+  >
+    Unfollow
+  </button>
+</div>
+)
                         })
                       ) : (
                         <p className="text-gray-500 text-center col-span-full mt-4">
@@ -453,44 +418,49 @@ export const Profile = () => {
       {following.length ? (
         following.map((f) => (
           <div
-            key={f._id}
-            className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between 
-            gap-4 hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={(e) => {
-              if (e.target.tagName !== "BUTTON") {
-                navigate(`/profile/${f.username}`);
-              }
-            }}
-          >
-            {/* LEFT SIDE */}
-            <div className="flex items-center gap-4">
-              <img
-                src={f.profilePic || "/defaultProfilePic.webp"}
-                alt={f.username}
-                className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
-              />
+  className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+  onClick={(e) => {
+    if (e.target.tagName !== "BUTTON") {
+      navigate(`/profile/${f.username}`);
+    }
+  }}
+>
+  {/* LEFT SECTION — FIXED */}
+  <div className="flex items-center gap-4 min-w-0">
+    {/* Avatar */}
+    <div className="w-14 h-14 flex-shrink-0">
+      <img
+        src={f.profilePic || "/defaultProfilePic.webp"}
+        alt={f.username}
+        className="w-full h-full rounded-full object-cover border-2 border-gray-200"
+      />
+    </div>
 
-              <div className="max-w-[160px]">
-                <p className="font-semibold text-gray-800">{f.username}</p>
-                {f.bio && (
-                  <p className="text-gray-600 text-xs line-clamp-1 mt-1">
-                    {f.bio}
-                  </p>
-                )}
-              </div>
-            </div>
+    {/* Text (can shrink + truncate) */}
+    <div className="min-w-0">
+      <p className="font-semibold text-gray-800 truncate">
+        {f.username}
+      </p>
+      {f.bio && (
+        <p className="text-gray-600 text-xs truncate">
+          {f.bio}
+        </p>
+      )}
+    </div>
+  </div>
 
-            {/* RIGHT SIDE — UNFOLLOW BUTTON */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleFollow(f);
-              }}
-              className="px-3 py-1 rounded-lg text-sm font-semibold bg-red-500 hover:bg-red-600 text-white"
-            >
-              Unfollow
-            </button>
-          </div>
+  {/* RIGHT BUTTON — FIXED */}
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      toggleFollow(f);
+    }}
+    className="flex-shrink-0 px-3 py-1 rounded-lg text-sm font-semibold bg-red-500 hover:bg-red-600 text-white"
+  >
+    Unfollow
+  </button>
+</div>
+
         ))
       ) : (
         <p className="text-gray-500 text-center col-span-full mt-4">
@@ -503,88 +473,75 @@ export const Profile = () => {
 
 
                 {activeTab === "contribution" && (
-                  <div>
-                    {/* Add New Place Button */}
-                    <button
-                      className="w-full bg-[#9156F1] text-white py-2 rounded-lg flex items-center justify-center mb-4 hover:bg-yellow-500"
-                      onClick={() => setIsAddContributionOpen(true)}
-                    >
-                      <span className="mr-2">+</span> Add New Place
-                    </button>
+  <div className="max-h-[350px] md:max-h-[450px] overflow-y-auto pr-2 custom-scroll">
+    <div>
+      {/* Add New Place Button */}
+      <button
+        className="w-full bg-[#9156F1] text-white py-2 rounded-lg flex items-center justify-center mb-4 hover:bg-yellow-500"
+        onClick={() => setIsAddContributionOpen(true)}
+      >
+        <span className="mr-2">+</span> Add New Place
+      </button>
 
-                    {/* Sub-tabs (All / Approved / Pending) */}
-                    <div className="flex space-x-4 mb-4">
-                      {["all", "approved", "pending"].map((sub) => (
-                        <button
-                          key={sub}
-                          className={`flex-1 py-2 font-semibold rounded-lg transition-colors ${
-                            contribSubTab === sub
-                              ? "bg-[#310a49] text-white"
-                              : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                          }`}
-                          onClick={() => setContribSubTab(sub)}
-                        >
-                          {sub.charAt(0).toUpperCase() + sub.slice(1)}
-                        </button>
-                      ))}
-                    </div>
+      {/* Sub-tabs */}
+      <div className="flex space-x-4 mb-4">
+        {["all", "approved", "pending"].map((sub) => (
+          <button
+            key={sub}
+            className={`flex-1 py-2 font-semibold rounded-lg transition-colors ${
+              contribSubTab === sub
+                ? "bg-[#310a49] text-white"
+                : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+            }`}
+            onClick={() => setContribSubTab(sub)}
+          >
+            {sub.charAt(0).toUpperCase() + sub.slice(1)}
+          </button>
+        ))}
+      </div>
 
-                    {/* Contributions Grid */}
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {userContributions
-                        .filter((c) => {
-                          if (contribSubTab === "all") return true;
-                          if (contribSubTab === "approved") return c.verified;
-                          if (contribSubTab === "pending") return !c.verified;
-                        })
-                        .map((c) => (
-                          <div
-                            key={c._id}
-                            className={`bg-white rounded-lg shadow p-4 cursor-pointer border-t-4 ${
-                              c.verified
-                                ? "border-green-500"
-                                : "border-yellow-500"
-                            }`}
-                          >
-                            {/* Cover Image */}
-                            <img
-                              src={c.coverImage || "/defaultCoverPic.png"}
-                              alt={c.title || "Contribution"}
-                              className="w-full h-40 object-cover rounded mb-2"
-                            />
+      {/* Contributions Grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {userContributions
+          .filter((c) => {
+            if (contribSubTab === "all") return true;
+            if (contribSubTab === "approved") return c.verified;
+            if (contribSubTab === "pending") return !c.verified;
+          })
+          .map((c) => (
+            <div
+              key={c._id}
+              className={`bg-white rounded-lg shadow p-4 cursor-pointer border-t-4 ${
+                c.verified ? "border-green-500" : "border-yellow-500"
+              }`}
+            >
+              <img
+                src={c.coverImage || "/defaultCoverPic.png"}
+                className="w-full h-40 object-cover rounded mb-2"
+              />
+              <h4 className="font-bold text-lg">
+                {c.title || "Untitled Place"}
+              </h4>
+              <p className="text-sm text-gray-500">
+                {c.district || "Unknown District"}
+              </p>
+              <p className="text-sm text-gray-600 line-clamp-2 mt-1">
+                {c.description}
+              </p>
+              <p
+                className={`mt-2 text-xs font-semibold ${
+                  c.verified ? "text-green-600" : "text-yellow-600"
+                }`}
+              >
+                {c.verified ? "✅ Approved" : "🕒 Pending Approval"}
+              </p>
+            </div>
+          ))}
+      </div>
+    </div>
+  </div>
+)}
 
-                            {/* Title */}
-                            <h4 className="font-bold text-lg">
-                              {c.title || "Untitled Place"}
-                            </h4>
-
-                            {/* District */}
-                            <p className="text-sm text-gray-500">
-                              {c.district || "Unknown District"}
-                            </p>
-
-                            {/* Description Preview */}
-                            <p className="text-sm text-gray-600 line-clamp-2 mt-1">
-                              {c.description}
-                            </p>
-
-                            {/* Status Badge */}
-                            <p
-                              className={`mt-2 text-xs font-semibold ${
-                                c.verified
-                                  ? "text-green-600"
-                                  : "text-yellow-600"
-                              }`}
-                            >
-                              {c.verified
-                                ? "✅ Approved"
-                                : "🕒 Pending Approval"}
-                            </p>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>

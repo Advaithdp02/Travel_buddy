@@ -295,54 +295,57 @@ export const ProfilePublic = () => {
 )}
 
               {activeTab === "contribution" && (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {user.contributions?.length ? (
-                    user.contributions.map((c) => (
-                      <div
-                        key={c._id}
-                        className={`bg-white rounded-lg shadow p-4 border-t-4 ${
-                          c.verified ? "border-green-500" : "border-yellow-500"
-                        }`}
-                      >
-                        {/* Cover Image */}
-                        <img
-                          src={c.coverImage || "/defaultCoverPic.png"}
-                          alt={c.title || "Contribution"}
-                          className="w-full h-40 object-cover rounded mb-2"
-                        />
+  <div className="max-h-[350px] md:max-h-[450px] overflow-y-auto pr-2 custom-scroll">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {user.contributions?.length ? (
+        user.contributions.map((c) => (
+          <div
+            key={c._id}
+            className={`bg-white rounded-lg shadow p-4 border-t-4 ${
+              c.verified ? "border-green-500" : "border-yellow-500"
+            }`}
+          >
+            {/* Cover Image */}
+            <img
+              src={c.coverImage || "/defaultCoverPic.png"}
+              alt={c.title || "Contribution"}
+              className="w-full h-40 object-cover rounded mb-2"
+            />
 
-                        {/* Title */}
-                        <h4 className="font-bold text-lg">
-                          {c.title || "Untitled Place"}
-                        </h4>
+            {/* Title */}
+            <h4 className="font-bold text-lg">
+              {c.title || "Untitled Place"}
+            </h4>
 
-                        {/* District */}
-                        <p className="text-sm text-gray-500 mb-1">
-                          {c.district || "Unknown District"}
-                        </p>
+            {/* District */}
+            <p className="text-sm text-gray-500 mb-1">
+              {c.district || "Unknown District"}
+            </p>
 
-                        {/* Description */}
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                          {c.description}
-                        </p>
+            {/* Description */}
+            <p className="text-sm text-gray-600 line-clamp-2">
+              {c.description}
+            </p>
 
-                        {/* Status */}
-                        <p
-                          className={`mt-2 text-xs font-semibold ${
-                            c.verified ? "text-green-600" : "text-yellow-600"
-                          }`}
-                        >
-                          {c.verified ? "✅ Approved" : "🕒 Pending Approval"}
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-gray-500 text-center col-span-full py-10">
-                      No contributions yet.
-                    </p>
-                  )}
-                </div>
-              )}
+            {/* Status */}
+            <p
+              className={`mt-2 text-xs font-semibold ${
+                c.verified ? "text-green-600" : "text-yellow-600"
+              }`}
+            >
+              {c.verified ? "✅ Approved" : "🕒 Pending Approval"}
+            </p>
+          </div>
+        ))
+      ) : (
+        <p className="text-gray-500 text-center col-span-full py-10">
+          No contributions yet.
+        </p>
+      )}
+    </div>
+  </div>
+)}
+
             </div>
           </div>
         </div>
