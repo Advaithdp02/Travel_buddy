@@ -49,9 +49,5 @@ export default function Counter({ value, duration = 2000 }) {
     requestAnimationFrame(animate);
   }, [hasStarted, value, duration]);
 
-  return (
-    <span ref={ref}>
-      {count.toLocaleString("en-US")}
-    </span>
-  );
+  return <span ref={ref}>{count.toLocaleString("en-US")}</span>;
 }

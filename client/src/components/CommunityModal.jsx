@@ -229,35 +229,46 @@ export const CommunityModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-
       {/* MAIN WRAPPER */}
       <div className="bg-[#fbebff]/90 backdrop-blur-sm w-11/12 md:w-4/5 lg:w-3/4 h-[90vh] p-0 rounded-xl shadow-2xl flex flex-col relative overflow-hidden">
-
-
         {/* 🌟 BACKGROUND TRAVEL VECTOR ART */}
         <div className="pointer-events-none absolute inset-0 opacity-10 select-none">
-
           {/* Airplane */}
-          <svg className="absolute top-6 right-10 w-40" viewBox="0 0 100 100" fill="#9156F1">
+          <svg
+            className="absolute top-6 right-10 w-40"
+            viewBox="0 0 100 100"
+            fill="#9156F1"
+          >
             <path d="M4 55 L90 10 L95 20 L40 60 L95 75 L90 90 Z" />
           </svg>
 
           {/* Mountains */}
-          <svg className="absolute bottom-0 left-0 w-1/2" viewBox="0 0 200 100" fill="#9156F1">
+          <svg
+            className="absolute bottom-0 left-0 w-1/2"
+            viewBox="0 0 200 100"
+            fill="#9156F1"
+          >
             <path d="M0 100 L50 20 L100 100 Z" opacity="0.4" />
             <path d="M80 100 L140 10 L200 100 Z" opacity="0.3" />
           </svg>
 
           {/* Cloud */}
-          <svg className="absolute top-24 left-10 w-32" viewBox="0 0 64 64" fill="#9156F1">
+          <svg
+            className="absolute top-24 left-10 w-32"
+            viewBox="0 0 64 64"
+            fill="#9156F1"
+          >
             <path d="M20 50c-8 0-14-5-14-12 0-5 4-10 9-11 1-8 8-14 16-14 9 0 17 7 17 16 6 1 10 6 10 12 0 7-6 12-14 12H20z" />
           </svg>
 
           {/* Location Pin */}
-          <svg className="absolute bottom-10 right-8 w-16" viewBox="0 0 24 24" fill="#9156F1">
+          <svg
+            className="absolute bottom-10 right-8 w-16"
+            viewBox="0 0 24 24"
+            fill="#9156F1"
+          >
             <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7zm0 9.5c-1.4 0-2.5-1.1-2.5-2.5S10.6 6.5 12 6.5s2.5 1.1 2.5 2.5S13.4 11.5 12 11.5z" />
           </svg>
-
         </div>
         {/* END BACKGROUND */}
 
@@ -279,8 +290,10 @@ export const CommunityModal = ({
             const isOwnComment = c.user?._id === userId;
 
             return (
-              <div key={c._id} className="bg-white border rounded-2xl p-4 shadow-md">
-
+              <div
+                key={c._id}
+                className="bg-white border rounded-2xl p-4 shadow-md"
+              >
                 {/* USER */}
                 <div className="flex items-center gap-2">
                   {c.user?.profilePic && (
@@ -328,7 +341,10 @@ export const CommunityModal = ({
                   {commentTrim.trimmed && (
                     <button
                       onClick={() =>
-                        setExpandedComments((p) => ({ ...p, [c._id]: !p[c._id] }))
+                        setExpandedComments((p) => ({
+                          ...p,
+                          [c._id]: !p[c._id],
+                        }))
                       }
                       className="text-[#9156F1] ml-2 text-sm font-semibold"
                     >
@@ -404,7 +420,9 @@ export const CommunityModal = ({
                                     : "bg-[#9156F1] text-white"
                                 }`}
                               >
-                                {followed[replyUsername] ? "Following" : "Follow"}
+                                {followed[replyUsername]
+                                  ? "Following"
+                                  : "Follow"}
                               </button>
                             )}
                           </div>

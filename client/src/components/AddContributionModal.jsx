@@ -70,27 +70,26 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
     points: [],
   });
   const initialFormData = {
-  title: "",
-  subtitle: "",
-  district: "",
-  description: "",
-  latitude: "",
-  longitude: "",
-  bestTimeToVisit: "",
-  crowded: "",
-  familyFriendly: false,
-  petFriendly: false,
-  accessibility: "",
-  activities: [],
-  facilities: [],
-  ratings: {},
-  hiddenGems: [],
-  points: [],
-  tips: "",
-  coverImage: null,
-  images: [],
-};
-
+    title: "",
+    subtitle: "",
+    district: "",
+    description: "",
+    latitude: "",
+    longitude: "",
+    bestTimeToVisit: "",
+    crowded: "",
+    familyFriendly: false,
+    petFriendly: false,
+    accessibility: "",
+    activities: [],
+    facilities: [],
+    ratings: {},
+    hiddenGems: [],
+    points: [],
+    tips: "",
+    coverImage: null,
+    images: [],
+  };
 
   // -----------------------------
   // Input handlers
@@ -160,56 +159,55 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
   // -----------------------------
 
   const handleSave = async () => {
-  const token = localStorage.getItem("token");
-  if (!token) return alert("You must be logged in.");
+    const token = localStorage.getItem("token");
+    if (!token) return alert("You must be logged in.");
 
-  try {
-    const data = new FormData();
+    try {
+      const data = new FormData();
 
-    data.append("title", formData.title);
-    data.append("subtitle", formData.subtitle);
-    data.append("district", formData.district);
-    data.append("description", formData.description);
-    data.append("latitude", formData.latitude);
-    data.append("longitude", formData.longitude);
-    data.append("bestTimeToVisit", formData.bestTimeToVisit);
-    data.append("crowded", formData.crowded);
-    data.append("familyFriendly", formData.familyFriendly);
-    data.append("petFriendly", formData.petFriendly);
-    data.append("accessibility", formData.accessibility);
+      data.append("title", formData.title);
+      data.append("subtitle", formData.subtitle);
+      data.append("district", formData.district);
+      data.append("description", formData.description);
+      data.append("latitude", formData.latitude);
+      data.append("longitude", formData.longitude);
+      data.append("bestTimeToVisit", formData.bestTimeToVisit);
+      data.append("crowded", formData.crowded);
+      data.append("familyFriendly", formData.familyFriendly);
+      data.append("petFriendly", formData.petFriendly);
+      data.append("accessibility", formData.accessibility);
 
-    data.append("activities", JSON.stringify(formData.activities));
-    data.append("facilities", JSON.stringify(formData.facilities));
-    data.append("ratings", JSON.stringify(formData.ratings));
-    data.append("hiddenGems", JSON.stringify(formData.hiddenGems));
-    data.append("points", JSON.stringify(formData.points));
-    data.append("tips", formData.tips);
+      data.append("activities", JSON.stringify(formData.activities));
+      data.append("facilities", JSON.stringify(formData.facilities));
+      data.append("ratings", JSON.stringify(formData.ratings));
+      data.append("hiddenGems", JSON.stringify(formData.hiddenGems));
+      data.append("points", JSON.stringify(formData.points));
+      data.append("tips", formData.tips);
 
-    if (formData.coverImage) data.append("coverImage", formData.coverImage);
-    formData.images.forEach((file) => data.append("images", file));
+      if (formData.coverImage) data.append("coverImage", formData.coverImage);
+      formData.images.forEach((file) => data.append("images", file));
 
-    const res = await fetch(`${Backend_URL}/contributions`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: data,
-    });
+      const res = await fetch(`${Backend_URL}/contributions`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: data,
+      });
 
-    if (!res.ok) throw new Error("Failed to save.");
+      if (!res.ok) throw new Error("Failed to save.");
 
-    alert("Contribution submitted! Awaiting admin approval.");
+      alert("Contribution submitted! Awaiting admin approval.");
 
-    /* ✅ RESET FORM */
-    setFormData(initialFormData);
+      /* ✅ RESET FORM */
+      setFormData(initialFormData);
 
-    /* ✅ CLOSE MODAL */
-    onClose();
-    window.location.reload();
-  } catch (err) {
-    console.error(err);
-    alert("Error saving contribution.");
-  }
-};
-
+      /* ✅ CLOSE MODAL */
+      onClose();
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert("Error saving contribution.");
+    }
+  };
 
   // -----------------------------
   // Fetch districts
