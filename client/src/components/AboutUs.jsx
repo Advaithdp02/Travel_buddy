@@ -13,7 +13,6 @@ export const AboutUs = () => {
     >
       {/* Center Wrapper */}
       <div className="max-w-3xl w-full text-center md:text-left px-6 md:px-0">
-
         <h4 className="text-yellow-400 font-schoolbell text-2xl mb-2">
           About Us
         </h4>
@@ -24,12 +23,9 @@ export const AboutUs = () => {
 
         <p className="text-gray-200 text-sm md:text-base mt-4 leading-relaxed">
           TravelBuddy makes traveling easier by providing everything you need in
-          one place. Whether you're planning a trip or already on the go, we help
-          you navigate, explore, and find the best options.
+          one place. Whether you're planning a trip or already on the go, we
+          help you navigate, explore, and find the best options.
         </p>
-
-        
-
       </div>
     </section>
   );

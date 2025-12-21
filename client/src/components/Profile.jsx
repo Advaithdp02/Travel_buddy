@@ -357,50 +357,53 @@ export const Profile = () => {
                             (u) => u._id === f._id
                           );
 
-                          return (<div
-  className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
-  onClick={(e) => {
-    if (e.target.tagName !== "BUTTON") {
-      navigate(`/profile/${f.username}`);
-    }
-  }}
->
-  {/* LEFT SECTION — FIXED */}
-  <div className="flex items-center gap-4 min-w-0">
-    {/* Avatar */}
-    <div className="w-14 h-14 flex-shrink-0">
-      <img
-        src={f.profilePic || "/defaultProfilePic.webp"}
-        alt={f.username}
-        className="w-full h-full rounded-full object-cover border-2 border-gray-200"
-      />
-    </div>
+                          return (
+                            <div
+                              className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+                              onClick={(e) => {
+                                if (e.target.tagName !== "BUTTON") {
+                                  navigate(`/profile/${f.username}`);
+                                }
+                              }}
+                            >
+                              {/* LEFT SECTION — FIXED */}
+                              <div className="flex items-center gap-4 min-w-0">
+                                {/* Avatar */}
+                                <div className="w-14 h-14 flex-shrink-0">
+                                  <img
+                                    src={
+                                      f.profilePic || "/defaultProfilePic.webp"
+                                    }
+                                    alt={f.username}
+                                    className="w-full h-full rounded-full object-cover border-2 border-gray-200"
+                                  />
+                                </div>
 
-    {/* Text (can shrink + truncate) */}
-    <div className="min-w-0">
-      <p className="font-semibold text-gray-800 truncate">
-        {f.username}
-      </p>
-      {f.bio && (
-        <p className="text-gray-600 text-xs truncate">
-          {f.bio}
-        </p>
-      )}
-    </div>
-  </div>
+                                {/* Text (can shrink + truncate) */}
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-gray-800 truncate">
+                                    {f.username}
+                                  </p>
+                                  {f.bio && (
+                                    <p className="text-gray-600 text-xs truncate">
+                                      {f.bio}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
 
-  {/* RIGHT BUTTON — FIXED */}
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      toggleFollow(f);
-    }}
-    className="flex-shrink-0 px-3 py-1 rounded-lg text-sm font-semibold bg-red-500 hover:bg-red-600 text-white"
-  >
-    Unfollow
-  </button>
-</div>
-)
+                              {/* RIGHT BUTTON — FIXED */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleFollow(f);
+                                }}
+                                className="flex-shrink-0 px-3 py-1 rounded-lg text-sm font-semibold bg-red-500 hover:bg-red-600 text-white"
+                              >
+                                Unfollow
+                              </button>
+                            </div>
+                          );
                         })
                       ) : (
                         <p className="text-gray-500 text-center col-span-full mt-4">
@@ -412,136 +415,140 @@ export const Profile = () => {
                 )}
 
                 {activeTab === "following" && (
-  <div className="max-h-[350px] md:max-h-[450px] overflow-y-auto pr-2 custom-scroll">
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+                  <div className="max-h-[350px] md:max-h-[450px] overflow-y-auto pr-2 custom-scroll">
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+                      {following.length ? (
+                        following.map((f) => (
+                          <div
+                            className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+                            onClick={(e) => {
+                              if (e.target.tagName !== "BUTTON") {
+                                navigate(`/profile/${f.username}`);
+                              }
+                            }}
+                          >
+                            {/* LEFT SECTION — FIXED */}
+                            <div className="flex items-center gap-4 min-w-0">
+                              {/* Avatar */}
+                              <div className="w-14 h-14 flex-shrink-0">
+                                <img
+                                  src={
+                                    f.profilePic || "/defaultProfilePic.webp"
+                                  }
+                                  alt={f.username}
+                                  className="w-full h-full rounded-full object-cover border-2 border-gray-200"
+                                />
+                              </div>
 
-      {following.length ? (
-        following.map((f) => (
-          <div
-  className="bg-white shadow-md rounded-xl p-4 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow cursor-pointer"
-  onClick={(e) => {
-    if (e.target.tagName !== "BUTTON") {
-      navigate(`/profile/${f.username}`);
-    }
-  }}
->
-  {/* LEFT SECTION — FIXED */}
-  <div className="flex items-center gap-4 min-w-0">
-    {/* Avatar */}
-    <div className="w-14 h-14 flex-shrink-0">
-      <img
-        src={f.profilePic || "/defaultProfilePic.webp"}
-        alt={f.username}
-        className="w-full h-full rounded-full object-cover border-2 border-gray-200"
-      />
-    </div>
+                              {/* Text (can shrink + truncate) */}
+                              <div className="min-w-0">
+                                <p className="font-semibold text-gray-800 truncate">
+                                  {f.username}
+                                </p>
+                                {f.bio && (
+                                  <p className="text-gray-600 text-xs truncate">
+                                    {f.bio}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
 
-    {/* Text (can shrink + truncate) */}
-    <div className="min-w-0">
-      <p className="font-semibold text-gray-800 truncate">
-        {f.username}
-      </p>
-      {f.bio && (
-        <p className="text-gray-600 text-xs truncate">
-          {f.bio}
-        </p>
-      )}
-    </div>
-  </div>
-
-  {/* RIGHT BUTTON — FIXED */}
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      toggleFollow(f);
-    }}
-    className="flex-shrink-0 px-3 py-1 rounded-lg text-sm font-semibold bg-red-500 hover:bg-red-600 text-white"
-  >
-    Unfollow
-  </button>
-</div>
-
-        ))
-      ) : (
-        <p className="text-gray-500 text-center col-span-full mt-4">
-          Not following anyone yet
-        </p>
-      )}
-    </div>
-  </div>
-)}
-
+                            {/* RIGHT BUTTON — FIXED */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFollow(f);
+                              }}
+                              className="flex-shrink-0 px-3 py-1 rounded-lg text-sm font-semibold bg-red-500 hover:bg-red-600 text-white"
+                            >
+                              Unfollow
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-center col-span-full mt-4">
+                          Not following anyone yet
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {activeTab === "contribution" && (
-  <div className="max-h-[350px] md:max-h-[450px] overflow-y-auto pr-2 custom-scroll">
-    <div>
-      {/* Add New Place Button */}
-      <button
-        className="w-full bg-[#9156F1] text-white py-2 rounded-lg flex items-center justify-center mb-4 hover:bg-yellow-500"
-        onClick={() => setIsAddContributionOpen(true)}
-      >
-        <span className="mr-2">+</span> Add New Place
-      </button>
+                  <div className="max-h-[350px] md:max-h-[450px] overflow-y-auto pr-2 custom-scroll">
+                    <div>
+                      {/* Add New Place Button */}
+                      <button
+                        className="w-full bg-[#9156F1] text-white py-2 rounded-lg flex items-center justify-center mb-4 hover:bg-yellow-500"
+                        onClick={() => setIsAddContributionOpen(true)}
+                      >
+                        <span className="mr-2">+</span> Add New Place
+                      </button>
 
-      {/* Sub-tabs */}
-      <div className="flex space-x-4 mb-4">
-        {["all", "approved", "pending"].map((sub) => (
-          <button
-            key={sub}
-            className={`flex-1 py-2 font-semibold rounded-lg transition-colors ${
-              contribSubTab === sub
-                ? "bg-[#310a49] text-white"
-                : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-            }`}
-            onClick={() => setContribSubTab(sub)}
-          >
-            {sub.charAt(0).toUpperCase() + sub.slice(1)}
-          </button>
-        ))}
-      </div>
+                      {/* Sub-tabs */}
+                      <div className="flex space-x-4 mb-4">
+                        {["all", "approved", "pending"].map((sub) => (
+                          <button
+                            key={sub}
+                            className={`flex-1 py-2 font-semibold rounded-lg transition-colors ${
+                              contribSubTab === sub
+                                ? "bg-[#310a49] text-white"
+                                : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                            }`}
+                            onClick={() => setContribSubTab(sub)}
+                          >
+                            {sub.charAt(0).toUpperCase() + sub.slice(1)}
+                          </button>
+                        ))}
+                      </div>
 
-      {/* Contributions Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {userContributions
-          .filter((c) => {
-            if (contribSubTab === "all") return true;
-            if (contribSubTab === "approved") return c.verified;
-            if (contribSubTab === "pending") return !c.verified;
-          })
-          .map((c) => (
-            <div
-              key={c._id}
-              className={`bg-white rounded-lg shadow p-4 cursor-pointer border-t-4 ${
-                c.verified ? "border-green-500" : "border-yellow-500"
-              }`}
-            >
-              <img
-                src={c.coverImage || "/defaultCoverPic.png"}
-                className="w-full h-40 object-cover rounded mb-2"
-              />
-              <h4 className="font-bold text-lg">
-                {c.title || "Untitled Place"}
-              </h4>
-              <p className="text-sm text-gray-500">
-                {c.district || "Unknown District"}
-              </p>
-              <p className="text-sm text-gray-600 line-clamp-2 mt-1">
-                {c.description}
-              </p>
-              <p
-                className={`mt-2 text-xs font-semibold ${
-                  c.verified ? "text-green-600" : "text-yellow-600"
-                }`}
-              >
-                {c.verified ? "✅ Approved" : "🕒 Pending Approval"}
-              </p>
-            </div>
-          ))}
-      </div>
-    </div>
-  </div>
-)}
-
+                      {/* Contributions Grid */}
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {userContributions
+                          .filter((c) => {
+                            if (contribSubTab === "all") return true;
+                            if (contribSubTab === "approved") return c.verified;
+                            if (contribSubTab === "pending") return !c.verified;
+                          })
+                          .map((c) => (
+                            <div
+                              key={c._id}
+                              className={`bg-white rounded-lg shadow p-4 cursor-pointer border-t-4 ${
+                                c.verified
+                                  ? "border-green-500"
+                                  : "border-yellow-500"
+                              }`}
+                            >
+                              <img
+                                src={c.coverImage || "/defaultCoverPic.png"}
+                                className="w-full h-40 object-cover rounded mb-2"
+                              />
+                              <h4 className="font-bold text-lg">
+                                {c.title || "Untitled Place"}
+                              </h4>
+                              <p className="text-sm text-gray-500">
+                                {c.district || "Unknown District"}
+                              </p>
+                              <p className="text-sm text-gray-600 line-clamp-2 mt-1">
+                                {c.description}
+                              </p>
+                              <p
+                                className={`mt-2 text-xs font-semibold ${
+                                  c.verified
+                                    ? "text-green-600"
+                                    : "text-yellow-600"
+                                }`}
+                              >
+                                {c.verified
+                                  ? "✅ Approved"
+                                  : "🕒 Pending Approval"}
+                              </p>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

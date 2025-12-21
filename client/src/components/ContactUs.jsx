@@ -88,9 +88,7 @@ const ContactUs = () => {
             className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1D1D51]"
           ></textarea>
 
-          {success && (
-            <p className="text-green-600 font-semibold">{success}</p>
-          )}
+          {success && <p className="text-green-600 font-semibold">{success}</p>}
           {error && <p className="text-red-600 font-semibold">{error}</p>}
 
           <button
