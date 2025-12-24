@@ -2,6 +2,32 @@ import React, { useRef, useState, useEffect } from "react";
 import DestinationCard from "./DestinationCard";
 import { IconArrowRight, IconArrowLeft } from "./Icons";
 
+/* =======================
+   CACHE CONFIG (FIX)
+======================= */
+const CACHE_TTL = 20 * 60 * 1000; // 20 minutes
+
+const safeStorage = {
+  get(key) {
+    try {
+      return JSON.parse(localStorage.getItem(key));
+    } catch {
+      return null;
+    }
+  },
+  set(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch {
+      return false;
+    }
+  },
+};
+
+/* =======================
+   ARROW BUTTON
+======================= */
 const ArrowButton = ({ direction = "right", onClick, className = "" }) => {
   const Icon = direction === "right" ? IconArrowLeft : IconArrowRight;
   const [hover, setHover] = useState(false);
@@ -20,6 +46,9 @@ const ArrowButton = ({ direction = "right", onClick, className = "" }) => {
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
+/* =======================
+   TOP DESTINATIONS
+======================= */
 export const TopDestinations = ({ userCoords }) => {
   const [destinations, setDestinations] = useState([]);
   const [nearestCode, setNearestCode] = useState(null);
@@ -29,7 +58,6 @@ export const TopDestinations = ({ userCoords }) => {
   const scrollEndTimeout = useRef(null);
   const centeredIndexRef = useRef(null);
 
-  // Fixed card widths
   const DESKTOP_CARD_WIDTH = 285;
   const MOBILE_CARD_WIDTH = 230;
 
@@ -38,7 +66,9 @@ export const TopDestinations = ({ userCoords }) => {
 
   const [activeIndex, setActiveIndex] = useState(null);
 
-  // Detect mobile
+  /* =======================
+     MOBILE DETECTION
+  ======================= */
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.matchMedia("(max-width: 600px)").matches;
@@ -51,36 +81,30 @@ export const TopDestinations = ({ userCoords }) => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Fetch Data
+  /* =======================
+     FETCH DESTINATIONS (FIXED)
+  ======================= */
   useEffect(() => {
     const fetchDestinations = async () => {
       if (!userCoords) return;
 
-      // full coords for backend accuracy
       const fullLat = userCoords.latitude;
       const fullLon = userCoords.longitude;
 
-      // rounded for stable cache key (NO GPS drift)
       const keyLat = fullLat.toFixed(3);
       const keyLon = fullLon.toFixed(3);
 
       const cacheKey = `nearest_district_${keyLat}_${keyLon}`;
-      const cached = localStorage.getItem(cacheKey);
+      const cached = safeStorage.get(cacheKey);
 
-      if (cached) {
-        const { data, expiry } = JSON.parse(cached);
-
-        if (Date.now() < expiry) {
-          // use cached response
-          if (data?.orderedDistricts) {
-            setDestinations(data.orderedDistricts);
-            setNearestCode(data.nearestDistrict?.DistrictCode);
-          }
-          return;
-        }
+      if (cached?.data && Date.now() < cached.expiry) {
+        setDestinations(cached.data.orderedDistricts || []);
+        setNearestCode(
+          cached.data.nearestDistrict?.DistrictCode || null
+        );
+        return;
       }
 
-      // if no valid cache → fetch fresh
       try {
         const res = await fetch(
           `${BACKEND_URL}/districts/nearest/${fullLat}/${fullLon}`
@@ -89,17 +113,13 @@ export const TopDestinations = ({ userCoords }) => {
 
         if (data?.orderedDistricts) {
           setDestinations(data.orderedDistricts);
-          setNearestCode(data.nearestDistrict?.DistrictCode);
+          setNearestCode(data.nearestDistrict?.DistrictCode || null);
         }
 
-        // Save in cache for 20 minutes
-        localStorage.setItem(
-          cacheKey,
-          JSON.stringify({
-            data,
-            expiry: Date.now() + CACHE_TTL,
-          })
-        );
+        safeStorage.set(cacheKey, {
+          data,
+          expiry: Date.now() + CACHE_TTL,
+        });
       } catch (err) {
         console.error("Error fetching districts:", err);
       }
@@ -108,57 +128,11 @@ export const TopDestinations = ({ userCoords }) => {
     fetchDestinations();
   }, [userCoords]);
 
-  // Infinite list
-  const fullList = [...destinations, ...destinations, ...destinations];
-  const middleIndex = destinations.length;
-
-  // Initial PERFECT centering (phone + desktop)
-  // useEffect(() => {
-  //   if (!scrollRef.current || destinations.length === 0) return;
-
-  //   const cardSize = CARD_WIDTH + GAP;
-  //   const containerWidth = scrollRef.current.offsetWidth;
-
-  //   const startScroll =
-  //     middleIndex * cardSize + CARD_WIDTH / 2 - containerWidth / 2 + (isMobile ? 30 : 0);
-
-  //   scrollRef.current.scrollLeft = startScroll;
-  //   setActiveIndex(middleIndex);
-  //   centeredIndexRef.current = middleIndex;
-  // }, [destinations, CARD_WIDTH]);
+  /* =======================
+     CLEAN OLD CACHE
+  ======================= */
   useEffect(() => {
-    if (!scrollRef.current || destinations.length === 0) return;
-
-    const cardSize = CARD_WIDTH + GAP;
-    const containerWidth = scrollRef.current.offsetWidth;
-
-    // find index of the nearest district inside the base destinations array
-    const nearestIndex = destinations.findIndex(
-      (d) => d.DistrictCode === nearestCode
-    );
-
-    // If nearest not found, fall back to a default (start of middle copy)
-    const indexToCenter =
-      nearestIndex >= 0 ? middleIndex + nearestIndex : middleIndex;
-
-    const startCardCenter = indexToCenter * cardSize + CARD_WIDTH / 2;
-    const startScroll =
-      startCardCenter - containerWidth / 2 + (isMobile ? 30 : 0);
-
-    scrollRef.current.scrollLeft = startScroll;
-
-    setActiveIndex(indexToCenter);
-    centeredIndexRef.current = indexToCenter;
-
-    // Debugging (optional)
-    // console.log("Centering index:", indexToCenter, "nearestIndex:", nearestIndex);
-  }, [destinations, CARD_WIDTH, nearestCode, isMobile]);
-
-  const CACHE_TTL = 20 * 60 * 1000; // 20 minutes
-
-  const cleanOldCache = () => {
     const now = Date.now();
-
     Object.keys(localStorage).forEach((key) => {
       if (key.startsWith("nearest_district_")) {
         try {
@@ -171,12 +145,49 @@ export const TopDestinations = ({ userCoords }) => {
         }
       }
     });
-  };
-  useEffect(() => {
-    cleanOldCache(); // runs once when component mounts
   }, []);
 
-  // Detect center card
+  /* =======================
+     INFINITE LIST SAFE FIX
+  ======================= */
+  const fullList =
+    destinations.length > 0
+      ? [...destinations, ...destinations, ...destinations]
+      : [];
+
+  const middleIndex = destinations.length;
+
+  /* =======================
+     INITIAL CENTERING (FIXED)
+  ======================= */
+  useEffect(() => {
+    if (!scrollRef.current || destinations.length === 0) return;
+
+    const cardSize = CARD_WIDTH + GAP;
+    const containerWidth = scrollRef.current.offsetWidth;
+
+    const nearestIndex = nearestCode
+      ? destinations.findIndex(
+          (d) => d.DistrictCode === nearestCode
+        )
+      : 0;
+
+    const indexToCenter =
+      nearestIndex >= 0 ? middleIndex + nearestIndex : middleIndex;
+
+    const cardCenter = indexToCenter * cardSize + CARD_WIDTH / 2;
+    const startScroll =
+      cardCenter - containerWidth / 2 + (isMobile ? 30 : 0);
+
+    scrollRef.current.scrollLeft = startScroll;
+
+    setActiveIndex(indexToCenter);
+    centeredIndexRef.current = indexToCenter;
+  }, [destinations, CARD_WIDTH, nearestCode, isMobile]);
+
+  /* =======================
+     CENTER DETECTION
+  ======================= */
   const detectCenteredCard = () => {
     if (!scrollRef.current) return;
 
@@ -188,8 +199,8 @@ export const TopDestinations = ({ userCoords }) => {
     let minDistance = Infinity;
 
     fullList.forEach((_, index) => {
-      const cardCenter = index * (CARD_WIDTH + GAP) + CARD_WIDTH / 2;
-
+      const cardCenter =
+        index * (CARD_WIDTH + GAP) + CARD_WIDTH / 2;
       const dist = Math.abs(cardCenter - center);
       if (dist < minDistance) {
         minDistance = dist;
@@ -201,25 +212,31 @@ export const TopDestinations = ({ userCoords }) => {
     centeredIndexRef.current = closestIndex;
   };
 
-  // Snap card EXACTLY to center
+  /* =======================
+     SNAP TO CENTER
+  ======================= */
   const snapToCenteredCard = () => {
-    if (!scrollRef.current || centeredIndexRef.current == null) return;
+    if (!scrollRef.current || centeredIndexRef.current == null)
+      return;
 
     const cardSize = CARD_WIDTH + GAP;
     const index = centeredIndexRef.current;
     const containerWidth = scrollRef.current.offsetWidth;
 
-    const cardCenter = index * cardSize + CARD_WIDTH / 2; // ✅ correct center
-    const targetScrollLeft =
+    const cardCenter =
+      index * cardSize + CARD_WIDTH / 2;
+    const targetScroll =
       cardCenter - containerWidth / 2 + (isMobile ? 30 : 0);
 
     scrollRef.current.scrollTo({
-      left: targetScrollLeft,
+      left: targetScroll,
       behavior: "smooth",
     });
   };
 
-  // Infinite scroll logic
+  /* =======================
+     INFINITE SCROLL HANDLER
+  ======================= */
   const handleInfiniteScroll = () => {
     if (!scrollRef.current || destinations.length === 0) return;
 
@@ -235,13 +252,17 @@ export const TopDestinations = ({ userCoords }) => {
 
     detectCenteredCard();
 
-    if (scrollEndTimeout.current) clearTimeout(scrollEndTimeout.current);
+    if (scrollEndTimeout.current)
+      clearTimeout(scrollEndTimeout.current);
+
     scrollEndTimeout.current = setTimeout(() => {
       snapToCenteredCard();
     }, 120);
   };
 
-  // Arrow button scroll
+  /* =======================
+     ARROW SCROLL
+  ======================= */
   const scroll = (direction) => {
     if (!scrollRef.current) return;
 
@@ -258,13 +279,15 @@ export const TopDestinations = ({ userCoords }) => {
     }, 350);
   };
 
+  /* =======================
+     RENDER
+  ======================= */
   return (
     <section
-      className="lg:w-[100vw] md:ml-[-60px]  w-full bg-cover bg-center text-white py-20 md:mr-[-60px] "
+      className="lg:w-[100vw] md:ml-[-60px] w-full bg-cover bg-center text-white py-20 md:mr-[-60px]"
       style={{ backgroundImage: `url(/TopDestinationBG.png)` }}
     >
-      <div className="max-w-[1400px] mx-auto px-4 md:px-12 lg:px-0 xl:px-0 relative">
-        {/* Heading */}
+      <div className="max-w-[1400px] mx-auto px-4 md:px-12 lg:px-0 relative">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-4">
           <div>
             <h2 className="font-schoolbell text-[#F2B024] text-3xl md:text-4xl">
@@ -275,7 +298,6 @@ export const TopDestinations = ({ userCoords }) => {
             </p>
           </div>
 
-          {/* Desktop arrows */}
           {!isMobile && (
             <>
               <ArrowButton
@@ -292,7 +314,6 @@ export const TopDestinations = ({ userCoords }) => {
           )}
         </div>
 
-        {/* Mobile floating arrows */}
         {isMobile && (
           <>
             <ArrowButton
@@ -308,19 +329,18 @@ export const TopDestinations = ({ userCoords }) => {
           </>
         )}
 
-        {/* Card List */}
         <div
           ref={scrollRef}
           onScroll={handleInfiniteScroll}
-          className="flex flex-row gap-6 overflow-x-scroll hide-scrollbar pt-16 pb-20 relative"
+          className="flex gap-6 overflow-x-scroll hide-scrollbar pt-16 pb-20"
         >
           {fullList.map((dest, i) => {
-
             const isCenter = activeIndex === i;
+
             return (
               <div
                 key={i}
-                className="flex-shrink-0 transition-all duration-300 ease-out"
+                className="flex-shrink-0 transition-all duration-300"
                 style={{
                   width: CARD_WIDTH,
                   zIndex: isCenter ? 20 : 10,
@@ -332,7 +352,9 @@ export const TopDestinations = ({ userCoords }) => {
               >
                 <DestinationCard
                   destination={dest}
-                  isNearest={dest.DistrictCode === nearestCode}
+                  isNearest={
+                    dest.DistrictCode === nearestCode
+                  }
                 />
               </div>
             );

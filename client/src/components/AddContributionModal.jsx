@@ -41,6 +41,8 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
   const [previewImages, setPreviewImages] = useState([]);
   const [coverPreview, setCoverPreview] = useState(null);
   const fileInputRef = useRef(null);
+  const [submitting, setSubmitting] = useState(false);
+
 
   const [formData, setFormData] = useState({
     title: "",
@@ -154,60 +156,116 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+const validateForm = () => {
+  if (
+    !formData.title.trim() ||
+    !formData.district.trim() ||
+    !formData.description.trim()
+  ) {
+    alert("Title, district and description are required.");
+    return false;
+  }
+
+  if (formData.latitude === "" || formData.longitude === "") {
+    alert("Latitude and Longitude are required.");
+    return false;
+  }
+
+  if (
+    isNaN(Number(formData.latitude)) ||
+    isNaN(Number(formData.longitude))
+  ) {
+    alert("Invalid latitude or longitude.");
+    return false;
+  }
+
+  return true;
+};
+
   // -----------------------------
   // API: Save Contribution
   // -----------------------------
 
   const handleSave = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return alert("You must be logged in.");
+  const token = localStorage.getItem("token");
+  if (submitting) return; // 🔒 block double click
+  setSubmitting(true);
+  if (!token) {
+    alert("Session expired. Please login again.");
+    return;
+  }
 
-    try {
-      const data = new FormData();
+  if (!validateForm()) return;
 
-      data.append("title", formData.title);
-      data.append("subtitle", formData.subtitle);
-      data.append("district", formData.district);
-      data.append("description", formData.description);
-      data.append("latitude", formData.latitude);
-      data.append("longitude", formData.longitude);
-      data.append("bestTimeToVisit", formData.bestTimeToVisit);
-      data.append("crowded", formData.crowded);
-      data.append("familyFriendly", formData.familyFriendly);
-      data.append("petFriendly", formData.petFriendly);
-      data.append("accessibility", formData.accessibility);
+  try {
+    const data = new FormData();
 
-      data.append("activities", JSON.stringify(formData.activities));
-      data.append("facilities", JSON.stringify(formData.facilities));
-      data.append("ratings", JSON.stringify(formData.ratings));
-      data.append("hiddenGems", JSON.stringify(formData.hiddenGems));
-      data.append("points", JSON.stringify(formData.points));
-      data.append("tips", formData.tips);
+    data.append("title", formData.title.trim());
+    data.append("subtitle", formData.subtitle || "");
+    data.append("district", formData.district);
+    data.append("description", formData.description.trim());
+    data.append("latitude", String(formData.latitude));
+    data.append("longitude", String(formData.longitude));
 
-      if (formData.coverImage) data.append("coverImage", formData.coverImage);
-      formData.images.forEach((file) => data.append("images", file));
+    data.append("bestTimeToVisit", formData.bestTimeToVisit || "");
 
-      const res = await fetch(`${Backend_URL}/contributions`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: data,
-      });
+    // ✅ FORCE booleans to strings (important)
+    data.append("crowded", String(formData.crowded));
+    data.append("familyFriendly", String(formData.familyFriendly));
+    data.append("petFriendly", String(formData.petFriendly));
 
-      if (!res.ok) throw new Error("Failed to save.");
+    data.append("accessibility", formData.accessibility || "Unknown");
 
-      alert("Contribution submitted! Awaiting admin approval.");
+    // ✅ SAFE JSON fields (NO crashes)
+    data.append("activities", JSON.stringify(formData.activities || []));
+    data.append("facilities", JSON.stringify(formData.facilities || []));
+    data.append("ratings", JSON.stringify(formData.ratings || {}));
+    data.append("hiddenGems", JSON.stringify(formData.hiddenGems || []));
+    data.append("points", JSON.stringify(formData.points || []));
 
-      /* ✅ RESET FORM */
-      setFormData(initialFormData);
+    data.append("tips", formData.tips || "");
 
-      /* ✅ CLOSE MODAL */
-      onClose();
-      window.location.reload();
-    } catch (err) {
-      console.error(err);
-      alert("Error saving contribution.");
+    if (formData.coverImage) {
+      data.append("coverImage", formData.coverImage);
     }
-  };
+
+    (formData.images || []).forEach((file) =>
+      data.append("images", file)
+    );
+
+    const res = await fetch(`${Backend_URL}/contributions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: data,
+    });
+
+    if (res.status === 401) {
+      alert("Session expired. Please login again.");
+      return;
+    }
+
+    if (!res.ok) {
+      const err = await res.json();
+      alert(err.message || "Failed to submit contribution.");
+      return;
+    }
+
+    alert("Contribution submitted! Awaiting admin approval.");
+
+    setFormData(initialFormData);
+    setPreviewImages([]);
+    setCoverPreview(null);
+    setSelectedState("");
+
+    onClose();
+  } catch (err) {
+    console.error("Submit error:", err);
+    alert("Something went wrong while submitting.");
+  }
+};
+
 
   // -----------------------------
   // Fetch districts
@@ -563,11 +621,18 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
             Cancel
           </button>
           <button
-            onClick={handleSave}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Submit Contribution
-          </button>
+  onClick={handleSave}
+  disabled={
+    !formData.title ||
+    !formData.district ||
+    !formData.latitude ||
+    !formData.longitude
+  }
+  className="bg-blue-600 disabled:opacity-50 text-white px-6 py-2 rounded-lg"
+>
+  Submit Contribution
+</button>
+
         </div>
       </div>
     </div>

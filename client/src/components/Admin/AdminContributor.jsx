@@ -31,7 +31,7 @@ const AdminContributor = () => {
 
   const token = localStorage.getItem("token");
 
-  /* ================= FETCH (SERVER-SIDE PAGINATION) ================= */
+  /* ================= FETCH CONTRIBUTIONS ================= */
   const fetchContributions = async () => {
     try {
       setLoading(true);
@@ -41,22 +41,11 @@ const AdminContributor = () => {
         params: {
           page,
           limit: LIMIT,
-          status: filter, // pending | approved | all
+          status: filter,
         },
       });
 
-      /**
-       * Expected backend response (later):
-       * {
-       *   contributions: [],
-       *   totalPages: number,
-       *   currentPage: number
-       * }
-       */
-
-      const data = res.data.contributions || res.data;
-
-      setContributions(data);
+      setContributions(res.data.contributions || res.data);
       setTotalPages(res.data.totalPages || 1);
     } catch (err) {
       console.error(err);
@@ -119,6 +108,7 @@ const AdminContributor = () => {
   /* ================= UI ================= */
   return (
     <Box className="p-6 bg-gray-100 min-h-screen">
+      {/* HEADER */}
       <Box className="flex justify-between items-center mb-6">
         <Typography variant="h4" fontWeight="bold">
           Contributions
@@ -131,7 +121,7 @@ const AdminContributor = () => {
             label="Status"
             onChange={(e) => {
               setFilter(e.target.value);
-              setPage(1); // reset page on filter change
+              setPage(1);
             }}
           >
             <MenuItem value="all">All</MenuItem>
@@ -189,18 +179,85 @@ const AdminContributor = () => {
 
       {/* MODAL */}
       <Modal open={!!selected} onClose={() => setSelected(null)}>
-        <Box className="bg-white p-6 w-[90%] max-w-3xl mx-auto mt-24 rounded-xl">
+        <Box className="bg-white rounded-xl shadow-lg p-6 w-[90%] max-w-3xl mx-auto mt-24 max-h-[80vh] overflow-y-auto">
           {selected && (
             <>
+              {/* IMAGES */}
+              <div className="flex overflow-x-auto gap-3 mb-4">
+                {selected.coverImage && (
+                  <img
+                    src={selected.coverImage}
+                    className="h-60 rounded-lg flex-shrink-0"
+                  />
+                )}
+                {selected.images?.map((img, idx) => (
+                  <img
+                    key={idx}
+                    src={img}
+                    className="h-60 rounded-lg flex-shrink-0"
+                  />
+                ))}
+              </div>
+
+              {/* BASIC INFO */}
               <Typography variant="h5" fontWeight="bold">
                 {selected.title}
+              </Typography>
+
+              <Typography className="text-sm text-gray-600">
+                District: {selected.district}
               </Typography>
 
               <Typography className="mt-2">
                 {selected.description}
               </Typography>
 
+              {/* COORDINATES */}
+              <Box className="mt-4 text-sm">
+                <Typography>
+                  📍 Latitude: {selected.coordinates?.coordinates?.[1]}
+                </Typography>
+                <Typography>
+                  📍 Longitude: {selected.coordinates?.coordinates?.[0]}
+                </Typography>
+              </Box>
+
+              {/* EXTRA DETAILS */}
+              <Box className="mt-4 text-sm text-gray-600">
+                <p>🏖 Best Time: {selected.bestTimeToVisit || "N/A"}</p>
+                <p>👨‍👩‍👧 Family Friendly: {selected.familyFriendly ? "Yes" : "No"}</p>
+                <p>🐶 Pet Friendly: {selected.petFriendly ? "Yes" : "No"}</p>
+                <p>♿ Accessibility: {selected.accessibility || "N/A"}</p>
+                <p>
+                  🎯 Activities: {selected.activities?.join(", ") || "None"}
+                </p>
+              </Box>
+
+              {/* RATINGS */}
+              {selected.ratings && (
+                <Box className="mt-4 border-t pt-3">
+                  <Typography variant="h6">Ratings</Typography>
+                  <div className="grid grid-cols-2 gap-2 text-sm mt-2">
+                    <p>Overall: {selected.ratings.overall}</p>
+                    <p>Cleanliness: {selected.ratings.cleanliness}</p>
+                    <p>Safety: {selected.ratings.safety}</p>
+                    <p>Crowd: {selected.ratings.crowd}</p>
+                    <p>Value: {selected.ratings.valueForMoney}</p>
+                  </div>
+                </Box>
+              )}
+
+              {/* TIPS */}
               <Box className="mt-4">
+                <Typography variant="h6">Tips</Typography>
+                <Typography>{selected.tips || "None"}</Typography>
+              </Box>
+
+              {/* TERRAIN */}
+              <Box className="mt-4">
+                <Typography variant="h6" className="mb-2">
+                  Terrain Type
+                </Typography>
                 <select
                   className="border px-3 py-2 rounded w-full"
                   value={selected.terrain || ""}
@@ -209,14 +266,19 @@ const AdminContributor = () => {
                   }
                 >
                   <option value="">Select Terrain</option>
-                  <option value="Mountain">Mountain</option>
-                  <option value="Beach">Beach</option>
-                  <option value="Forest">Forest</option>
-                  <option value="Desert">Desert</option>
-                  <option value="Urban">Urban</option>
+                  <option value="Mountain">Mountains</option>
+                <option value="Beach">Beaches</option>
+                <option value="Forest">Forests</option>
+                <option value="Desert">Deserts</option>
+                <option value="Plain">Plains</option>
+                <option value="Rocky">Rocky</option>
+                <option value="River">River</option>
+                <option value="Hilly">Hilly</option>
+                <option value="Urban">Urban</option>
                 </select>
               </Box>
 
+              {/* ACTION BUTTONS */}
               <Box className="flex justify-end gap-3 mt-6">
                 <Button onClick={() => setSelected(null)}>Close</Button>
 
