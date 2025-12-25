@@ -189,13 +189,14 @@ const validateForm = () => {
   const handleSave = async () => {
   const token = localStorage.getItem("token");
   if (submitting) return; // 🔒 block double click
-  setSubmitting(true);
+  
   if (!token) {
     alert("Session expired. Please login again.");
     return;
   }
 
   if (!validateForm()) return;
+  setSubmitting(true);
 
   try {
     const data = new FormData();
@@ -260,9 +261,12 @@ const validateForm = () => {
     setSelectedState("");
 
     onClose();
+    window.location.reload();
   } catch (err) {
     console.error("Submit error:", err);
     alert("Something went wrong while submitting.");
+  }finally {
+    setSubmitting(false); // ✅ ALWAYS reset
   }
 };
 
@@ -626,11 +630,12 @@ const validateForm = () => {
     !formData.title ||
     !formData.district ||
     !formData.latitude ||
-    !formData.longitude
+    !formData.longitude ||
+    submitting
   }
   className="bg-blue-600 disabled:opacity-50 text-white px-6 py-2 rounded-lg"
 >
-  Submit Contribution
+  {submitting ? "Submitting..." : "Submit Contribution"}
 </button>
 
         </div>
