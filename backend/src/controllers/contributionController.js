@@ -204,26 +204,53 @@ export const getContributionsForDistrict = async (req, res) => {
 
 // Admin: Verify a contribution
 export const verifyContribution = async (req, res) => {
-  const adminTerrain = req.body.terrain; // <-- admin override
+  const adminTerrain = req.body.terrain; // admin override
 
   try {
     const contribId = req.params.id;
+
+    // -----------------------------------------
+    // FETCH CONTRIBUTION
+    // -----------------------------------------
     const c = await Contribution.findById(contribId);
-    if (!c) return res.status(404).json({ message: "Contribution not found" });
+    if (!c) {
+      return res.status(404).json({ message: "Contribution not found" });
+    }
 
     if (c.verified && c.approvedLocation) {
       return res.status(400).json({ message: "Contribution already verified" });
     }
 
     // -----------------------------------------
-    // FIND DISTRICT OR CREATE NEW
+    // GUARD: VALID COORDINATES
     // -----------------------------------------
-    let districtDoc = await District.findOne({
-      name: { $regex: `^${c.district}$`, $options: "i" },
-    });
+    if (!c.coordinates?.coordinates || c.coordinates.coordinates.length !== 2) {
+      return res.status(400).json({
+        message: "Contribution has no valid coordinates",
+      });
+    }
+
+    // -----------------------------------------
+    // NORMALIZE DISTRICT NAME
+    // -----------------------------------------
+    function normalize(str) {
+      return str
+        .replace(/\u00A0/g, " ") // non-breaking space
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    const districtName = normalize(c.district);
+
+    // -----------------------------------------
+    // FIND DISTRICT (NO CREATION, NO REGEX)
+    // -----------------------------------------
+    const districtDoc = await District.findOne({ name: districtName });
 
     if (!districtDoc) {
-      districtDoc = await District.create({ name: c.district });
+      return res.status(400).json({
+        message: `District "${districtName}" not found in master list`,
+      });
     }
 
     // -----------------------------------------
@@ -235,9 +262,8 @@ export const verifyContribution = async (req, res) => {
           `https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`
         );
         const data = await response.json();
-
         if (!data.results?.length) return null;
-        return data.results[0].elevation; // meters
+        return data.results[0].elevation;
       } catch (err) {
         console.error("Elevation API error:", err);
         return null;
@@ -250,45 +276,17 @@ export const verifyContribution = async (req, res) => {
     function detectTerrain(elevation, activities, description) {
       const text = (description || "").toLowerCase();
 
-      // ✔ Activity based
       if (activities?.includes("Beach / Swimming")) return "Beach";
       if (activities?.includes("Adventure / Trekking")) return "Hilly";
       if (activities?.includes("Photography") && elevation > 600)
         return "Mountain";
 
-      // ✔ Keyword based
-      if (
-        text.includes("forest") ||
-        text.includes("trees") ||
-        text.includes("wildlife")
-      )
-        return "Forest";
-      if (
-        text.includes("desert") ||
-        text.includes("sand") ||
-        text.includes("dunes")
-      )
-        return "Desert";
-      if (
-        text.includes("rock") ||
-        text.includes("cliff") ||
-        text.includes("boulder")
-      )
-        return "Rocky";
-      if (
-        text.includes("river") ||
-        text.includes("stream") ||
-        text.includes("waterfall")
-      )
-        return "River";
-      if (
-        text.includes("town") ||
-        text.includes("city") ||
-        text.includes("urban")
-      )
-        return "Urban";
+      if (text.includes("forest") || text.includes("trees")) return "Forest";
+      if (text.includes("desert") || text.includes("sand")) return "Desert";
+      if (text.includes("rock") || text.includes("cliff")) return "Rocky";
+      if (text.includes("river") || text.includes("waterfall")) return "River";
+      if (text.includes("city") || text.includes("urban")) return "Urban";
 
-      // ✔ Elevation based
       if (elevation !== null) {
         if (elevation < 30) return "Beach";
         if (elevation < 200) return "Plain";
@@ -299,22 +297,22 @@ export const verifyContribution = async (req, res) => {
       return "Unknown";
     }
 
-    // Get elevation from coordinates
+    // -----------------------------------------
+    // COORDINATES → ELEVATION
+    // -----------------------------------------
     const [lng, lat] = c.coordinates.coordinates;
     const elevation = await getElevation(lat, lng);
-
-    // Final terrain guess
     const autoTerrain = detectTerrain(elevation, c.activities, c.description);
 
     // -----------------------------------------
-    // AUTO-GENERATED SUBTITLE
+    // AUTO SUBTITLE
     // -----------------------------------------
     const generatedSubtitle = c.activities?.length
       ? `A popular place for ${c.activities.slice(0, 3).join(", ")}`
-      : `A notable destination in ${c.district}`;
+      : `A notable destination in ${districtName}`;
 
     // -----------------------------------------
-    // AUTO-GENERATED POINTS
+    // AUTO POINTS
     // -----------------------------------------
     const points = [];
 
@@ -334,32 +332,27 @@ export const verifyContribution = async (req, res) => {
       `Crowd level: ${c.crowded ? "High" : "Low to Moderate"}`
     );
 
-    // Ratings
     if (c.ratings) {
-      const r = c.ratings;
       points.push(
-        `Overall rating: ${r.overall || "-"}`,
-        `Cleanliness: ${r.cleanliness || "-"}`,
-        `Safety: ${r.safety || "-"}`,
-        `Value for money: ${r.valueForMoney || "-"}`
+        `Overall rating: ${c.ratings.overall || "-"}`,
+        `Cleanliness: ${c.ratings.cleanliness || "-"}`,
+        `Safety: ${c.ratings.safety || "-"}`,
+        `Value for money: ${c.ratings.valueForMoney || "-"}`
       );
     }
 
     // -----------------------------------------
-    // AUTO-GENERATED DESCRIPTION
+    // AUTO DESCRIPTION
     // -----------------------------------------
     const generatedDescription = `
 ${c.description || ""}
 
 Visitors describe the atmosphere as ${
       c.crowded ? "often crowded" : "generally calm"
-    } and family-friendly. ${
-      c.bestTimeToVisit
-        ? `Recommended time to visit: ${c.bestTimeToVisit}.`
-        : ""
-    } ${
-      c.hiddenGems?.length ? `Hidden gems: ${c.hiddenGems.join(", ")}.` : ""
-    } ${c.tips ? `Traveler tips: ${c.tips}` : ""}
+    } and family-friendly.
+${c.bestTimeToVisit ? `Recommended time: ${c.bestTimeToVisit}.` : ""}
+${c.hiddenGems?.length ? `Hidden gems: ${c.hiddenGems.join(", ")}.` : ""}
+${c.tips ? `Traveler tips: ${c.tips}` : ""}
 `
       .replace(/\s+/g, " ")
       .trim();
@@ -373,21 +366,20 @@ Visitors describe the atmosphere as ${
       description: generatedDescription,
       district: districtDoc._id,
 
-      points: points,
+      points,
       images: c.images || [],
       coverImage: c.coverImage || "",
 
       terrain:
         adminTerrain && adminTerrain !== "none" ? adminTerrain : autoTerrain,
 
-      reviewLength: 0,
       review: 0,
+      reviewLength: 0,
 
       coordinates: c.coordinates,
       contributions: [c._id],
       comments: [],
 
-      // Store raw data for admin reference
       contributionMeta: {
         rawActivities: c.activities,
         rawFacilities: c.facilities,
@@ -397,14 +389,16 @@ Visitors describe the atmosphere as ${
       },
     });
 
-    // Mark Contribution Verified
+    // -----------------------------------------
+    // MARK CONTRIBUTION VERIFIED
+    // -----------------------------------------
     c.verified = true;
     c.approvedLocation = newLocation._id;
     await c.save();
 
     return res.status(200).json({
       success: true,
-      message: "Contribution verified + Auto terrain + Auto content",
+      message: "Contribution verified successfully",
       location: newLocation,
     });
   } catch (err) {
@@ -412,6 +406,7 @@ Visitors describe the atmosphere as ${
     return res.status(500).json({ message: err.message });
   }
 };
+
 
 // ✅ Get all contributions (Admin)
 export const getAllContributions = async (req, res) => {
