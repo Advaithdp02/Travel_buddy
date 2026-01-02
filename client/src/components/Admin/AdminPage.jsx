@@ -9,6 +9,7 @@ import {
   Globe as GlobeIcon,
   MessageCircle as MessageCircleIcon,
   MapPinOff,
+  UserCog
 } from "lucide-react";
 
 import AdminUsers from "./AdminUsers";
@@ -21,6 +22,7 @@ import AdminBlogs from "./AdminBlog";
 import AdminContributor from "./AdminContributor";
 import AdminComment from "./AdminComment";
 import AdminDistricts from "./AdminDistricts";
+import AdminStaff from "./AdminStaff";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -131,6 +133,11 @@ export const AdminPage = () => {
             label: "Users",
             icon: <UsersIcon className="w-5 h-5" />,
           },
+          {
+            id: "staff",
+            label: "Staff",
+            icon: <UserCog className="w-5 h-5"  />, 
+          },
         ]
       : []),
   ];
@@ -215,6 +222,13 @@ export const AdminPage = () => {
         ) : (
           <p className="p-6">Access Denied</p>
         );
+      case "staff":
+        return userRole === "admin" ? (
+          <AdminStaff />
+        ) : (
+          <p className="p-6">Access Denied</p>
+        );
+
       case "blogs":
         return <AdminBlogs />;
       case "contributions":

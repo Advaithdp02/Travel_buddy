@@ -18,8 +18,10 @@ import {
   verifyResetOTP,
   resetPassword,
   verifyToken,
+  getStaff,
+  updateStaff,
 } from "../controllers/userController.js";
-import { protect,staffProtect } from "../middlewares/authMiddleware.js";
+import { protect,staffProtect,adminProtect } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
@@ -60,6 +62,8 @@ router.put("/locations/track/:locationId", trackLocationVisit);
 
 // Admin routes
 router.get("/admin/users", protect, staffProtect, getAllUsers);
+router.get("/admin/staff", protect, adminProtect, getStaff);
+router.put("/admin/staff/:id", protect, adminProtect,updateStaff);
 router.put("/admin/users/:id/role", protect, staffProtect, updateUserRole);
 router.delete("/admin/users/:id", protect, staffProtect, deleteUser);
 

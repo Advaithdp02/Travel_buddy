@@ -567,3 +567,66 @@ export const verifyToken = async (req, res) => {
     },
   });
 };
+// GET /users/admin/staff
+export const getStaff= async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search = "" } = req.query;
+
+    const query = {
+      role: "staff",
+      $or: [
+        { name: new RegExp(search, "i") },
+        { email: new RegExp(search, "i") },
+        { username: new RegExp(search, "i") },
+      ],
+    };
+
+    const total = await User.countDocuments(query);
+    const users = await User.find(query)
+      .skip((page - 1) * limit)
+      .limit(Number(limit))
+      .select("-password");
+
+    res.json({
+      users,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+//PUT /admin/staff/:id
+export const updateStaff=async (req, res) => {
+  try {
+    const staff = await User.findById(req.params.id);
+    if (!staff || staff.role !== "staff") {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+
+    const editableFields = [
+      "name",
+      "username",
+      "email",
+      "phone",
+      "gender",
+      "dob",
+      "location",
+      "occupation",
+      "relationshipStatus",
+      "bio",
+    ];
+
+    editableFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        staff[field] = req.body[field];
+      }
+    });
+
+    await staff.save();
+
+    res.json({ success: true, user: staff });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
