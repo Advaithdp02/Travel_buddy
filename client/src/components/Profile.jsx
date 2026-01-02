@@ -22,6 +22,8 @@ export const Profile = () => {
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [wishlist, setWishlist] = useState([]);
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const [selectedContributionId, setSelectedContributionId] = useState(null);
 
   const navigate = useNavigate();
   const logout = () => {
@@ -512,13 +514,19 @@ export const Profile = () => {
                           })
                           .map((c) => (
                             <div
-                              key={c._id}
-                              className={`bg-white rounded-lg shadow p-4 cursor-pointer border-t-4 ${
-                                c.verified
-                                  ? "border-green-500"
-                                  : "border-yellow-500"
-                              }`}
-                            >
+  key={c._id}
+  onClick={() => {
+    if (!c.verified) {
+      setSelectedContributionId(c._id);
+      setIsUpdateMode(true);
+      setIsAddContributionOpen(true);
+    }
+  }}
+  className={`bg-white rounded-lg shadow p-4 cursor-pointer border-t-4 ${
+    c.verified ? "border-green-500" : "border-yellow-500"
+  }`}
+>
+
                               <img
                                 src={c.coverImage || "/defaultCoverPic.png"}
                                 className="w-full h-40 object-cover rounded mb-2"
@@ -788,13 +796,17 @@ export const Profile = () => {
         )}
 
         <AddContributionModal
-          isOpen={isAddContributionOpen}
-          onClose={() => setIsAddContributionOpen(false)}
-          onSave={(contributionData) =>
-            handleSaveContribution(contributionData)
-          }
-          locationId={location._id}
-        />
+  isOpen={isAddContributionOpen}
+  onClose={() => {
+    setIsAddContributionOpen(false);
+    setIsUpdateMode(false);
+    setSelectedContributionId(null);
+  }}
+  update={isUpdateMode}
+  id={selectedContributionId}
+  locationId={location._id}
+/>
+
       </div>
     </>
   );

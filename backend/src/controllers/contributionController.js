@@ -20,6 +20,7 @@ export const createContribution = async (req, res) => {
       subtitle,
       district,
       description,
+      terrain,
       latitude,
       longitude,
       bestTimeToVisit,
@@ -100,6 +101,7 @@ export const createContribution = async (req, res) => {
       subtitle,
       district, // text – admin will map it later
       description,
+      terrain,
       coordinates: {
         type: "Point",
         coordinates: [parseFloat(longitude), parseFloat(latitude)],
@@ -140,6 +142,134 @@ export const createContribution = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+export const updateContribution = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { id } = req.params;
+
+    const contribution = await Contribution.findById(id);
+
+    if (!contribution) {
+      return res.status(404).json({ message: "Contribution not found" });
+    }
+
+    // 🔒 Only owner can update
+    if (contribution.user.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    // 🔒 Optional: block update after approval
+    if (contribution.verified) {
+      return res
+        .status(403)
+        .json({ message: "Approved contributions cannot be edited" });
+    }
+
+    const {
+      title,
+      subtitle,
+      district,
+      terrain,
+      description,
+      latitude,
+      longitude,
+      bestTimeToVisit,
+      crowded,
+      familyFriendly,
+      petFriendly,
+      accessibility,
+      activities,
+      facilities,
+      ratings,
+      tips,
+      hiddenGems,
+      points,
+    } = req.body;
+    console.log("REQ BODY TERRAIN:", req.body.terrain);
+
+
+    // Parse JSON fields
+    const parsedActivities =
+      typeof activities === "string" ? JSON.parse(activities) : activities;
+    const parsedFacilities =
+      typeof facilities === "string" ? JSON.parse(facilities) : facilities;
+    const parsedRatings =
+      typeof ratings === "string" ? JSON.parse(ratings) : ratings;
+    const parsedHiddenGems =
+      typeof hiddenGems === "string"
+        ? JSON.parse(hiddenGems)
+        : hiddenGems;
+    const parsedPoints =
+      typeof points === "string" ? JSON.parse(points) : points;
+
+    // Update text fields
+    if (title) contribution.title = title;
+    if (subtitle !== undefined) contribution.subtitle = subtitle;
+    if (district) contribution.district = district;
+    if (description) contribution.description = description;
+    if (bestTimeToVisit) contribution.bestTimeToVisit = bestTimeToVisit;
+    if (accessibility) contribution.accessibility = accessibility;
+    if (terrain) contribution.terrain = terrain;
+
+    contribution.crowded = crowded === "true" || crowded === true;
+    contribution.familyFriendly =
+      familyFriendly === "true" || familyFriendly === true;
+    contribution.petFriendly =
+      petFriendly === "true" || petFriendly === true;
+
+    if (latitude && longitude) {
+      contribution.coordinates = {
+        type: "Point",
+        coordinates: [parseFloat(longitude), parseFloat(latitude)],
+      };
+    }
+
+    if (parsedActivities) contribution.activities = parsedActivities;
+    if (parsedFacilities) contribution.facilities = parsedFacilities;
+    if (parsedRatings) contribution.ratings = parsedRatings;
+    if (parsedHiddenGems) contribution.hiddenGems = parsedHiddenGems;
+    if (parsedPoints) contribution.points = parsedPoints;
+    if (tips !== undefined) contribution.tips = tips;
+
+    // 📸 Handle file updates
+    const folderName = `contributions/${userId}/${Date.now()}`;
+
+    if (req.files?.coverImage?.length) {
+      const file = req.files.coverImage[0];
+      contribution.coverImage = await uploadToS3(
+        file.buffer,
+        file.originalname,
+        folderName,
+        file.mimetype
+      );
+    }
+
+    if (req.files?.images?.length) {
+      const newImages = [];
+      for (const file of req.files.images) {
+        const uploaded = await uploadToS3(
+          file.buffer,
+          file.originalname,
+          folderName,
+          file.mimetype
+        );
+        newImages.push(uploaded);
+      }
+
+      // append new images (don’t delete old)
+      contribution.images.push(...newImages);
+    }
+
+    await contribution.save();
+
+    res.json({ success: true, contribution });
+  } catch (err) {
+    console.error("❌ Update Contribution Error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
 
 // Get a single contribution by ID
 export const getContributionById = async (req, res) => {
@@ -204,10 +334,9 @@ export const getContributionsForDistrict = async (req, res) => {
 
 // Admin: Verify a contribution
 export const verifyContribution = async (req, res) => {
-  const adminTerrain = req.body.terrain; // admin override
-
   try {
     const contribId = req.params.id;
+    const adminTerrain = req.body.terrain; // admin override (optional)
 
     // -----------------------------------------
     // FETCH CONTRIBUTION
@@ -224,7 +353,10 @@ export const verifyContribution = async (req, res) => {
     // -----------------------------------------
     // GUARD: VALID COORDINATES
     // -----------------------------------------
-    if (!c.coordinates?.coordinates || c.coordinates.coordinates.length !== 2) {
+    if (
+      !c.coordinates?.coordinates ||
+      c.coordinates.coordinates.length !== 2
+    ) {
       return res.status(400).json({
         message: "Contribution has no valid coordinates",
       });
@@ -233,20 +365,15 @@ export const verifyContribution = async (req, res) => {
     // -----------------------------------------
     // NORMALIZE DISTRICT NAME
     // -----------------------------------------
-    function normalize(str) {
-      return str
-        .replace(/\u00A0/g, " ") // non-breaking space
-        .replace(/\s+/g, " ")
-        .trim();
-    }
+    const normalize = (str) =>
+      str.replace(/\u00A0/g, " ").replace(/\s+/g, " ").trim();
 
     const districtName = normalize(c.district);
 
     // -----------------------------------------
-    // FIND DISTRICT (NO CREATION, NO REGEX)
+    // FIND DISTRICT (STRICT)
     // -----------------------------------------
     const districtDoc = await District.findOne({ name: districtName });
-
     if (!districtDoc) {
       return res.status(400).json({
         message: `District "${districtName}" not found in master list`,
@@ -262,8 +389,7 @@ export const verifyContribution = async (req, res) => {
           `https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`
         );
         const data = await response.json();
-        if (!data.results?.length) return null;
-        return data.results[0].elevation;
+        return data.results?.[0]?.elevation ?? null;
       } catch (err) {
         console.error("Elevation API error:", err);
         return null;
@@ -298,11 +424,25 @@ export const verifyContribution = async (req, res) => {
     }
 
     // -----------------------------------------
-    // COORDINATES → ELEVATION
+    // COORDINATES → ELEVATION → TERRAIN
     // -----------------------------------------
     const [lng, lat] = c.coordinates.coordinates;
     const elevation = await getElevation(lat, lng);
-    const autoTerrain = detectTerrain(elevation, c.activities, c.description);
+    const autoTerrain = detectTerrain(
+      elevation,
+      c.activities,
+      c.description
+    );
+
+    // -----------------------------------------
+    // FINAL TERRAIN (ADMIN OVERRIDE SAFE)
+    // -----------------------------------------
+    const finalTerrain =
+      typeof adminTerrain === "string" &&
+      adminTerrain.trim() !== "" &&
+      adminTerrain !== "none"
+        ? adminTerrain
+        : autoTerrain;
 
     // -----------------------------------------
     // AUTO SUBTITLE
@@ -370,8 +510,7 @@ ${c.tips ? `Traveler tips: ${c.tips}` : ""}
       images: c.images || [],
       coverImage: c.coverImage || "",
 
-      terrain:
-        adminTerrain && adminTerrain !== "none" ? adminTerrain : autoTerrain,
+      terrain: finalTerrain,
 
       review: 0,
       reviewLength: 0,
@@ -394,6 +533,7 @@ ${c.tips ? `Traveler tips: ${c.tips}` : ""}
     // -----------------------------------------
     c.verified = true;
     c.approvedLocation = newLocation._id;
+    c.terrain = finalTerrain; // ✅ keep contribution in sync
     await c.save();
 
     return res.status(200).json({
@@ -406,6 +546,7 @@ ${c.tips ? `Traveler tips: ${c.tips}` : ""}
     return res.status(500).json({ message: err.message });
   }
 };
+
 
 
 // ✅ Get all contributions (Admin)

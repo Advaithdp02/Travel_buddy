@@ -16,6 +16,7 @@ import {
   MenuItem,
   Pagination,
 } from "@mui/material";
+import AddContributionModal from "../AddContributionModal";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 const LIMIT = 9;
@@ -28,6 +29,8 @@ const AdminContributor = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editContributionId, setEditContributionId] = useState(null);
 
   const token = localStorage.getItem("token");
 
@@ -208,9 +211,7 @@ const AdminContributor = () => {
                 District: {selected.district}
               </Typography>
 
-              <Typography className="mt-2">
-                {selected.description}
-              </Typography>
+              <Typography className="mt-2">{selected.description}</Typography>
 
               {/* COORDINATES */}
               <Box className="mt-4 text-sm">
@@ -225,7 +226,9 @@ const AdminContributor = () => {
               {/* EXTRA DETAILS */}
               <Box className="mt-4 text-sm text-gray-600">
                 <p>🏖 Best Time: {selected.bestTimeToVisit || "N/A"}</p>
-                <p>👨‍👩‍👧 Family Friendly: {selected.familyFriendly ? "Yes" : "No"}</p>
+                <p>
+                  👨‍👩‍👧 Family Friendly: {selected.familyFriendly ? "Yes" : "No"}
+                </p>
                 <p>🐶 Pet Friendly: {selected.petFriendly ? "Yes" : "No"}</p>
                 <p>♿ Accessibility: {selected.accessibility || "N/A"}</p>
                 <p>
@@ -267,20 +270,33 @@ const AdminContributor = () => {
                 >
                   <option value="">Select Terrain</option>
                   <option value="Mountain">Mountains</option>
-                <option value="Beach">Beaches</option>
-                <option value="Forest">Forests</option>
-                <option value="Desert">Deserts</option>
-                <option value="Plain">Plains</option>
-                <option value="Rocky">Rocky</option>
-                <option value="River">River</option>
-                <option value="Hilly">Hilly</option>
-                <option value="Urban">Urban</option>
+                  <option value="Beach">Beaches</option>
+                  <option value="Forest">Forests</option>
+                  <option value="Desert">Deserts</option>
+                  <option value="Plain">Plains</option>
+                  <option value="Rocky">Rocky</option>
+                  <option value="River">River</option>
+                  <option value="Hilly">Hilly</option>
+                  <option value="Urban">Urban</option>
                 </select>
               </Box>
 
               {/* ACTION BUTTONS */}
               <Box className="flex justify-end gap-3 mt-6">
                 <Button onClick={() => setSelected(null)}>Close</Button>
+
+                <Button
+                  color="primary"
+                  variant="contained"
+                  onClick={() => {
+                    setEditContributionId(selected._id);
+
+                    setIsEditOpen(true);
+                    setSelected(null);
+                  }}
+                >
+                  Edit
+                </Button>
 
                 {!selected.verified && (
                   <Button
@@ -304,8 +320,18 @@ const AdminContributor = () => {
           )}
         </Box>
       </Modal>
+      <AddContributionModal
+    isOpen={isEditOpen}
+    onClose={() => {
+      setIsEditOpen(false);
+      setEditContributionId(null);
+    }}
+    update={true}
+    id={editContributionId}
+  />;
     </Box>
   );
+  
 };
 
 export default AdminContributor;

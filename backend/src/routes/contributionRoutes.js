@@ -11,6 +11,7 @@ import {
   getAllContributions,
   deleteContribution,
   getContributionsByUser,
+  updateContribution,
  
 } from "../controllers/contributionController.js";
 import multer from "multer";
@@ -32,6 +33,15 @@ router.post(
 
 router.get("/user", protect, getContributionsByUser);
 
+router.put(
+  "/:id",
+  protect,
+  upload.fields([
+    { name: "images", maxCount: 10 },
+    { name: "coverImage", maxCount: 1 },
+  ]),
+  updateContribution
+);
 
 
 // Get single contribution

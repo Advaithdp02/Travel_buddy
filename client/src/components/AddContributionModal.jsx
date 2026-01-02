@@ -33,7 +33,12 @@ const accessibilityOptions = ["Easy", "Moderate", "Difficult", "Unknown"];
 
 const Backend_URL = import.meta.env.VITE_BACKEND_URL;
 
-export const AddContributionModal = ({ isOpen, onClose }) => {
+export const AddContributionModal = ({
+  isOpen,
+  onClose,
+  update = false,
+  id = null,
+}) => {
   const [districts, setDistricts] = useState([]);
   const [states, setStates] = useState([]); // <-- ADDED
   const [selectedState, setSelectedState] = useState(""); // <-- ADDED
@@ -43,12 +48,12 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
   const fileInputRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
 
-
   const [formData, setFormData] = useState({
     title: "",
     subtitle: "",
     district: "",
     description: "",
+    terrain: "",
     latitude: "",
     longitude: "",
     images: [],
@@ -71,27 +76,6 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
     hiddenGems: [],
     points: [],
   });
-  const initialFormData = {
-    title: "",
-    subtitle: "",
-    district: "",
-    description: "",
-    latitude: "",
-    longitude: "",
-    bestTimeToVisit: "",
-    crowded: "",
-    familyFriendly: false,
-    petFriendly: false,
-    accessibility: "",
-    activities: [],
-    facilities: [],
-    ratings: {},
-    hiddenGems: [],
-    points: [],
-    tips: "",
-    coverImage: null,
-    images: [],
-  };
 
   // -----------------------------
   // Input handlers
@@ -156,120 +140,105 @@ export const AddContributionModal = ({ isOpen, onClose }) => {
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-const validateForm = () => {
-  if (
-    !formData.title.trim() ||
-    !formData.district.trim() ||
-    !formData.description.trim()
-  ) {
-    alert("Title, district and description are required.");
-    return false;
-  }
+  const validateForm = () => {
+    if (
+      !formData.title.trim() ||
+      !formData.district.trim() ||
+      !formData.description.trim()
+    ) {
+      alert("Title, district and description are required.");
+      return false;
+    }
 
-  if (formData.latitude === "" || formData.longitude === "") {
-    alert("Latitude and Longitude are required.");
-    return false;
-  }
+    if (formData.latitude === "" || formData.longitude === "") {
+      alert("Latitude and Longitude are required.");
+      return false;
+    }
 
-  if (
-    isNaN(Number(formData.latitude)) ||
-    isNaN(Number(formData.longitude))
-  ) {
-    alert("Invalid latitude or longitude.");
-    return false;
-  }
+    if (isNaN(Number(formData.latitude)) || isNaN(Number(formData.longitude))) {
+      alert("Invalid latitude or longitude.");
+      return false;
+    }
 
-  return true;
-};
+    return true;
+  };
 
   // -----------------------------
   // API: Save Contribution
   // -----------------------------
 
   const handleSave = async () => {
-  const token = localStorage.getItem("token");
-  if (submitting) return; // 🔒 block double click
-  
-  if (!token) {
-    alert("Session expired. Please login again.");
-    return;
-  }
-
-  if (!validateForm()) return;
-  setSubmitting(true);
-
-  try {
-    const data = new FormData();
-
-    data.append("title", formData.title.trim());
-    data.append("subtitle", formData.subtitle || "");
-    data.append("district", formData.district);
-    data.append("description", formData.description.trim());
-    data.append("latitude", String(formData.latitude));
-    data.append("longitude", String(formData.longitude));
-
-    data.append("bestTimeToVisit", formData.bestTimeToVisit || "");
-
-    // ✅ FORCE booleans to strings (important)
-    data.append("crowded", String(formData.crowded));
-    data.append("familyFriendly", String(formData.familyFriendly));
-    data.append("petFriendly", String(formData.petFriendly));
-
-    data.append("accessibility", formData.accessibility || "Unknown");
-
-    // ✅ SAFE JSON fields (NO crashes)
-    data.append("activities", JSON.stringify(formData.activities || []));
-    data.append("facilities", JSON.stringify(formData.facilities || []));
-    data.append("ratings", JSON.stringify(formData.ratings || {}));
-    data.append("hiddenGems", JSON.stringify(formData.hiddenGems || []));
-    data.append("points", JSON.stringify(formData.points || []));
-
-    data.append("tips", formData.tips || "");
-
-    if (formData.coverImage) {
-      data.append("coverImage", formData.coverImage);
-    }
-
-    (formData.images || []).forEach((file) =>
-      data.append("images", file)
-    );
-
-    const res = await fetch(`${Backend_URL}/contributions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: data,
-    });
-
-    if (res.status === 401) {
+    const token = localStorage.getItem("token");
+    if (submitting) return;
+    if (!token) {
       alert("Session expired. Please login again.");
       return;
     }
 
-    if (!res.ok) {
-      const err = await res.json();
-      alert(err.message || "Failed to submit contribution.");
-      return;
+    if (!validateForm()) return;
+    setSubmitting(true);
+
+    try {
+      const data = new FormData();
+
+      Object.entries({
+        title: formData.title.trim(),
+        subtitle: formData.subtitle || "",
+        district: formData.district,
+        description: formData.description.trim(),
+        latitude: String(formData.latitude),
+        longitude: String(formData.longitude),
+        bestTimeToVisit: formData.bestTimeToVisit || "",
+        crowded: String(formData.crowded),
+        familyFriendly: String(formData.familyFriendly),
+        petFriendly: String(formData.petFriendly),
+        accessibility: formData.accessibility || "Unknown",
+        tips: formData.tips || "",
+      }).forEach(([k, v]) => data.append(k, v));
+
+      data.append("activities", JSON.stringify(formData.activities || []));
+      data.append("facilities", JSON.stringify(formData.facilities || []));
+      data.append("ratings", JSON.stringify(formData.ratings || {}));
+      data.append("hiddenGems", JSON.stringify(formData.hiddenGems || []));
+      data.append("points", JSON.stringify(formData.points || []));
+      data.append("terrain", formData.terrain || "");
+
+      if (formData.coverImage) {
+        data.append("coverImage", formData.coverImage);
+      }
+
+      (formData.images || []).forEach((file) => data.append("images", file));
+
+      const url = update
+        ? `${Backend_URL}/contributions/${id}`
+        : `${Backend_URL}/contributions`;
+
+      const method = update ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: data,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.message || "Submission failed");
+        return;
+      }
+
+      alert(update ? "Contribution updated!" : "Contribution submitted!");
+      onClose();
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong");
+    } finally {
+      setSubmitting(false);
     }
-
-    alert("Contribution submitted! Awaiting admin approval.");
-
-    setFormData(initialFormData);
-    setPreviewImages([]);
-    setCoverPreview(null);
-    setSelectedState("");
-
-    onClose();
-    window.location.reload();
-  } catch (err) {
-    console.error("Submit error:", err);
-    alert("Something went wrong while submitting.");
-  }finally {
-    setSubmitting(false); // ✅ ALWAYS reset
-  }
-};
-
+  };
 
   // -----------------------------
   // Fetch districts
@@ -293,6 +262,76 @@ const validateForm = () => {
     fetchDistricts();
   }, []);
 
+  // -----------------------------
+  // Fetch contribution for update
+  // -----------------------------
+  useEffect(() => {
+    if (!update || !id || !isOpen) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const fetchContribution = async () => {
+      try {
+        const res = await fetch(`${Backend_URL}/contributions/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) return;
+
+        const json = await res.json();
+        const data = json.contribution; // ✅ correct level
+        console.log(data);
+        // ✅ extract coordinates properly
+        const longitude = data.coordinates?.coordinates?.[0] ?? "";
+        const latitude = data.coordinates?.coordinates?.[1] ?? "";
+
+        setFormData({
+          title: data.title ?? "",
+          subtitle: data.subtitle ?? "",
+          district: data.district ?? "",
+          description: data.description ?? "",
+          latitude: String(latitude),
+          longitude: String(longitude),
+          bestTimeToVisit: data.bestTimeToVisit ?? "",
+          terrain: data.terrain ?? "",
+          crowded: Boolean(data.crowded),
+          familyFriendly: Boolean(data.familyFriendly),
+          petFriendly: Boolean(data.petFriendly),
+          accessibility: data.accessibility ?? "Unknown",
+          activities: Array.isArray(data.activities) ? data.activities : [],
+          facilities: Array.isArray(data.facilities) ? data.facilities : [],
+          ratings: {
+            overall: data.ratings?.overall ?? 0,
+            cleanliness: data.ratings?.cleanliness ?? 0,
+            safety: data.ratings?.safety ?? 0,
+            crowd: data.ratings?.crowd ?? 0,
+            valueForMoney: data.ratings?.valueForMoney ?? 0,
+          },
+          tips: data.tips ?? "",
+          hiddenGems: data.hiddenGems ?? [],
+          points: data.points ?? [],
+          images: [],
+          coverImage: null, // file only on upload
+        });
+
+        // ✅ district is string → infer state from districts list
+        const matchedDistrict = districts.find((d) => d.name === data.district);
+        if (matchedDistrict) {
+          setSelectedState(matchedDistrict.State);
+        }
+
+        // ✅ image previews
+        setCoverPreview(data.coverImage || null);
+        setPreviewImages(data.images || []);
+      } catch (err) {
+        console.error("Fetch contribution failed", err);
+      }
+    };
+
+    fetchContribution();
+  }, [update, id, isOpen, districts]);
+
   if (!isOpen) return null;
 
   // -----------------------------
@@ -303,8 +342,9 @@ const validateForm = () => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white w-full max-w-3xl rounded-xl shadow-lg p-6 overflow-y-auto max-h-[90vh] relative">
         <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">
-          Add a New Place
+          {update ? "Update Place" : "Add a New Place"}
         </h2>
+
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 text-2xl font-bold hover:text-black"
@@ -364,6 +404,27 @@ const validateForm = () => {
                   {d.name}
                 </option>
               ))}
+          </select>
+        </div>
+        {/* Terrain */}
+        <div className="mb-4">
+          <label className="font-semibold">Terrain</label>
+          <select
+            name="terrain"
+            value={formData.terrain}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded-lg"
+          >
+            <option value="">Select Terrain</option>
+            <option value="Mountain">Mountains</option>
+            <option value="Beach">Beaches</option>
+            <option value="Forest">Forests</option>
+            <option value="Desert">Deserts</option>
+            <option value="Plain">Plains</option>
+            <option value="Rocky">Rocky</option>
+            <option value="River">River</option>
+            <option value="Hilly">Hilly</option>
+            <option value="Urban">Urban</option>
           </select>
         </div>
 
@@ -625,19 +686,16 @@ const validateForm = () => {
             Cancel
           </button>
           <button
-  onClick={handleSave}
-  disabled={
-    !formData.title ||
-    !formData.district ||
-    !formData.latitude ||
-    !formData.longitude ||
-    submitting
-  }
-  className="bg-blue-600 disabled:opacity-50 text-white px-6 py-2 rounded-lg"
->
-  {submitting ? "Submitting..." : "Submit Contribution"}
-</button>
-
+            onClick={handleSave}
+            disabled={submitting}
+            className="bg-blue-600 disabled:opacity-50 text-white px-6 py-2 rounded-lg"
+          >
+            {submitting
+              ? "Saving..."
+              : update
+              ? "Update Contribution"
+              : "Submit Contribution"}
+          </button>
         </div>
       </div>
     </div>

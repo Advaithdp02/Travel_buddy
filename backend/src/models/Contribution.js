@@ -60,7 +60,10 @@ const contributionSchema = new mongoose.Schema(
       crowd: { type: Number, min: 1, max: 5 },
       valueForMoney: { type: Number, min: 1, max: 5 }
     },
-
+    terrain: {
+  type: String,
+  default: "",
+},
     tips: String,
     hiddenGems: [String],
 
