@@ -597,9 +597,11 @@ export const getStaff= async (req, res) => {
 };
 
 //PUT /admin/staff/:id
-export const updateStaff=async (req, res) => {
+
+export const updateStaff = async (req, res) => {
   try {
     const staff = await User.findById(req.params.id);
+
     if (!staff || staff.role !== "staff") {
       return res.status(404).json({ message: "Staff not found" });
     }
@@ -623,10 +625,29 @@ export const updateStaff=async (req, res) => {
       }
     });
 
+    // 🔐 ADMIN PASSWORD CHANGE
+    if (req.body.password && req.body.password.trim()) {
+      console.log("ADMIN SET PASSWORD");
+
+      const salt = await bcrypt.genSalt(10);
+      staff.password = await bcrypt.hash(req.body.password, salt);
+
+      // Optional: invalidate OTP
+      staff.resetPasswordOTP = null;
+      staff.resetPasswordExpires = null;
+    }
+
     await staff.save();
 
-    res.json({ success: true, user: staff });
+    res.json({
+      success: true,
+      message: "Staff updated successfully",
+      user: staff,
+    });
   } catch (err) {
+    console.error("Update staff error:", err);
     res.status(500).json({ message: err.message });
   }
 };
+
+

@@ -60,10 +60,17 @@ const userSchema = new mongoose.Schema(
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {
+  // 🚨 Skip hashing if password already looks hashed
   if (!this.isModified("password")) return next();
+
+  if (this.password.startsWith("$2b$")) {
+    return next(); // already hashed
+  }
+
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
+
 
 export default mongoose.model("User", userSchema);
