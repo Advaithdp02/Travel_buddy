@@ -336,7 +336,7 @@ export const getContributionsForDistrict = async (req, res) => {
 export const verifyContribution = async (req, res) => {
   try {
     const contribId = req.params.id;
-    const adminTerrain = req.body.terrain; // admin override (optional)
+    const adminTerrain = req.body.terrain; // optional admin override
 
     // -----------------------------------------
     // FETCH CONTRIBUTION
@@ -346,20 +346,20 @@ export const verifyContribution = async (req, res) => {
       return res.status(404).json({ message: "Contribution not found" });
     }
 
-    if (c.verified && c.approvedLocation) {
+    if (c.verified) {
       return res.status(400).json({ message: "Contribution already verified" });
     }
 
     // -----------------------------------------
-    // GUARD: VALID COORDINATES
+    // VALIDATE COORDINATES
     // -----------------------------------------
     if (
       !c.coordinates?.coordinates ||
       c.coordinates.coordinates.length !== 2
     ) {
-      return res.status(400).json({
-        message: "Contribution has no valid coordinates",
-      });
+      return res
+        .status(400)
+        .json({ message: "Contribution has invalid coordinates" });
     }
 
     // -----------------------------------------
@@ -370,13 +370,10 @@ export const verifyContribution = async (req, res) => {
 
     const districtName = normalize(c.district);
 
-    // -----------------------------------------
-    // FIND DISTRICT (STRICT)
-    // -----------------------------------------
     const districtDoc = await District.findOne({ name: districtName });
     if (!districtDoc) {
       return res.status(400).json({
-        message: `District "${districtName}" not found in master list`,
+        message: `District "${districtName}" not found`,
       });
     }
 
@@ -407,7 +404,7 @@ export const verifyContribution = async (req, res) => {
       if (activities?.includes("Photography") && elevation > 600)
         return "Mountain";
 
-      if (text.includes("forest") || text.includes("trees")) return "Forest";
+      if (text.includes("forest")) return "Forest";
       if (text.includes("desert") || text.includes("sand")) return "Desert";
       if (text.includes("rock") || text.includes("cliff")) return "Rocky";
       if (text.includes("river") || text.includes("waterfall")) return "River";
@@ -424,19 +421,17 @@ export const verifyContribution = async (req, res) => {
     }
 
     // -----------------------------------------
-    // COORDINATES → ELEVATION → TERRAIN
+    // COORDINATES → TERRAIN
     // -----------------------------------------
     const [lng, lat] = c.coordinates.coordinates;
     const elevation = await getElevation(lat, lng);
+
     const autoTerrain = detectTerrain(
       elevation,
       c.activities,
       c.description
     );
 
-    // -----------------------------------------
-    // FINAL TERRAIN (ADMIN OVERRIDE SAFE)
-    // -----------------------------------------
     const finalTerrain =
       typeof adminTerrain === "string" &&
       adminTerrain.trim() !== "" &&
@@ -445,14 +440,14 @@ export const verifyContribution = async (req, res) => {
         : autoTerrain;
 
     // -----------------------------------------
-    // AUTO SUBTITLE
+    // SUBTITLE
     // -----------------------------------------
     const generatedSubtitle = c.activities?.length
       ? `A popular place for ${c.activities.slice(0, 3).join(", ")}`
       : `A notable destination in ${districtName}`;
 
     // -----------------------------------------
-    // AUTO POINTS
+    // POINTS
     // -----------------------------------------
     const points = [];
 
@@ -482,7 +477,7 @@ export const verifyContribution = async (req, res) => {
     }
 
     // -----------------------------------------
-    // AUTO DESCRIPTION
+    // DESCRIPTION
     // -----------------------------------------
     const generatedDescription = `
 ${c.description || ""}
@@ -498,6 +493,15 @@ ${c.tips ? `Traveler tips: ${c.tips}` : ""}
       .trim();
 
     // -----------------------------------------
+    // MERGE IMAGES (COVER + IMAGES)
+    // -----------------------------------------
+    const locationImages = [
+      ...new Set(
+        [c.coverImage, ...(c.images || [])].filter(Boolean)
+      ),
+    ];
+
+    // -----------------------------------------
     // CREATE LOCATION
     // -----------------------------------------
     const newLocation = await Location.create({
@@ -507,25 +511,15 @@ ${c.tips ? `Traveler tips: ${c.tips}` : ""}
       district: districtDoc._id,
 
       points,
-      images: c.images || [],
-      coverImage: c.coverImage || "",
+      images: locationImages, // ✅ CORRECT FOR YOUR SCHEMA
 
       terrain: finalTerrain,
-
       review: 0,
       reviewLength: 0,
 
       coordinates: c.coordinates,
       contributions: [c._id],
       comments: [],
-
-      contributionMeta: {
-        rawActivities: c.activities,
-        rawFacilities: c.facilities,
-        rawTips: c.tips,
-        rawHiddenGems: c.hiddenGems,
-        rawRatings: c.ratings,
-      },
     });
 
     // -----------------------------------------
@@ -533,7 +527,7 @@ ${c.tips ? `Traveler tips: ${c.tips}` : ""}
     // -----------------------------------------
     c.verified = true;
     c.approvedLocation = newLocation._id;
-    c.terrain = finalTerrain; // ✅ keep contribution in sync
+    c.terrain = finalTerrain;
     await c.save();
 
     return res.status(200).json({
@@ -546,6 +540,7 @@ ${c.tips ? `Traveler tips: ${c.tips}` : ""}
     return res.status(500).json({ message: err.message });
   }
 };
+
 
 
 
