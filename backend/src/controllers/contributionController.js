@@ -511,7 +511,7 @@ ${c.tips ? `Traveler tips: ${c.tips}` : ""}
       district: districtDoc._id,
 
       points,
-      images: locationImages, // ✅ CORRECT FOR YOUR SCHEMA
+      images: locationImages, 
 
       terrain: finalTerrain,
       review: 0,
