@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Block private & non-SEO pages
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /profile
+Disallow: /admin
+
+# Block API if exposed
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://www.reandletravelbuddy.com/sitemap.xml
