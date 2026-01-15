@@ -104,31 +104,46 @@ export const toggleFollow = async (req, res) => {
     const currentUserId = req.user.id;
 
     const targetUser = await User.findOne({ username });
-    if (!targetUser) return res.status(404).json({ message: "Target user not found" });
+    if (!targetUser)
+      return res.status(404).json({ message: "Target user not found" });
 
     if (targetUser._id.toString() === currentUserId)
       return res.status(400).json({ message: "Cannot follow yourself" });
 
     const currentUser = await User.findById(currentUserId);
 
+    let isFollowing;
+
     if (currentUser.following.includes(targetUser._id)) {
-      // Unfollow
       currentUser.following.pull(targetUser._id);
       targetUser.followers.pull(currentUserId);
+      isFollowing = false;
     } else {
-      // Follow
       currentUser.following.push(targetUser._id);
       targetUser.followers.push(currentUserId);
+      isFollowing = true;
     }
 
+    // ✅ SAVE FIRST
     await currentUser.save();
     await targetUser.save();
 
-    res.json({ message: "Follow status updated" });
+    // ✅ POPULATE CURRENT USER (NOT TARGET USER)
+    await currentUser.populate("following", "username profilePic bio");
+    await currentUser.populate("followers", "username profilePic bio");
+
+    res.json({
+      message: "Follow status updated",
+      isFollowing,
+      following: currentUser.following,
+      followers: currentUser.followers,
+    });
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 // -------------------- GET USER PROFILE --------------------
 export const getUserProfile = async (req, res) => {
   try {

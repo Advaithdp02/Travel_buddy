@@ -31,50 +31,68 @@ export const Profile = () => {
     window.location.href = "/";
   };
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-  useEffect(() => {
+  const fetchUser = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
       console.warn("User not logged in");
       return;
     }
+    try {
+      const res = await fetch(`${BACKEND_URL}/users/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    const fetchUser = async () => {
-      try {
-        const res = await fetch(`${BACKEND_URL}/users/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+      const data = await res.json();
 
-        const data = await res.json();
+      const user = data.user ?? data; // normalize
 
-        const user = data.user ?? data; // normalize
+      const initialForm = {
+        name: user.name ?? "",
+        username: user.username ?? "",
+        bio: user.bio ?? "",
+        gender: user.gender ?? "",
+        dob: user.dob ? new Date(user.dob).toISOString().split("T")[0] : "",
+        phone: user.phone ?? "",
+        email: user.email ?? "",
+        job: user.occupation ?? user.job ?? "",
+        relationshipStatus: user.relationshipStatus ?? "",
+        location: user.location ?? "",
+        profileImage: user.profilePic ?? "", // fallback if missing
+        coverImage: user.coverPhoto ?? "",
+      };
+      setFollowers(user.followers || []);
+      setFollowing(user.following || []);
+      setWishlist(user.wishlist || []);
 
-        const initialForm = {
-          name: user.name ?? "",
-          username: user.username ?? "",
-          bio: user.bio ?? "",
-          gender: user.gender ?? "",
-          dob: user.dob ? new Date(user.dob).toISOString().split("T")[0] : "",
-          phone: user.phone ?? "",
-          email: user.email ?? "",
-          job: user.occupation ?? user.job ?? "",
-          relationshipStatus: user.relationshipStatus ?? "",
-          location: user.location ?? "",
-          profileImage: user.profilePic ?? "", // fallback if missing
-          coverImage: user.coverPhoto ?? "",
-        };
-        setFollowers(user.followers || []);
-        setFollowing(user.following || []);
-        setWishlist(user.wishlist || []);
-
-        setUserData(user);
-        setFormData(initialForm);
-      } catch (err) {
-        console.error("Error fetching user:", err);
-      }
-    };
-
+      setUserData(user);
+      setFormData(initialForm);
+    } catch (err) {
+      console.error("Error fetching user:", err);
+    }
+  };
+  useEffect(() => {
     fetchUser();
   }, []);
+
+  const toggleFollow = async (username) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(`${BACKEND_URL}/users/follow/${username}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("Toggle failed");
+
+      // ✅ ALWAYS re-fetch YOUR profile
+      await fetchUser();
+    } catch (err) {
+      console.error("Follow toggle failed:", err.message);
+    }
+  };
 
   const removeFromWishlist = async (locationId) => {
     try {
@@ -398,11 +416,15 @@ export const Profile = () => {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  toggleFollow(f);
+                                  toggleFollow(f.username);
                                 }}
-                                className="flex-shrink-0 px-3 py-1 rounded-lg text-sm font-semibold bg-red-500 hover:bg-red-600 text-white"
+                                className={`flex-shrink-0 px-3 py-1 rounded-lg text-sm font-semibold text-white ${
+                                  isFollowing
+                                    ? "bg-red-500 hover:bg-red-600"
+                                    : "bg-blue-500 hover:bg-blue-600"
+                                }`}
                               >
-                                Unfollow
+                                {isFollowing ? "Unfollow" : "Follow"}
                               </button>
                             </div>
                           );
@@ -459,7 +481,7 @@ export const Profile = () => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                toggleFollow(f);
+                                toggleFollow(f.username);
                               }}
                               className="flex-shrink-0 px-3 py-1 rounded-lg text-sm font-semibold bg-red-500 hover:bg-red-600 text-white"
                             >
@@ -514,19 +536,20 @@ export const Profile = () => {
                           })
                           .map((c) => (
                             <div
-  key={c._id}
-  onClick={() => {
-    if (!c.verified) {
-      setSelectedContributionId(c._id);
-      setIsUpdateMode(true);
-      setIsAddContributionOpen(true);
-    }
-  }}
-  className={`bg-white rounded-lg shadow p-4 cursor-pointer border-t-4 ${
-    c.verified ? "border-green-500" : "border-yellow-500"
-  }`}
->
-
+                              key={c._id}
+                              onClick={() => {
+                                if (!c.verified) {
+                                  setSelectedContributionId(c._id);
+                                  setIsUpdateMode(true);
+                                  setIsAddContributionOpen(true);
+                                }
+                              }}
+                              className={`bg-white rounded-lg shadow p-4 cursor-pointer border-t-4 ${
+                                c.verified
+                                  ? "border-green-500"
+                                  : "border-yellow-500"
+                              }`}
+                            >
                               <img
                                 src={c.coverImage || "/defaultCoverPic.png"}
                                 className="w-full h-40 object-cover rounded mb-2"
@@ -796,17 +819,16 @@ export const Profile = () => {
         )}
 
         <AddContributionModal
-  isOpen={isAddContributionOpen}
-  onClose={() => {
-    setIsAddContributionOpen(false);
-    setIsUpdateMode(false);
-    setSelectedContributionId(null);
-  }}
-  update={isUpdateMode}
-  id={selectedContributionId}
-  locationId={location._id}
-/>
-
+          isOpen={isAddContributionOpen}
+          onClose={() => {
+            setIsAddContributionOpen(false);
+            setIsUpdateMode(false);
+            setSelectedContributionId(null);
+          }}
+          update={isUpdateMode}
+          id={selectedContributionId}
+          locationId={location._id}
+        />
       </div>
     </>
   );
