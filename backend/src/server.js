@@ -5,8 +5,7 @@ import { connectDB } from "./config/db.js";
 
 
 const PORT = process.env.PORT || 3000;
-console.log("MONGO_URI:", process.env.MONGO_URI);
-console.log("PORT:", PORT);
+
 
 const startServer = async () => {
   await connectDB();

@@ -9,7 +9,8 @@ import {
   Globe as GlobeIcon,
   MessageCircle as MessageCircleIcon,
   MapPinOff,
-  UserCog
+  UserCog,
+  UsersRound,
 } from "lucide-react";
 
 import AdminUsers from "./AdminUsers";
@@ -23,6 +24,7 @@ import AdminContributor from "./AdminContributor";
 import AdminComment from "./AdminComment";
 import AdminDistricts from "./AdminDistricts";
 import AdminStaff from "./AdminStaff";
+import AdminContributorList from "./AdminContributorList";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -35,6 +37,8 @@ if (token) {
 
 export const AdminPage = () => {
   const [activePage, setActivePage] = useState("home");
+  const [locationCount, setLocationCount] = useState(0);
+  const [contributionCount, setContributionCount] = useState(0);
 
   const [analytics, setAnalytics] = useState({
     totalVisits: 0,
@@ -45,32 +49,62 @@ export const AdminPage = () => {
   const [liveUsers, setLiveUsers] = useState([]); // ⭐ Live users state
 
   useEffect(() => {
-    if (userRole) {
-      const fetchAnalytics = async () => {
-        try {
-          const res = await axios.get(`${BACKEND_URL}/track/stats`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+    if (!token || !userRole) return;
 
-          const overall = res.data.overall || {};
-          const topLocations = (res.data.byLocation || [])
-            .sort((a, b) => b.totalVisits - a.totalVisits)
-            .slice(0, 3)
-            .map((loc) => loc._id);
+    const fetchAnalytics = async () => {
+      try {
+        const res = await axios.get(`${BACKEND_URL}/track/stats`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-          setAnalytics({
-            totalVisits: overall.totalVisits || 0,
-            uniqueUsers: res.data.uniqueUsers || 0,
-            topLocations,
-          });
-        } catch (err) {
-          console.error("Error fetching analytics:", err);
-        }
-      };
+        const overall = res.data.overall || {};
+        const topLocations = (res.data.byLocation || [])
+          .sort((a, b) => b.totalVisits - a.totalVisits)
+          .slice(0, 3)
+          .map((loc) => loc._id);
 
-      // Fetch analytics once
-      fetchAnalytics();
-    }
+        setAnalytics({
+          totalVisits: overall.totalVisits || 0,
+          uniqueUsers: res.data.uniqueUsers || 0,
+          topLocations,
+        });
+      } catch (err) {
+        console.error("Analytics error:", err.response?.data || err.message);
+      }
+    };
+
+    const fetchCounts = async () => {
+      try {
+        const locRes = await axios.get(
+          `${BACKEND_URL}/services/countLocation`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        setLocationCount(locRes.data.totalLocations);
+      } catch (err) {
+        console.error(
+          "Location count error:",
+          err.response?.data || err.message
+        );
+      }
+
+      try {
+        const conRes = await axios.get(
+          `${BACKEND_URL}/services/countContribution`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        setContributionCount(conRes.data.totalContributions);
+      } catch (err) {
+        console.error(
+          "Contribution count error:",
+          err.response?.data || err.message
+        );
+      }
+    };
+
+    fetchAnalytics();
+    fetchCounts();
   }, [token, userRole]);
 
   useEffect(() => {
@@ -120,6 +154,11 @@ export const AdminPage = () => {
       label: "Districts",
       icon: <MapPinOff className="w-5 h-5" />,
     },
+    {
+      id: "contributors",
+      label: "Contributors",
+      icon: <UsersRound className="w-5 h-5" />,
+    },
 
     ...(userRole === "admin"
       ? [
@@ -136,7 +175,7 @@ export const AdminPage = () => {
           {
             id: "staff",
             label: "Staff",
-            icon: <UserCog className="w-5 h-5"  />, 
+            icon: <UserCog className="w-5 h-5" />,
           },
         ]
       : []),
@@ -206,6 +245,25 @@ export const AdminPage = () => {
                   </ul>
                 </ul>
               </div>
+              {/* Total Locations */}
+              <div className="bg-white shadow-lg rounded-2xl p-6 text-center">
+                <h3 className="text-lg font-semibold text-brand-gray">
+                  Total Locations
+                </h3>
+                <p className="text-3xl font-bold text-brand-dark mt-2">
+                  {locationCount}
+                </p>
+              </div>
+
+              {/* Total Contributions */}
+              <div className="bg-white shadow-lg rounded-2xl p-6 text-center">
+                <h3 className="text-lg font-semibold text-brand-gray">
+                  Contributions
+                </h3>
+                <p className="text-3xl font-bold text-brand-dark mt-2">
+                  {contributionCount}
+                </p>
+              </div>
             </div>
           </div>
         );
@@ -237,6 +295,8 @@ export const AdminPage = () => {
         return <AdminComment />;
       case "districts":
         return <AdminDistricts />;
+      case "contributors":
+        return <AdminContributorList />;
       default:
         return null;
     }
