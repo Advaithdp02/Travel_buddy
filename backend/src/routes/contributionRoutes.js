@@ -12,7 +12,7 @@ import {
   deleteContribution,
   getContributionsByUser,
   updateContribution,
- 
+  getUserContributions,
 } from "../controllers/contributionController.js";
 import multer from "multer";
 
@@ -28,7 +28,7 @@ router.post(
     { name: "images", maxCount: 10 },
     { name: "coverImage", maxCount: 1 },
   ]),
-  createContribution
+  createContribution,
 );
 
 router.get("/user", protect, getContributionsByUser);
@@ -40,17 +40,20 @@ router.put(
     { name: "images", maxCount: 10 },
     { name: "coverImage", maxCount: 1 },
   ]),
-  updateContribution
+  updateContribution,
 );
-
+router.get(
+  "/staff/:userId",
+  protect,
+  staffProtect,
+  getUserContributions,
+);
 
 // Get single contribution
 router.get("/:id", getContributionById);
 
 // Admin verifies a contribution
 router.put("/verify/:id", protect, staffProtect, verifyContribution);
-
-
 
 // ✅ Admin: Get all contributions
 router.get("/", protect, staffProtect, getAllContributions);

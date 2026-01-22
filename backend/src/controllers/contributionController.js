@@ -658,3 +658,18 @@ export const getContributionsByUser = async (req, res) => {
     });
   }
 };
+export const getUserContributions = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const contributions = await Contribution.find({ user: userId })
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json(contributions);
+  } catch (error) {
+    console.error("Error fetching contributions:", error);
+    return res.status(500).json({
+      message: "Failed to fetch user contributions",
+    });
+  }
+};
